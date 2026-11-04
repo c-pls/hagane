@@ -1,0 +1,205 @@
+import { Language } from '../types/gym';
+
+export const UI_TEXT = {
+  en: {
+    back: '← Back',
+    routinesBack: '← Routines',
+    tabWorkouts: 'Workouts',
+    tabWiki: 'Exercise Wiki',
+    tabBackup: 'PC ↔ Phone',
+    myRoutines: 'My Routines',
+    selectOrCreateRoutine: 'Select a workout routine or create a new custom split',
+    newRoutineBtn: '+ New Routine',
+    createNewRoutineTitle: 'Create New Workout Routine',
+    routineNamePlaceholder: 'Routine name (e.g. Push Day, Pull Day, Legs)...',
+    routineTagPlaceholder: 'Category tag (e.g. Upper Body, PPL)...',
+    cancel: 'Cancel',
+    createAndOpen: 'Create & Open',
+    open: 'Open →',
+    noExercisesYet: 'No exercises added yet',
+    setsLabel: 'sets',
+    repsLabel: 'reps',
+    addExerciseBtn: '+ Add Exercise',
+    addFirstExerciseBtn: '+ Add Your First Exercise',
+    emptyRoutineText: "This routine doesn't have any exercises yet.",
+    addNotePlaceholder: '+ Add note...',
+    minusSet: '− Set',
+    addSet: '+ Add Set',
+    addExerciseModalTitle: 'Add Exercise to Routine',
+    exercisesAvailable: 'exercises available',
+    searchExercisePlaceholder: 'Search exercise name, equipment, or muscle...',
+    addBtn: '+ Add',
+    instructionsTitle: 'Instructions',
+    step1Prepare: '1. Prepare & Position',
+    step2Execution: '2. Execution',
+    step3Breathing: '3. Breathing & Cues',
+    commentTitle: 'Comment',
+    saveNoteBtn: 'Save Note',
+    commentPlaceholder:
+      'Write your rack pin height, machine seat number, or personal cues for this exercise...',
+    addToRoutineLabel: 'Add to routine:',
+    musclesWorkedTitle: 'Muscles worked',
+    primaryLabel: 'Primary',
+    secondaryLabel: 'Secondary',
+    wikiTitle: 'Exercise Wiki',
+    wikiSubtitle:
+      'Tap any exercise for continuous 1080p video, instructions & muscle map',
+    customExerciseBtn: '+ Custom Exercise',
+    addCustomExerciseTitle: 'Add Custom Exercise to Wiki',
+    customNamePlaceholder: 'Exercise Name (e.g. Pendlay Row)',
+    customVideoPlaceholder:
+      'Video MP4 URL (optional — leave blank to use default demo)',
+    customPrepPlaceholder: '1. Prepare steps (one per line)',
+    customExecPlaceholder: '2. Execution steps (one per line)',
+    customBreathPlaceholder: '3. Breathing cues (one per line)',
+    saveExerciseBtn: 'Save Exercise',
+    exportTitle: 'Export from PC / Phone',
+    exportSubtitle:
+      'Build your routines and notes on PC, then export or copy this code to load onto your phone.',
+    copyTransferBtn: 'Copy Transfer Code',
+    downloadJsonBtn: 'Download .JSON File',
+    importTitle: 'Import Backup Data',
+    importSubtitle:
+      'Paste a transfer code or upload a backup .json file to restore your routines and personal comments.',
+    pasteJsonPlaceholder: 'Paste transfer JSON code here...',
+    restoreFromCodeBtn: 'Restore from Pasted Code',
+    uploadJsonBtn: 'Upload .JSON File',
+    toastSavedNote: 'Personal note saved!',
+    toastDeletedRoutine: 'Deleted routine',
+    toastCopiedJson: 'Copied transfer JSON to clipboard!',
+    toastDownloadedJson: 'Downloaded backup .json file!',
+    toastRestoredBackup: 'Restored routines & comments from backup!',
+  },
+  vi: {
+    back: '← Quay lại',
+    routinesBack: '← Lịch tập',
+    tabWorkouts: 'Buổi tập',
+    tabWiki: 'Thư viện bài tập',
+    tabBackup: 'PC ↔ Điện thoại',
+    myRoutines: 'Lịch tập của tôi',
+    selectOrCreateRoutine: 'Chọn buổi tập hoặc tạo lịch tập mới của riêng bạn',
+    newRoutineBtn: '+ Tạo buổi tập',
+    createNewRoutineTitle: 'Tạo buổi tập mới',
+    routineNamePlaceholder: 'Tên buổi tập (VD: Tập Thân Trên, Tập Chân)...',
+    routineTagPlaceholder: 'Nhóm (VD: Thân trên, Thân dưới)...',
+    cancel: 'Hủy',
+    createAndOpen: 'Tạo & Mở',
+    open: 'Mở →',
+    noExercisesYet: 'Chưa có bài tập nào',
+    setsLabel: 'hiệp',
+    repsLabel: 'lần',
+    addExerciseBtn: '+ Thêm bài tập',
+    addFirstExerciseBtn: '+ Thêm bài tập đầu tiên',
+    emptyRoutineText: 'Buổi tập này chưa có bài tập nào.',
+    addNotePlaceholder: '+ Thêm ghi chú...',
+    minusSet: '− Hiệp',
+    addSet: '+ Thêm hiệp',
+    addExerciseModalTitle: 'Thêm bài tập vào lịch',
+    exercisesAvailable: 'bài tập hiện có',
+    searchExercisePlaceholder: 'Tìm tên bài tập, dụng cụ hoặc nhóm cơ...',
+    addBtn: '+ Thêm',
+    instructionsTitle: 'Hướng dẫn thực hiện',
+    step1Prepare: '1. Chuẩn bị & Tư thế',
+    step2Execution: '2. Thực hiện động tác',
+    step3Breathing: '3. Hít thở & Lưu ý',
+    commentTitle: 'Ghi chú cá nhân',
+    saveNoteBtn: 'Lưu ghi chú',
+    commentPlaceholder:
+      'Ghi lại mức chốt tạ, nấc ghế máy tập hoặc lưu ý riêng của bạn cho bài tập này...',
+    addToRoutineLabel: 'Thêm vào buổi tập:',
+    musclesWorkedTitle: 'Nhóm cơ tác động',
+    primaryLabel: 'Cơ chính',
+    secondaryLabel: 'Cơ phụ',
+    wikiTitle: 'Thư viện bài tập',
+    wikiSubtitle:
+      'Chạm vào bài tập để xem video 1080p lặp liên tục, hướng dẫn & sơ đồ cơ',
+    customExerciseBtn: '+ Tự tạo bài tập',
+    addCustomExerciseTitle: 'Tạo bài tập mới vào thư viện',
+    customNamePlaceholder: 'Tên bài tập',
+    customVideoPlaceholder:
+      'Link video MP4 (tùy chọn — để trống dùng video mặc định)',
+    customPrepPlaceholder: '1. Các bước chuẩn bị (mỗi bước 1 dòng)',
+    customExecPlaceholder: '2. Các bước thực hiện (mỗi bước 1 dòng)',
+    customBreathPlaceholder: '3. Lưu ý hít thở (mỗi bước 1 dòng)',
+    saveExerciseBtn: 'Lưu bài tập',
+    exportTitle: 'Xuất dữ liệu từ PC / Điện thoại',
+    exportSubtitle:
+      'Soạn lịch tập và ghi chú trên PC, sau đó sao chép mã hoặc tải file JSON để nhập vào điện thoại.',
+    copyTransferBtn: 'Sao chép mã JSON',
+    downloadJsonBtn: 'Tải file .JSON',
+    importTitle: 'Nhập dữ liệu sao lưu',
+    importSubtitle:
+      'Dán mã JSON hoặc tải file .json lên để khôi phục lịch tập và ghi chú.',
+    pasteJsonPlaceholder: 'Dán mã JSON sao lưu vào đây...',
+    restoreFromCodeBtn: 'Khôi phục từ mã đã dán',
+    uploadJsonBtn: 'Tải lên file .JSON',
+    toastSavedNote: 'Đã lưu ghi chú!',
+    toastDeletedRoutine: 'Đã xóa buổi tập',
+    toastCopiedJson: 'Đã sao chép mã JSON!',
+    toastDownloadedJson: 'Đã tải xuống file sao lưu .json!',
+    toastRestoredBackup: 'Đã khôi phục lịch tập & ghi chú!',
+  },
+} as const;
+
+const MUSCLE_VI_MAP: Record<string, string> = {
+  All: 'Tất cả',
+  Quads: 'Đùi trước',
+  Glutes: 'Cơ mông',
+  Adductors: 'Đùi trong',
+  Hamstrings: 'Đùi sau',
+  Calves: 'Bắp chân',
+  Tibialis: 'Cơ ống quyển',
+  Chest: 'Cơ ngực',
+  'Upper Chest': 'Ngực trên',
+  'Lower Chest': 'Ngực dưới',
+  Serratus: 'Cơ răng cưa',
+  Back: 'Lưng & Xô',
+  Lats: 'Cơ xô',
+  'Upper Back': 'Lưng trên',
+  'Lower Back': 'Lưng dưới',
+  Traps: 'Cầu vai',
+  Shoulders: 'Cơ vai',
+  Delts: 'Cơ vai',
+  'Front Delts': 'Vai trước',
+  'Side Delts': 'Vai giữa',
+  'Rear Delts': 'Vai sau',
+  Biceps: 'Tay trước',
+  Triceps: 'Tay sau',
+  Forearms: 'Cẳng tay',
+  Core: 'Cơ bụng',
+  Abs: 'Cơ bụng',
+  Obliques: 'Cơ liên sườn',
+  'Hip Flexors': 'Cơ gập hông',
+};
+
+const EQUIPMENT_VI_MAP: Record<string, string> = {
+  All: 'Tất cả',
+  Barbell: 'Tạ đòn',
+  Dumbbell: 'Tạ đơn',
+  Machine: 'Máy tập',
+  Cable: 'Dây cáp',
+  'EZ-Bar': 'Đòn cong',
+  Kettlebell: 'Tạ ấm',
+  Bodyweight: 'Trọng lượng cơ thể',
+};
+
+export function translateMuscle(muscle: string, lang: Language): string {
+  if (lang === 'en') return muscle;
+  return MUSCLE_VI_MAP[muscle] || muscle;
+}
+
+export function translateEquipment(eq: string, lang: Language): string {
+  if (lang === 'en') return eq;
+  return EQUIPMENT_VI_MAP[eq] || eq;
+}
+
+const ROUTINE_TEXT_VI_MAP: Record<string, string> = {
+  'Custom Routine': 'Lịch tập cá nhân',
+  'Leg & Compound Day': 'Buổi tập Chân & Đa khớp',
+  'Upper Body Push & Pull': 'Buổi tập Thân trên Đẩy & Kéo',
+};
+
+export function translateRoutineText(text: string, lang: Language): string {
+  if (lang === 'en') return text;
+  return ROUTINE_TEXT_VI_MAP[text] || text;
+}
