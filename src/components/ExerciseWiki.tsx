@@ -91,7 +91,6 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
           ex.equipment,
           ex.category,
           ...ex.primaryMuscles,
-          ...ex.secondaryMuscles,
           ...ex.aliases,
         ].join(' ')
       );
@@ -103,9 +102,6 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
         muscleFilter === 'All' ||
         ex.category === muscleFilter ||
         ex.primaryMuscles.some((m) =>
-          m.toLowerCase().includes(muscleFilter.toLowerCase())
-        ) ||
-        ex.secondaryMuscles.some((m) =>
           m.toLowerCase().includes(muscleFilter.toLowerCase())
         );
 

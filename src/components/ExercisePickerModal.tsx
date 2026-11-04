@@ -53,7 +53,6 @@ export const ExercisePickerModal: React.FC<ExercisePickerModalProps> = ({
           ex.equipment,
           ex.category,
           ...ex.primaryMuscles,
-          ...ex.secondaryMuscles,
           ...ex.aliases,
         ].join(' ')
       );

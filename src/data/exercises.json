@@ -16,25 +16,23 @@
     "videoUrl": "/videos/barbell-back-squat-1435.mp4",
     "primaryMuscles": [
       "Quads",
-      "Glutes",
-      "Adductors",
-      "Lower Back"
+      "Glutes"
     ],
     "secondaryMuscles": [
+      "Adductors",
+      "Lower Back",
       "Hamstrings",
-      "Core",
-      "Calves"
+      "Core"
     ],
     "primarySlugs": [
       "quadriceps",
-      "gluteal",
-      "adductors",
-      "lower-back"
+      "gluteal"
     ],
     "secondarySlugs": [
+      "adductors",
+      "lower-back",
       "hamstring",
-      "abs",
-      "calves"
+      "abs"
     ],
     "shortDescription": "Classic compound lower body lift with barbell across traps, targeting quads and glutes.",
     "steps": {
@@ -588,25 +586,23 @@
     "videoUrl": "/videos/barbell-front-squat-0042.mp4",
     "primaryMuscles": [
       "Quads",
-      "Glutes",
-      "Adductors",
-      "Lower Back"
+      "Glutes"
     ],
     "secondaryMuscles": [
+      "Adductors",
+      "Lower Back",
       "Hamstrings",
-      "Core",
-      "Calves"
+      "Core"
     ],
     "primarySlugs": [
       "quadriceps",
-      "gluteal",
-      "adductors",
-      "lower-back"
+      "gluteal"
     ],
     "secondarySlugs": [
+      "adductors",
+      "lower-back",
       "hamstring",
-      "abs",
-      "calves"
+      "abs"
     ],
     "shortDescription": "Squat variation with barbell held at the front rack position, targeting the quadriceps.",
     "steps": {
@@ -798,13 +794,13 @@
   {
     "id": "0072",
     "slug": "barbell-prone-incline-curl",
-    "name": "Barbell Prone Incline Curl",
+    "name": "Barbell Spider Curl (Prone Incline Curl)",
     "aliases": [
-      "prone incline barbell curl",
-      "incline chest-supported barbell curl",
-      "face-down incline barbell curl",
+      "spider curl",
       "barbell spider curl",
-      "incline biceps curl with barbell",
+      "prone incline curl",
+      "incline prone barbell curl",
+      "chest supported bicep curl",
       "barbell prone incline curl"
     ],
     "category": "Biceps",
@@ -1208,15 +1204,19 @@
   {
     "id": "0116",
     "slug": "barbell-straight-leg-deadlift",
-    "name": "Barbell Straight Leg Deadlift",
+    "name": "Barbell Romanian Deadlift (RDL)",
     "aliases": [
-      "straight leg deadlift",
-      "SLDL",
-      "barbell SLDL",
       "stiff leg deadlift",
-      "stiff-legged barbell deadlift",
+      "barbell SLDL",
+      "barbell RDL",
+      "SLDL",
+      "romanian deadlift",
+      "barbell romanian deadlift",
+      "RDL",
       "barbell hamstring deadlift",
-      "barbell straight leg deadlift"
+      "stiff-legged barbell deadlift",
+      "barbell straight leg deadlift",
+      "straight leg deadlift"
     ],
     "category": "Hamstrings",
     "equipment": "Barbell",
@@ -1256,7 +1256,7 @@
         "Avoid: Letting the bar drift forward away from the legs"
       ]
     },
-    "nameVi": "Kéo tạ đòn thẳng chân tập đùi sau",
+    "nameVi": "Kéo tạ đòn chân thẳng kiểu Rumani",
     "stepsVi": {
       "prepare": [
         "Đứng thẳng người với hai chân rộng bằng hông, hai tay cầm thẳng thanh tạ đòn ở phía trước đùi.",
@@ -1281,13 +1281,15 @@
   {
     "id": "0027",
     "slug": "barbell-underhand-bent-over-row",
-    "name": "Barbell Underhand Bent-Over Row",
+    "name": "Barbell Reverse-Grip Bent-Over Row (Yates Row)",
     "aliases": [
+      "yates row",
       "reverse grip barbell row",
-      "underhand grip barbell row",
-      "supinated barbell row",
-      "Barbell Underhand Bent-over Row",
-      "barbell bent over row"
+      "underhand barbell row",
+      "dorian yates row",
+      "underhand bent over row",
+      "barbell row",
+      "barbell underhand bent over row"
     ],
     "category": "Back",
     "equipment": "Barbell",
@@ -1329,7 +1331,7 @@
         "Avoid: Flaring elbows excessively"
       ]
     },
-    "nameVi": "Gập người chèo tạ đòn ngửa tay",
+    "nameVi": "Gập người chèo tạ đòn ngửa tay kiểu Yates",
     "stepsVi": {
       "prepare": [
         "Đứng hai chân rộng bằng hông, đặt thanh tạ đòn trên mặt sàn.",
@@ -1568,14 +1570,17 @@
   {
     "id": "0553",
     "slug": "military-press",
-    "name": "Military Press",
+    "name": "Barbell Overhead Press (OHP / Military Press)",
     "aliases": [
       "overhead press",
+      "OHP",
+      "barbell overhead press",
       "barbell military press",
-      "shoulder press",
+      "military press",
       "strict press",
-      "Military Press",
-      "kettlebell two arm military press"
+      "barbell shoulder press",
+      "standing barbell press",
+      "standing OHP"
     ],
     "category": "Shoulders",
     "equipment": "Barbell",
@@ -1616,7 +1621,7 @@
         "Avoid: Bouncing the bar off shoulders"
       ]
     },
-    "nameVi": "Đứng đẩy vai với tạ đòn",
+    "nameVi": "Đẩy tạ đòn qua đầu",
     "stepsVi": {
       "prepare": [
         "Đứng hai chân rộng bằng hông và giữ thanh tạ đòn ở độ cao ngang vai.",
@@ -3624,15 +3629,14 @@
   {
     "id": "0333",
     "slug": "dumbbell-kickback",
-    "name": "Dumbbell Kickback",
+    "name": "Dumbbell Triceps Kickback",
     "aliases": [
+      "tricep kickback",
       "triceps kickback",
-      "dumbbell triceps kickback",
+      "dumbbell tricep kickback",
+      "dumbbell kickback",
       "DB kickback",
-      "bent-over triceps extension",
-      "rear triceps kickback",
-      "dumbbell arm kickback",
-      "dumbbell kickback"
+      "rear triceps kickback"
     ],
     "category": "Triceps",
     "equipment": "Dumbbell",
@@ -3670,7 +3674,7 @@
         "Avoid: Letting the elbows drift away from the ribs"
       ]
     },
-    "nameVi": "Gập người đá tạ đơn ra sau tập tay sau",
+    "nameVi": "Gập người duỗi tạ đơn ra sau tập tay sau",
     "stepsVi": {
       "prepare": [
         "Đứng cầm mỗi tay một quả tạ đơn và gập người về phía trước từ khớp hông với lưng thẳng.",
@@ -4122,15 +4126,13 @@
   {
     "id": "0351",
     "slug": "dumbbell-lying-triceps-extension",
-    "name": "Dumbbell Lying Triceps Extension",
+    "name": "Dumbbell Skullcrusher (Lying Triceps Extension)",
     "aliases": [
-      "lying triceps extension",
-      "dumbbell skull crusher",
+      "dumbbell skullcrusher",
+      "skullcrusher",
       "DB skull crusher",
-      "lying dumbbell triceps extension",
-      "lying triceps dumbbell press",
-      "triceps extension lying down",
-      "dumbbell lying triceps extension"
+      "dumbbell lying triceps extension",
+      "lying dumbbell tricep extension"
     ],
     "category": "Triceps",
     "equipment": "Dumbbell",
@@ -4168,7 +4170,7 @@
         "Avoid: Upper arms drift backward or forward during the rep."
       ]
     },
-    "nameVi": "Nằm ghế phẳng duỗi tạ đơn tập tay sau",
+    "nameVi": "Nằm ghế duỗi tạ đơn qua đầu tập tay sau",
     "stepsVi": {
       "prepare": [
         "Nằm ngửa trên ghế phẳng cầm mỗi tay một quả tạ đơn, đẩy tạ lên phía trên ngực với hai lòng bàn tay hướng vào nhau.",
@@ -4688,13 +4690,14 @@
   {
     "id": "0374",
     "slug": "dumbbell-prone-incline-curl",
-    "name": "Dumbbell Prone Incline Curl",
+    "name": "Dumbbell Spider Curl (Prone Incline Curl)",
     "aliases": [
-      "dumbbell prone incline curl",
-      "prone incline dumbbell curl",
-      "incline face-down dumbbell curl",
-      "chest-supported dumbbell curl",
-      "incline dumbbell biceps curl"
+      "dumbbell spider curl",
+      "spider curl",
+      "incline prone dumbbell curl",
+      "chest supported dumbbell curl",
+      "prone incline curl",
+      "dumbbell prone incline curl"
     ],
     "category": "Biceps",
     "equipment": "Dumbbell",
@@ -4966,13 +4969,11 @@
   {
     "id": "0394",
     "slug": "dumbbell-seated-kickback",
-    "name": "Dumbbell Seated Kickback",
+    "name": "Seated Dumbbell Triceps Kickback",
     "aliases": [
+      "seated tricep kickback",
       "seated dumbbell triceps kickback",
-      "DB seated kickback",
-      "seated triceps kickback",
-      "dumbbell kickback",
-      "seated arm kickback",
+      "seated kickback",
       "dumbbell seated kickback"
     ],
     "category": "Triceps",
@@ -5011,7 +5012,7 @@
         "Avoid: Letting the elbows drift away from the torso"
       ]
     },
-    "nameVi": "Ngồi gập người đá tạ đơn ra sau tập tay sau",
+    "nameVi": "Ngồi duỗi tạ đơn ra sau tập tay sau",
     "stepsVi": {
       "prepare": [
         "Ngồi trên ghế tập cầm mỗi tay một quả tạ đơn với hai bàn chân đặt phẳng trên sàn.",
@@ -5109,18 +5110,16 @@
     "slug": "dumbbell-seated-neutral-wrist-curl",
     "name": "Dumbbell Seated Neutral Wrist Curl",
     "aliases": [
-      "seated neutral wrist curl",
-      "dumbbell neutral-grip wrist curl",
-      "hammer wrist curl",
-      "seated forearm curl",
-      "neutral dumbbell wrist curl",
-      "dumbbell seated neutral wrist curl"
+      "wrist curl",
+      "neutral wrist curl",
+      "dumbbell wrist curl",
+      "forearm curl"
     ],
-    "category": "Biceps",
+    "category": "Forearms",
     "equipment": "Dumbbell",
     "videoUrl": "/videos/dumbbell-seated-neutral-wrist-curl-0397.mp4",
     "primaryMuscles": [
-      "Biceps"
+      "Forearms"
     ],
     "secondaryMuscles": [
       "Forearms"
@@ -5746,14 +5745,19 @@
   {
     "id": "0432",
     "slug": "dumbbell-stiff-leg-deadlift",
-    "name": "Dumbbell Stiff Leg Deadlift",
+    "name": "Dumbbell Romanian Deadlift (RDL)",
     "aliases": [
-      "stiff leg deadlift",
-      "dumbbell SLDL",
-      "dumbbell stiff-legged deadlift",
-      "straight-leg dumbbell deadlift",
       "dumbbell hamstring deadlift",
-      "dumbbell stiff leg deadlift"
+      "stiff leg deadlift",
+      "dumbbell stiff leg deadlift",
+      "SLDL",
+      "romanian deadlift",
+      "DB RDL",
+      "RDL",
+      "dumbbell stiff-legged deadlift",
+      "dumbbell SLDL",
+      "dumbbell romanian deadlift",
+      "straight-leg dumbbell deadlift"
     ],
     "category": "Glutes",
     "equipment": "Dumbbell",
@@ -5793,7 +5797,7 @@
         "Avoid: Letting the dumbbells drift away from the legs"
       ]
     },
-    "nameVi": "Kéo tạ đơn thẳng chân tập đùi sau",
+    "nameVi": "Kéo tạ đơn chân thẳng kiểu Rumani",
     "stepsVi": {
       "prepare": [
         "Đứng thẳng người hai chân mở rộng bằng hông, mỗi tay cầm một quả tạ đơn phía trước đùi.",
@@ -6097,13 +6101,17 @@
   {
     "id": "1757",
     "slug": "single-dumbbell-stiff-leg-deadlift",
-    "name": "Single Dumbbell Stiff-Leg Deadlift",
+    "name": "Single-Dumbbell Romanian Deadlift (RDL)",
     "aliases": [
-      "Single Arm Stiff-Leg Deadlift",
-      "One Dumbbell RDL",
-      "Single DB Stiff Deadlift",
       "Single Dumbbell Stiff Leg Deadlift",
-      "dumbbell single leg deadlift"
+      "dumbbell single leg deadlift",
+      "single leg romanian deadlift",
+      "Single DB Stiff Deadlift",
+      "single dumbbell RDL",
+      "romanian deadlift",
+      "one dumbbell RDL",
+      "Single Arm Stiff-Leg Deadlift",
+      "One Dumbbell RDL"
     ],
     "category": "Hamstrings",
     "equipment": "Dumbbell",
@@ -6142,7 +6150,7 @@
         "Avoid: Excessive knee bend"
       ]
     },
-    "nameVi": "Đứng kéo một tạ đơn thẳng chân tập đùi sau",
+    "nameVi": "Kéo một tạ đơn chân thẳng kiểu Rumani",
     "stepsVi": {
       "prepare": [
         "Đứng thẳng người dùng cả hai tay cầm một quả tạ đơn đặt phía trước đùi.",
@@ -6304,13 +6312,13 @@
   {
     "id": "0489",
     "slug": "45-degree-hyperextension",
-    "name": "45 Degree Hyperextension",
+    "name": "45° Hyperextension (Back Extension)",
     "aliases": [
+      "hyperextension",
       "back extension",
-      "hyperextension bench",
-      "Roman chair extension",
-      "45 Degree Hyperextension",
-      "hyperextension"
+      "roman chair",
+      "45 degree hyperextension",
+      "back extension bench"
     ],
     "category": "Back",
     "equipment": "Machine",
@@ -6349,7 +6357,7 @@
         "Avoid: Overextending at the top"
       ]
     },
-    "nameVi": "Gập lưng dưới trên ghế dốc 45 độ",
+    "nameVi": "Gập người duỗi lưng trên ghế dốc 45 độ",
     "stepsVi": {
       "prepare": [
         "Vào tư thế trên ghế tập lưng dốc 45 độ với mắt cá chân được cài cố định.",
@@ -6442,13 +6450,14 @@
   {
     "id": "0573",
     "slug": "lever-back-extension",
-    "name": "Lever Back Extension",
+    "name": "Machine Back Extension (Hyperextension Machine)",
     "aliases": [
       "machine back extension",
-      "lever back extension",
       "back extension machine",
-      "seated back extension",
-      "lower back machine extension"
+      "hyperextension machine",
+      "seated back extension machine",
+      "lower back machine",
+      "lever back extension"
     ],
     "category": "Back",
     "equipment": "Machine",
@@ -6488,7 +6497,7 @@
         "Avoid: Pushing through a short, rushed range of motion"
       ]
     },
-    "nameVi": "Gập duỗi lưng dưới trên máy tập",
+    "nameVi": "Ngồi gập duỗi lưng trên máy tập",
     "stepsVi": {
       "prepare": [
         "Điều chỉnh máy sao cho đệm tựa lưng áp vừa vặn vào lưng trên và hai bàn chân được cố định vững chắc trên bàn đạp.",
@@ -7151,13 +7160,13 @@
   {
     "id": "0593",
     "slug": "lever-reverse-hyperextension",
-    "name": "Lever Reverse Hyperextension",
+    "name": "Machine Reverse Hyperextension (Reverse Hyper)",
     "aliases": [
-      "reverse hyperextension machine",
-      "lever reverse hyper",
-      "machine reverse hyperextension",
-      "reverse leg raise machine",
-      "glute raise on machine",
+      "reverse hyper",
+      "reverse hyperextension",
+      "reverse hyper machine",
+      "machine reverse hyper",
+      "glute hyperextension",
       "lever reverse hyperextension"
     ],
     "category": "Glutes",
@@ -7198,7 +7207,7 @@
         "Avoid: Arching the lower back at the top"
       ]
     },
-    "nameVi": "Nằm sấp nâng hai chân ngược trên máy tập mông",
+    "nameVi": "Nằm nâng chân tập lưng dưới trên máy tập",
     "stepsVi": {
       "prepare": [
         "Điều chỉnh máy sao cho hông tựa vững trên đệm và hai chân có thể buông thõng tự do.",
@@ -7371,12 +7380,13 @@
   {
     "id": "1452",
     "slug": "lever-seated-crunch",
-    "name": "Lever Seated Crunch",
+    "name": "Machine Seated Crunch (Ab Crunch Machine)",
     "aliases": [
-      "machine crunch",
+      "ab machine",
       "ab crunch machine",
-      "seated ab crunch",
-      "Lever Seated Crunch (1)",
+      "machine seated crunch",
+      "machine ab crunch",
+      "seated crunch machine",
       "lever seated crunch"
     ],
     "category": "Core",
@@ -7727,15 +7737,13 @@
   {
     "id": "0602",
     "slug": "lever-seated-reverse-fly",
-    "name": "Machine Rear Delt Reverse Fly (Pec Deck)",
+    "name": "Reverse Pec Deck Fly (Machine Rear Delt)",
     "aliases": [
-      "seated reverse fly machine",
-      "machine rear delt fly",
-      "rear delt machine fly",
       "reverse pec deck",
-      "seated rear shoulder fly",
-      "lever seated reverse fly",
-      "Lever Seated Reverse Fly"
+      "rear delt fly machine",
+      "machine rear delt fly",
+      "reverse fly machine",
+      "pec deck reverse fly"
     ],
     "category": "Shoulders",
     "equipment": "Machine",
@@ -7775,7 +7783,7 @@
         "Avoid: Straightening the elbows and turning it into a press"
       ]
     },
-    "nameVi": "Ngồi ép ngực ngược trên máy tập vai sau",
+    "nameVi": "Ngồi ép vai sau trên máy tập",
     "stepsVi": {
       "prepare": [
         "Điều chỉnh ghế ngồi sao cho tay cầm ngang tầm vai khi bạn ngồi xuống.",
@@ -7800,11 +7808,10 @@
   {
     "id": "0604",
     "slug": "lever-shrug",
-    "name": "Lever Shrug",
+    "name": "Machine Trap Shrug (Plate-Loaded)",
     "aliases": [
       "machine shrug",
-      "lever machine shrug",
-      "shrug machine",
+      "plate loaded shrug",
       "trap shrug machine",
       "shoulder shrug machine",
       "lever shrug"
@@ -7845,7 +7852,7 @@
         "Avoid: Rolling the shoulders forward or backward"
       ]
     },
-    "nameVi": "Đứng nhún cầu vai trên máy",
+    "nameVi": "Nhún cơ cầu vai trên máy tập",
     "stepsVi": {
       "prepare": [
         "Điều chỉnh máy sao cho tay cầm nằm ở hai bên hông khi vai ở trạng thái thả lỏng.",
@@ -7941,13 +7948,13 @@
   {
     "id": "2286",
     "slug": "lever-standing-hip-extension",
-    "name": "Lever Standing Hip Extension",
+    "name": "Machine Standing Glute Kickback",
     "aliases": [
-      "machine standing hip extension",
-      "butt blaster",
       "glute kickback machine",
-      "Lever Standing Hip Extension",
-      "lever hip extension"
+      "machine standing hip extension",
+      "butt blaster machine",
+      "standing glute kickback",
+      "lever standing hip extension"
     ],
     "category": "Glutes",
     "equipment": "Machine",
@@ -7986,7 +7993,7 @@
         "Avoid: Using momentum"
       ]
     },
-    "nameVi": "Đứng đạp chân ra sau trên máy tập mông",
+    "nameVi": "Đứng đá chân ra sau tập mông trên máy tập",
     "stepsVi": {
       "prepare": [
         "Điều chỉnh máy tập cho phù hợp với chiều cao của bạn.",
@@ -8010,10 +8017,12 @@
   {
     "id": "drv-lever-standing-rear-kick",
     "slug": "lever-standing-rear-kick",
-    "name": "Lever Standing Rear Kick",
+    "name": "Machine Standing Glute Kickback (Rear Kick)",
     "aliases": [
-      "machine glute kickback",
-      "lever rear kick"
+      "machine rear kick",
+      "standing glute kickback machine",
+      "glute kick machine",
+      "lever standing rear kick"
     ],
     "category": "Glutes",
     "equipment": "Machine",
@@ -8052,7 +8061,7 @@
         "Avoid: Swinging leg with momentum"
       ]
     },
-    "nameVi": "Đứng đá chân ra sau trên máy tập mông",
+    "nameVi": "Đứng đạp chân ra sau tập mông trên máy tập",
     "stepsVi": {
       "prepare": [
         "Điều chỉnh đệm tựa của máy đòn bẩy ngang tầm ngực và chọn mức tạ phù hợp.",
@@ -8222,12 +8231,14 @@
   {
     "id": "drv-lever-pec-deck-fly",
     "slug": "pec-deck-fly",
-    "name": "Machine Pec Deck Fly",
+    "name": "Machine Pec Deck Fly (Chest Fly Machine)",
     "aliases": [
       "pec deck",
+      "chest fly machine",
+      "pec deck fly",
       "machine chest fly",
-      "lever chest fly",
-      "Pec Deck Fly"
+      "butterfly machine",
+      "lever pec deck fly"
     ],
     "category": "Chest",
     "equipment": "Machine",
@@ -8266,7 +8277,7 @@
         "Avoid: Arching lower back"
       ]
     },
-    "nameVi": "Ngồi ép ngực trên máy",
+    "nameVi": "Ngồi ép ngực trên máy tập",
     "stepsVi": {
       "prepare": [
         "Điều chỉnh chiều cao ghế ngồi và ngồi áp lưng sát vào đệm tựa.",
@@ -8363,13 +8374,13 @@
   {
     "id": "0738",
     "slug": "sled-45-degree-calf-press",
-    "name": "Sled 45 Degree Calf Press",
+    "name": "Leg Press Calf Raise (45° Sled)",
     "aliases": [
-      "45 degree sled calf press",
-      "sled calf press",
       "leg press calf raise",
       "calf press on leg press",
-      "machine calf press",
+      "45 degree calf raise",
+      "sled calf press",
+      "machine calf raise",
       "sled 45 degree calf press"
     ],
     "category": "Calves",
@@ -8408,7 +8419,7 @@
         "Avoid: Placing the whole foot flat on the platform so the heels cannot drop"
       ]
     },
-    "nameVi": "Đạp nhón bắp chân trên máy nghiêng 45 độ",
+    "nameVi": "Nhón bắp chân trên máy đạp đùi 45 độ",
     "stepsVi": {
       "prepare": [
         "Ngồi vào máy trượt nghiêng 45 độ và đặt ức của cả hai bàn chân lên mép dưới bàn đạp với gót chân thả tự do ngoài rìa.",
@@ -8719,16 +8730,17 @@
     "slug": "smith-machine-deadlift",
     "name": "Smith Machine Deadlift",
     "aliases": [
+      "smith machine deadlift",
       "smith deadlift",
-      "smith bar deadlift",
-      "machine deadlift",
-      "Smith Deadlift - Deadlift (1)"
+      "deadlift on smith machine"
     ],
-    "category": "Core",
+    "category": "Back",
     "equipment": "Machine",
     "videoUrl": "/videos/smith-machine-deadlift-0752.mp4",
     "primaryMuscles": [
-      "Erectors"
+      "Hamstrings",
+      "Glutes",
+      "Lower Back"
     ],
     "secondaryMuscles": [
       "Glutes",
@@ -9149,14 +9161,13 @@
   {
     "id": "0175",
     "slug": "cable-kneeling-crunch",
-    "name": "Cable Kneeling Crunch",
+    "name": "Cable Kneeling Crunch (Rope Crunch / Cable Abs)",
     "aliases": [
+      "cable crunch",
+      "rope crunch",
       "kneeling cable crunch",
-      "cable rope crunch",
-      "rope kneeling crunch",
-      "high cable kneeling crunch",
-      "kneeling ab crunch",
-      "cable abs crunch",
+      "cable abs",
+      "kneeling rope crunch",
       "cable kneeling crunch"
     ],
     "category": "Core",
@@ -9195,7 +9206,7 @@
         "Avoid: Sitting hips back and turning it into a hip hinge"
       ]
     },
-    "nameVi": "Quỳ kéo cáp gập bụng",
+    "nameVi": "Quỳ kéo cáp gập bụng tập cơ bụng 6 múi",
     "stepsVi": {
       "prepare": [
         "Gắn tay cầm dây thừng vào ròng rọc ở vị trí cao nhất và quỳ gối hướng mặt vào máy kéo cáp.",
@@ -9292,14 +9303,12 @@
   {
     "id": "0186",
     "slug": "cable-lying-triceps-extension",
-    "name": "Cable Lying Triceps Extension",
+    "name": "Cable Skullcrusher (Lying Triceps Extension)",
     "aliases": [
-      "lying cable triceps extension",
-      "cable skull crusher",
-      "rope lying triceps extension",
-      "lying rope triceps extension",
-      "triceps extension on bench with cable",
-      "cable lying triceps extension"
+      "cable skullcrusher",
+      "skullcrusher",
+      "cable lying triceps extension",
+      "lying cable tricep extension"
     ],
     "category": "Triceps",
     "equipment": "Cable",
@@ -9337,7 +9346,7 @@
         "Avoid: Drifting the upper arms backward and turning it into a pullover"
       ]
     },
-    "nameVi": "Nằm ghế phẳng duỗi cáp tập tay sau",
+    "nameVi": "Nằm ghế kéo cáp duỗi tay sau",
     "stepsVi": {
       "prepare": [
         "Gắn tay cầm dây thừng vào ròng rọc cáp thấp và đặt một chiếc ghế tập nằm phẳng thẳng hàng với ròng rọc.",
@@ -9715,12 +9724,11 @@
   {
     "id": "0198",
     "slug": "cable-pulldown",
-    "name": "Cable Pulldown",
+    "name": "Cable Lat Pulldown (Wide-Grip)",
     "aliases": [
       "lat pulldown",
       "cable lat pulldown",
-      "wide-grip pulldown",
-      "pulldown machine",
+      "wide grip lat pulldown",
       "lat pull down",
       "cable pulldown"
     ],
@@ -9762,7 +9770,7 @@
         "Avoid: Swinging the torso backward to start the rep"
       ]
     },
-    "nameVi": "Kéo cáp thẳng xuống tập cơ xô",
+    "nameVi": "Ngồi kéo cáp thẳng tay xô rộng",
     "stepsVi": {
       "prepare": [
         "Điều chỉnh ghế ngồi và đệm chặn đùi sao cho hai đùi được giữ chặt và bạn có thể với tới thanh đòn phía trên đầu.",
@@ -9787,15 +9795,18 @@
   {
     "id": "0203",
     "slug": "cable-rear-delt-row-with-rope",
-    "name": "Cable Rear Delt Row (with rope)",
+    "name": "Cable Face Pull (Rope Rear Delt Row)",
     "aliases": [
-      "cable rear delt row",
-      "rope rear delt row",
-      "rear delt cable row",
       "low cable rear delt row",
-      "rope face-away rear delt row",
+      "rear delt cable row",
+      "cable rear delt row (with rope)",
+      "rope face pull",
+      "rope rear delt row",
       "rear shoulder rope row",
-      "cable rear delt row (with rope)"
+      "rope face-away rear delt row",
+      "face pull",
+      "cable face pull",
+      "cable rear delt row"
     ],
     "category": "Shoulders",
     "equipment": "Cable",
@@ -10430,15 +10441,13 @@
   {
     "id": "0238",
     "slug": "cable-straight-arm-pulldown",
-    "name": "Cable Straight Arm Pulldown",
+    "name": "Cable Straight-Arm Pulldown (Lat Prayer)",
     "aliases": [
-      "straight-arm pulldown",
-      "cable straight-arm pulldown",
-      "straight arm cable pulldown",
-      "lat prayer pulldown",
-      "straight-arm lat pulldown",
-      "straight-arm cable lat pull",
-      "cable straight arm pulldown"
+      "lat prayer",
+      "straight arm pulldown",
+      "cable straight arm pulldown",
+      "cable pullover",
+      "stiff arm pulldown"
     ],
     "category": "Back",
     "equipment": "Cable",
@@ -10478,7 +10487,7 @@
         "Avoid: Leaning back and using body swing to move the bar"
       ]
     },
-    "nameVi": "Đứng kéo cáp thẳng tay tập cơ xô",
+    "nameVi": "Đứng kéo cáp thẳng tay tập xô",
     "stepsVi": {
       "prepare": [
         "Gắn thanh đòn thẳng vào ròng rọc cáp cao và đứng đối diện với máy tập.",
@@ -10572,15 +10581,15 @@
   {
     "id": "0862",
     "slug": "cable-twist-up-down",
-    "name": "Cable Twist (up-down)",
+    "name": "Cable Woodchopper (Diagonal Twist / Cable Chop)",
     "aliases": [
-      "cable twist up-down",
-      "high-to-low cable twist",
-      "low-to-high cable twist",
-      "standing cable torso twist",
-      "cable oblique twist",
-      "cable core rotation",
-      "cable twist (up-down)"
+      "woodchopper",
+      "cable woodchopper",
+      "cable chop",
+      "cable twist",
+      "standing cable rotation",
+      "oblique cable twist",
+      "cable twist up down"
     ],
     "category": "Core",
     "equipment": "Cable",
@@ -10619,7 +10628,7 @@
         "Avoid: Bending and straightening the elbows to move the weight"
       ]
     },
-    "nameVi": "Đứng xoay người với dây cáp tập liên sườn",
+    "nameVi": "Kéo cáp chéo người tập cơ bụng liên sườn",
     "stepsVi": {
       "prepare": [
         "Điều chỉnh tay cầm cáp ở vị trí ngang tầm vai và đứng nghiêng người cạnh máy với hai chân rộng bằng hông.",
@@ -12678,6 +12687,1396 @@
         "Hít vào khi hạ người xuống, thở ra khi nhấn tay đẩy người lên.",
         "Tránh: Để hai vai bị cuộn gù về phía trước",
         "Tránh: Hạ hông xuống quá sâu gây hại khớp vai"
+      ]
+    }
+  },
+  {
+    "id": "famous-db-bulgarian-split-squat",
+    "slug": "dumbbell-bulgarian-split-squat",
+    "name": "Dumbbell Bulgarian Split Squat",
+    "nameVi": "Gánh tạ đơn một chân kê ghế sau",
+    "aliases": [
+      "bulgarian split squat",
+      "rear foot elevated split squat",
+      "RFESS",
+      "dumbbell split squat",
+      "single leg split squat"
+    ],
+    "category": "Quads",
+    "equipment": "Dumbbell",
+    "videoUrl": "/videos/dumbbell-lunge-0336.mp4",
+    "primaryMuscles": [
+      "Quads",
+      "Glutes"
+    ],
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Adductors",
+      "Calves"
+    ],
+    "primarySlugs": [
+      "quadriceps",
+      "gluteal"
+    ],
+    "secondarySlugs": [
+      "hamstring",
+      "adductors",
+      "calves"
+    ],
+    "shortDescription": "Single-leg squat with the rear foot elevated on a bench and dumbbells held at the sides to heavily target the quads and glutes.",
+    "steps": {
+      "prepare": [
+        "Stand about two feet in front of a flat bench holding a dumbbell in each hand at your sides, and place the top of your rear foot onto the bench behind you.",
+        "Square your hips forward, brace your core, and plant your front foot flat on the floor."
+      ],
+      "execution": [
+        "Lower your hips down and slightly back by bending your front knee until your rear knee nearly touches the floor.",
+        "Keep a slight forward torso lean for glute emphasis or an upright torso for quad emphasis, ensuring your front knee tracks over your toes.",
+        "Drive firmly through your entire front foot to return to the top starting position without locking out harshly.",
+        "Form cue: Front foot flat on floor",
+        "Form cue: Knee tracks in line with toes",
+        "Form cue: Drive through the front leg"
+      ],
+      "breathing": [
+        "Inhale as you lower under control into the split squat, and exhale as you drive back up to the top.",
+        "Avoid: Pushing off excessively with the back foot on the bench",
+        "Avoid: Letting the front knee cave inward at the bottom"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Đứng cách ghế phẳng khoảng hai bước bàn chân, hai tay cầm tạ đơn thả dọc hai bên sườn và đặt mu bàn chân sau lên mặt đệm ghế phía sau.",
+        "Giữ khung hông hướng thẳng về phía trước, gồng chặt cơ bụng và đặt bàn chân trước bám phẳng hoàn toàn xuống mặt sàn."
+      ],
+      "execution": [
+        "Hạ thấp hông xuống và hơi đẩy nhẹ ra sau bằng cách gập đầu gối chân trước cho đến khi đầu gối chân sau gần chạm sàn.",
+        "Hơi đổ nhẹ thân người về trước để tập trung vào cơ mông hoặc giữ lưng thẳng đứng để tập trung vào cơ đùi trước, đảm bảo đầu gối chân trước mở theo đúng hướng mũi chân.",
+        "Đạp mạnh qua toàn bộ lòng bàn chân trước để đẩy người đứng lên vị trí bắt đầu mà không khóa cứng khớp gối.",
+        "Lưu ý kỹ thuật: Giữ bàn chân trước bám chặt trên sàn",
+        "Lưu ý kỹ thuật: Đầu gối mở theo đúng hướng mũi chân",
+        "Lưu ý kỹ thuật: Phát lực chính từ chân trụ phía trước"
+      ],
+      "breathing": [
+        "Hít vào khi hạ người xuống có kiểm soát, và thở ra khi đạp chân trước đẩy người đứng lên.",
+        "Tránh: Dùng chân kê trên ghế phía sau để đạp lấy đà quá nhiều",
+        "Tránh: Để đầu gối chân trước bị chụm sụp vào trong ở vị trí thấp nhất"
+      ]
+    }
+  },
+  {
+    "id": "famous-bb-bulgarian-split-squat",
+    "slug": "barbell-bulgarian-split-squat",
+    "name": "Barbell Bulgarian Split Squat",
+    "nameVi": "Gánh tạ đòn một chân kê ghế sau",
+    "aliases": [
+      "barbell bulgarian split squat",
+      "bulgarian split squat",
+      "barbell rear foot elevated split squat",
+      "barbell split squat"
+    ],
+    "category": "Quads",
+    "equipment": "Barbell",
+    "videoUrl": "/videos/barbell-lunge-0054.mp4",
+    "primaryMuscles": [
+      "Quads",
+      "Glutes"
+    ],
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Adductors",
+      "Lower Back"
+    ],
+    "primarySlugs": [
+      "quadriceps",
+      "gluteal"
+    ],
+    "secondarySlugs": [
+      "hamstring",
+      "adductors",
+      "lower-back"
+    ],
+    "shortDescription": "Rear-foot-elevated split squat performed with a barbell across the upper back for high-load unilateral leg development.",
+    "steps": {
+      "prepare": [
+        "Unrack the barbell across your upper traps, step forward in front of a bench, and rest the laces of your rear foot on the bench pad.",
+        "Brace your core tightly, keep your chest proud, and balance your weight over your front mid-foot."
+      ],
+      "execution": [
+        "Bend your front knee and hip to descend smoothly until your front thigh is parallel to the floor.",
+        "Pause briefly at the bottom while keeping your spine neutral and your front knee aligned with your foot.",
+        "Drive up forcefully through your front heel and mid-foot to return to standing.",
+        "Form cue: Brace torso tightly under the bar",
+        "Form cue: Keep hips squared forward",
+        "Form cue: Control the descent"
+      ],
+      "breathing": [
+        "Take a deep breath and brace before descending, then exhale as you drive up through the sticking point.",
+        "Avoid: Twisting the hips or leaning sideways",
+        "Avoid: Bouncing off the bottom of the rep"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Nhấc thanh tạ đòn đặt vững trên cơ cầu vai trên, bước ra phía trước ghế tập và đặt mu bàn chân sau lên mặt đệm ghế.",
+        "Gồng chặt cơ bụng, giữ ngực mở cao và dồn trọng tâm cân bằng trên lòng bàn chân trước."
+      ],
+      "execution": [
+        "Gập khớp gối và khớp hông chân trước để hạ người xuống mượt mà cho đến khi đùi trước song song với mặt sàn.",
+        "Dừng một nhịp ngắn ở điểm thấp nhất trong khi vẫn giữ cột sống thẳng tự nhiên và đầu gối thẳng hàng với mũi chân.",
+        "Đạp mạnh qua gót chân và giữa bàn chân trước để đẩy người trở lại tư thế đứng thẳng.",
+        "Lưu ý kỹ thuật: Gồng cứng thân người dưới thanh tạ",
+        "Lưu ý kỹ thuật: Giữ hai bên hông cân bằng hướng thẳng về trước",
+        "Lưu ý kỹ thuật: Hạ người xuống có kiểm soát"
+      ],
+      "breathing": [
+        "Hít sâu và gồng bụng trước khi hạ người xuống, sau đó thở ra khi đạp mạnh vượt qua điểm nặng nhất.",
+        "Tránh: Xoay lệch hông hoặc nghiêng vẹo thân người sang bên",
+        "Tránh: Nhún bật lấy đà ở điểm thấp nhất của động tác"
+      ]
+    }
+  },
+  {
+    "id": "famous-bb-conventional-deadlift",
+    "slug": "barbell-conventional-deadlift",
+    "name": "Barbell Deadlift (Conventional)",
+    "nameVi": "Kéo tạ đòn từ sàn truyền thống",
+    "aliases": [
+      "deadlift",
+      "barbell deadlift",
+      "conventional deadlift",
+      "floor deadlift"
+    ],
+    "category": "Back",
+    "equipment": "Barbell",
+    "videoUrl": "/videos/barbell-straight-leg-deadlift-0116.mp4",
+    "primaryMuscles": [
+      "Hamstrings",
+      "Glutes",
+      "Lower Back"
+    ],
+    "secondaryMuscles": [
+      "Quads",
+      "Lats",
+      "Traps",
+      "Forearms"
+    ],
+    "primarySlugs": [
+      "hamstring",
+      "gluteal",
+      "lower-back"
+    ],
+    "secondarySlugs": [
+      "quadriceps",
+      "upper-back",
+      "trapezius",
+      "forearm"
+    ],
+    "shortDescription": "Fundamental full-body compound pull lifting a loaded barbell from the floor to a standing lockout.",
+    "steps": {
+      "prepare": [
+        "Stand with your feet hip-width apart with the barbell positioned directly over your mid-foot (about 2–3 cm from your shins).",
+        "Hinge at the hips and bend your knees until your shins touch the bar, grip the bar just outside your legs, pull your chest up, and flatten your back."
+      ],
+      "execution": [
+        "Take the slack out of the bar, engage your lats (imagine squeezing oranges in your armpits), and push the floor away with your legs.",
+        "Keep the barbell dragging close along your shins and thighs as your hips and shoulders rise at the same rate.",
+        "Drive your hips forward to stand tall at lockout with glutes squeezed, then hinge at the hips to lower the bar back to the floor under control.",
+        "Form cue: Keep bar against shins and thighs",
+        "Form cue: Push the floor away with your feet",
+        "Form cue: Lock out with glutes, do not hyperextend lower back"
+      ],
+      "breathing": [
+        "Take a big 360-degree breath into your belly and brace hard before lifting from the floor; exhale at the top or after resetting on the floor.",
+        "Avoid: Letting the lower back round as the bar leaves the floor",
+        "Avoid: Letting the bar drift forward away from your shins"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Đứng hai chân rộng bằng hông với thanh tạ đòn nằm ngay phía trên giữa bàn chân (cách ống quyển khoảng 2–3 cm).",
+        "Gập hông và hạ gối cho đến khi ống quyển chạm nhẹ vào thanh tạ, hai tay nắm tạ ngay sát mép ngoài hai chân, mở ngực cao và giữ lưng phẳng."
+      ],
+      "execution": [
+        "Kéo căng nhẹ để khử độ rơ của thanh tạ, khóa chặt cơ xô (tưởng tượng như đang kẹp chặt vật dưới nách), và đạp mạnh hai chân xuống mặt sàn.",
+        "Giữ thanh tạ luôn trượt sát dọc theo ống quyển và đùi trong khi hông và vai nâng lên cùng một tốc độ.",
+        "Đẩy hông về phía trước để đứng thẳng khóa khớp cùng cơ mông siết chặt, sau đó đẩy hông ra sau để hạ tạ có kiểm soát trở lại mặt sàn.",
+        "Lưu ý kỹ thuật: Luôn giữ thanh tạ sát ống quyển và đùi",
+        "Lưu ý kỹ thuật: Dùng lực chân đạp mạnh mặt sàn ra xa",
+        "Lưu ý kỹ thuật: Khóa khớp bằng cơ mông, không ưỡn võng lưng dưới"
+      ],
+      "breathing": [
+        "Hít một hơi thật sâu vào bụng và gồng cứng toàn bộ cơ trung tâm trước khi nhấc tạ khỏi sàn; thở ra ở đỉnh hoặc sau khi đặt tạ xuống sàn.",
+        "Tránh: Để lưng dưới bị cong gù khi thanh tạ rời khỏi mặt sàn",
+        "Tránh: Để thanh tạ trôi ra xa phía trước ống quyển"
+      ]
+    }
+  },
+  {
+    "id": "famous-bb-sumo-deadlift",
+    "slug": "barbell-sumo-deadlift",
+    "name": "Barbell Sumo Deadlift",
+    "nameVi": "Kéo tạ đòn từ sàn chân rộng",
+    "aliases": [
+      "sumo deadlift",
+      "barbell sumo deadlift",
+      "wide stance deadlift"
+    ],
+    "category": "Glutes",
+    "equipment": "Barbell",
+    "videoUrl": "/videos/dumbbell-sumo-squat-new-dumbbell-sumo-squat.mp4",
+    "primaryMuscles": [
+      "Glutes",
+      "Adductors",
+      "Hamstrings"
+    ],
+    "secondaryMuscles": [
+      "Quads",
+      "Lower Back",
+      "Traps",
+      "Forearms"
+    ],
+    "primarySlugs": [
+      "gluteal",
+      "adductors",
+      "hamstring"
+    ],
+    "secondarySlugs": [
+      "quadriceps",
+      "lower-back",
+      "trapezius",
+      "forearm"
+    ],
+    "shortDescription": "Wide-stance barbell deadlift with hands gripping inside the knees to emphasize the glutes, adductors, and quads while reducing lower-back shear.",
+    "steps": {
+      "prepare": [
+        "Take a wide stance with your toes pointed out at roughly 45 degrees and the barbell directly over your mid-foot.",
+        "Push your knees out in line with your toes, drop your hips, and grip the bar with your arms straight down inside your legs."
+      ],
+      "execution": [
+        "Pull your chest tall, wedge your hips close to the bar, and spread the floor apart with your feet to initiate the pull.",
+        "Keep your torso upright and the bar sliding close up your shins and thighs.",
+        "Lock out your hips and knees simultaneously at the top, then control the bar back down to the floor.",
+        "Form cue: Open knees wide in line with toes",
+        "Form cue: Wedge hips in close to the bar",
+        "Form cue: Spread the floor with your feet"
+      ],
+      "breathing": [
+        "Inhale deeply and brace your core before pulling from the floor, exhaling at lockout.",
+        "Avoid: Letting the knees cave inward off the floor",
+        "Avoid: Shooting the hips up first and turning it into a stiff-leg pull"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Đứng chân mở rộng với hai mũi chân xoay ra ngoài góc khoảng 45 độ và thanh tạ đòn nằm ngay phía trên giữa bàn chân.",
+        "Mở rộng hai đầu gối theo đúng hướng mũi chân, hạ hông xuống và nắm thanh tạ với hai tay thả thẳng bên trong hai chân."
+      ],
+      "execution": [
+        "Mở cao lồng ngực, ép sát hông vào gần thanh tạ và dùng hai bàn chân đạp tách mặt sàn sang hai bên để bắt đầu kéo tạ.",
+        "Giữ thân người thẳng và kéo thanh tạ trượt sát dọc theo ống quyển và đùi.",
+        "Khóa thẳng khớp hông và khớp gối cùng lúc ở vị trí cao nhất, sau đó hạ thanh tạ có kiểm soát trở lại sàn.",
+        "Lưu ý kỹ thuật: Mở rộng hai gối theo đúng hướng mũi chân",
+        "Lưu ý kỹ thuật: Ép hông vào sát thanh tạ trước khi kéo",
+        "Lưu ý kỹ thuật: Đạp tách mặt sàn sang hai bên bằng hai bàn chân"
+      ],
+      "breathing": [
+        "Hít sâu và gồng cứng cơ bụng trước khi nhấc tạ khỏi sàn, thở ra khi đã đứng thẳng khóa khớp.",
+        "Tránh: Để hai đầu gối bị chụm vào trong khi tạ rời sàn",
+        "Tránh: Nhổm mông lên quá sớm làm mất thế lưng thẳng"
+      ]
+    }
+  },
+  {
+    "id": "famous-bb-hip-thrust",
+    "slug": "barbell-hip-thrust",
+    "name": "Barbell Hip Thrust",
+    "nameVi": "Tựa ghế đẩy hông với tạ đòn",
+    "aliases": [
+      "hip thrust",
+      "barbell hip thrust",
+      "glute bridge on bench",
+      "barbell glute thrust"
+    ],
+    "category": "Glutes",
+    "equipment": "Barbell",
+    "videoUrl": "/videos/rear-decline-bridge-0668.mp4",
+    "primaryMuscles": [
+      "Glutes"
+    ],
+    "secondaryMuscles": [
+      "Hamstrings",
+      "Adductors",
+      "Core"
+    ],
+    "primarySlugs": [
+      "gluteal"
+    ],
+    "secondarySlugs": [
+      "hamstring",
+      "adductors",
+      "abs"
+    ],
+    "shortDescription": "Premier glute-building exercise performed with upper back braced against a bench and a padded barbell resting across the hips.",
+    "steps": {
+      "prepare": [
+        "Sit on the floor with your upper back (just below your shoulder blades) resting against the edge of a sturdy bench and roll a padded barbell over your hips.",
+        "Bend your knees and plant your feet flat on the floor hip-width apart so that your shins are vertical at the top of the movement."
+      ],
+      "execution": [
+        "Brace your abs, tuck your chin slightly, and drive through your heels to lift your hips until your body forms a flat tabletop from shoulders to knees.",
+        "Squeeze your glutes hard for a 1-second pause at full hip extension while keeping your ribs down.",
+        "Lower your hips back down under control without resting the weight completely between reps.",
+        "Form cue: Vertical shins at the top",
+        "Form cue: Chin tucked and ribs down",
+        "Form cue: Full glute squeeze at lockout"
+      ],
+      "breathing": [
+        "Inhale as you lower your hips toward the floor, and exhale forcefully as you drive your hips up and squeeze your glutes.",
+        "Avoid: Hyperextending the lower back instead of extending the hips",
+        "Avoid: Placing feet too close or too far away from the bench"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Ngồi trên sàn với phần lưng trên (ngay dưới xương bả vai) tựa vào mép ghế tập chắc chắn và lăn thanh tạ đòn có bọc đệm êm đặt ngang qua hông.",
+        "Co đầu gối và đặt hai bàn chân bám phẳng trên sàn rộng bằng hông sao cho khi đẩy hông lên cao nhất thì hai ống quyển thẳng đứng vuông góc với sàn."
+      ],
+      "execution": [
+        "Gồng chặt cơ bụng, hơi thu nhẹ cằm và đạp lực qua hai gót chân để đẩy hông lên cao cho đến khi thân người từ vai đến đầu gối tạo thành một mặt phẳng ngang.",
+        "Siết cứng cơ mông và giữ 1 giây ở đỉnh động tác trong khi vẫn giữ khung sườn khép chặt.",
+        "Từ từ hạ hông xuống có kiểm soát trước khi thực hiện lần lặp tiếp theo.",
+        "Lưu ý kỹ thuật: Cẳng chân vuông góc với mặt sàn ở đỉnh động tác",
+        "Lưu ý kỹ thuật: Thu nhẹ cằm và giữ khung sườn ổn định",
+        "Lưu ý kỹ thuật: Siết chặt tối đa cơ mông ở điểm cao nhất"
+      ],
+      "breathing": [
+        "Hít vào khi hạ hông xuống gần sàn, và thở ra mạnh khi đẩy hông lên cao siết chặt cơ mông.",
+        "Tránh: Ưỡn võng lưng dưới thay vì đẩy bằng cơ mông",
+        "Tránh: Đặt hai bàn chân quá gần hoặc quá xa ghế tựa"
+      ]
+    }
+  },
+  {
+    "id": "famous-db-flat-bench-press",
+    "slug": "dumbbell-bench-press",
+    "name": "Dumbbell Bench Press (Flat)",
+    "nameVi": "Nằm ghế phẳng đẩy ngực với tạ đơn",
+    "aliases": [
+      "dumbbell bench press",
+      "flat dumbbell press",
+      "DB bench press",
+      "dumbbell chest press"
+    ],
+    "category": "Chest",
+    "equipment": "Dumbbell",
+    "videoUrl": "/videos/dumbbell-bench-press-flat.mp4",
+    "primaryMuscles": [
+      "Chest"
+    ],
+    "secondaryMuscles": [
+      "Front Delts",
+      "Triceps"
+    ],
+    "primarySlugs": [
+      "chest"
+    ],
+    "secondarySlugs": [
+      "deltoids",
+      "triceps"
+    ],
+    "shortDescription": "Classic flat-bench pressing exercise using dumbbells for a deep pectoral stretch and natural shoulder path.",
+    "steps": {
+      "prepare": [
+        "Sit on a flat bench with a dumbbell resting on each thigh, then lie back while kicking the weights up to chest level.",
+        "Plant your feet firmly on the floor, retract your shoulder blades into the bench, and hold the dumbbells with palms facing forward."
+      ],
+      "execution": [
+        "Lower the dumbbells slowly to the sides of your mid-chest with your elbows tucked at roughly a 45-degree angle.",
+        "Feel a controlled stretch across your chest at the bottom with your forearms vertical.",
+        "Press the dumbbells up in a slight arc over your chest until your arms are extended.",
+        "Form cue: Retract shoulder blades into bench",
+        "Form cue: Keep elbows at 45-degree angle",
+        "Form cue: Full stretch at chest level"
+      ],
+      "breathing": [
+        "Inhale as you lower the dumbbells toward your chest, and exhale as you press them back up.",
+        "Avoid: Flaring elbows straight out to 90 degrees",
+        "Avoid: Clanging the dumbbells together hard at the top"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Ngồi trên ghế phẳng với mỗi bên đùi đặt một quả tạ đơn, sau đó ngả lưng nằm xuống đồng thời hất nhẹ đùi đưa tạ lên ngang ngực.",
+        "Đặt hai bàn chân bám chặt xuống mặt sàn, ép chặt hai xương bả vai xuống mặt ghế và cầm tạ đơn với lòng bàn tay hướng về phía trước."
+      ],
+      "execution": [
+        "Hạ chậm hai quả tạ đơn xuống hai bên cạnh ngực giữa với khuỷu tay khép góc khoảng 45 độ so với thân người.",
+        "Cảm nhận độ căng mở của cơ ngực ở điểm thấp nhất trong khi cẳng tay giữ thẳng đứng.",
+        "Đẩy mạnh hai quả tạ lên theo đường vòng cung nhẹ về phía trên ngực cho đến khi hai tay duỗi thẳng.",
+        "Lưu ý kỹ thuật: Ép chặt hai bả vai xuống mặt ghế",
+        "Lưu ý kỹ thuật: Giữ khuỷu tay mở góc 45 độ an toàn cho khớp vai",
+        "Lưu ý kỹ thuật: Hạ tạ đủ sâu ngang tầm ngực"
+      ],
+      "breathing": [
+        "Hít vào khi hạ tạ đơn xuống hai bên ngực, và thở ra khi đẩy tạ lên cao.",
+        "Tránh: Xòe ngang hai khuỷu tay vuông góc 90 độ gây áp lực lên khớp vai",
+        "Tránh: Đập mạnh hai quả tạ vào nhau ở điểm cao nhất"
+      ]
+    }
+  },
+  {
+    "id": "famous-bb-overhand-bent-over-row",
+    "slug": "barbell-bent-over-row-overhand",
+    "name": "Barbell Bent-Over Row (Overhand / Pendlay)",
+    "nameVi": "Gập người chèo tạ đòn úp tay",
+    "aliases": [
+      "barbell row",
+      "bent over row",
+      "overhand barbell row",
+      "pendlay row",
+      "BB row"
+    ],
+    "category": "Back",
+    "equipment": "Barbell",
+    "videoUrl": "/videos/barbell-underhand-bent-over-row-0027.mp4",
+    "primaryMuscles": [
+      "Upper Back",
+      "Lats"
+    ],
+    "secondaryMuscles": [
+      "Rear Delts",
+      "Biceps",
+      "Lower Back"
+    ],
+    "primarySlugs": [
+      "upper-back"
+    ],
+    "secondarySlugs": [
+      "deltoids",
+      "biceps",
+      "lower-back"
+    ],
+    "shortDescription": "Staple compound back builder rowing a barbell with an overhand grip into the lower chest or upper abdomen.",
+    "steps": {
+      "prepare": [
+        "Stand with feet hip-width apart and grip the barbell slightly wider than shoulder width with an overhand (pronated) grip.",
+        "Hinge forward at the hips until your torso is between 45 degrees and parallel to the floor, keeping your spine flat and knees slightly bent."
+      ],
+      "execution": [
+        "Brace your core and drive your elbows back to row the barbell into your upper abdomen or lower sternum.",
+        "Squeeze your shoulder blades firmly together at the top of the rep.",
+        "Lower the barbell under control until your arms are fully extended while maintaining your hip hinge angle.",
+        "Form cue: Keep back flat and torso angle fixed",
+        "Form cue: Drive with the elbows, not the wrists",
+        "Form cue: Squeeze shoulder blades at the top"
+      ],
+      "breathing": [
+        "Exhale as you row the barbell toward your torso, and inhale as you lower it under control.",
+        "Avoid: Standing upright and jerking the weight with momentum",
+        "Avoid: Rounding the lower back during the set"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Đứng hai chân rộng bằng hông và nắm thanh tạ đòn rộng hơn vai một chút bằng tay cầm úp (lòng bàn tay hướng về phía người).",
+        "Gập người về trước từ khớp hông cho đến khi thân người nghiêng khoảng 45 độ hoặc gần song song với sàn, giữ cột sống thẳng và đầu gối hơi chùng nhẹ."
+      ],
+      "execution": [
+        "Gồng chặt cơ bụng và kéo mạnh hai khuỷu tay ra sau để đưa thanh tạ đòn chạm vào phần bụng trên hoặc chấn thủy.",
+        "Siết chặt hai xương bả vai lại với nhau ở điểm cao nhất của động tác.",
+        "Từ từ hạ thanh tạ xuống có kiểm soát cho đến khi hai tay duỗi thẳng hoàn toàn mà vẫn giữ nguyên góc gập thân người.",
+        "Lưu ý kỹ thuật: Giữ lưng phẳng và cố định góc gập người",
+        "Lưu ý kỹ thuật: Phát lực kéo từ khuỷu tay chứ không gập cổ tay",
+        "Lưu ý kỹ thuật: Khép chặt hai bả vai ở đỉnh động tác"
+      ],
+      "breathing": [
+        "Thở ra khi kéo thanh tạ đòn về sát thân người, và hít vào khi hạ tạ xuống có kiểm soát.",
+        "Tránh: Nhổm đứng dậy giật tạ bằng quán tính",
+        "Tránh: Để lưng dưới bị cong gù trong suốt hiệp tập"
+      ]
+    }
+  },
+  {
+    "id": "famous-db-one-arm-row",
+    "slug": "one-arm-dumbbell-row",
+    "name": "One-Arm Dumbbell Row (Single-Arm Row)",
+    "nameVi": "Chèo tạ đơn một tay tựa ghế tập xô",
+    "aliases": [
+      "one arm dumbbell row",
+      "single arm dumbbell row",
+      "dumbbell row",
+      "kroc row",
+      "bench supported one arm row"
+    ],
+    "category": "Back",
+    "equipment": "Dumbbell",
+    "videoUrl": "/videos/dumbbell-bent-over-row-0293.mp4",
+    "primaryMuscles": [
+      "Lats",
+      "Upper Back"
+    ],
+    "secondaryMuscles": [
+      "Rear Delts",
+      "Biceps",
+      "Forearms"
+    ],
+    "primarySlugs": [
+      "upper-back"
+    ],
+    "secondarySlugs": [
+      "deltoids",
+      "biceps",
+      "forearm"
+    ],
+    "shortDescription": "Unilateral back exercise bracing one hand on a bench while rowing a dumbbell in an arc toward the hip.",
+    "steps": {
+      "prepare": [
+        "Place your non-working hand and knee (or plant both feet in a staggered stance with one hand braced) on a flat bench.",
+        "Flatten your back parallel to the floor and hold a dumbbell in your working hand with your arm fully extended."
+      ],
+      "execution": [
+        "Pull the dumbbell back in a smooth arc toward your hip pocket by driving your elbow past your torso.",
+        "Pause briefly at the top and squeeze your lat without twisting your spine.",
+        "Lower the dumbbell slowly back down into a full lat stretch at the bottom.",
+        "Form cue: Row toward the hip pocket in an arc",
+        "Form cue: Keep shoulders squared to the floor",
+        "Form cue: Full stretch at the bottom"
+      ],
+      "breathing": [
+        "Exhale as you drive your elbow back to row the dumbbell up, and inhale as you lower it down.",
+        "Avoid: Shrugging the shoulder up toward your ear",
+        "Avoid: Jerking and rotating the torso excessively to heave the weight"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Đặt tay và đầu gối bên không tập lên mặt ghế phẳng (hoặc đứng chân trước chân sau và chống một tay vững chắc lên ghế).",
+        "Giữ lưng phẳng gần như song song với mặt sàn và cầm tạ đơn ở tay tập với cánh tay duỗi thẳng tự nhiên."
+      ],
+      "execution": [
+        "Kéo quả tạ đơn về phía sau theo đường vòng cung hướng về phía hông bằng cách đưa khuỷu tay vượt qua thân người.",
+        "Dừng một nhịp ngắn ở điểm cao nhất và siết chặt cơ xô mà không vặn xoắn cột sống.",
+        "Hạ quả tạ đơn chậm rãi xuống vị trí bắt đầu để kéo giãn tối đa cơ xô ở điểm dưới cùng.",
+        "Lưu ý kỹ thuật: Kéo tạ theo đường vòng cung về phía túi quần (hông)",
+        "Lưu ý kỹ thuật: Giữ hai vai cân bằng song song với mặt sàn",
+        "Lưu ý kỹ thuật: Thả giãn hết biên độ cơ xô ở điểm thấp nhất"
+      ],
+      "breathing": [
+        "Thở ra khi kéo khuỷu tay ra sau đưa tạ lên, và hít vào khi hạ tạ xuống có kiểm soát.",
+        "Tránh: Nhún rụt vai lên sát tai khi kéo",
+        "Tránh: Vặn xoắn thân người quá mức để giật tạ"
+      ]
+    }
+  },
+  {
+    "id": "0587",
+    "slug": "machine-shoulder-press",
+    "name": "Machine Shoulder Press (Leverage Military Press)",
+    "nameVi": "Ngồi đẩy vai trên máy tập",
+    "aliases": [
+      "machine shoulder press",
+      "lever military press",
+      "seated machine overhead press",
+      "shoulder press machine"
+    ],
+    "category": "Shoulders",
+    "equipment": "Machine",
+    "videoUrl": "/videos/lever-military-press-0587.mp4",
+    "primaryMuscles": [
+      "Delts",
+      "Front Delts"
+    ],
+    "secondaryMuscles": [
+      "Triceps",
+      "Upper Chest"
+    ],
+    "primarySlugs": [
+      "deltoids"
+    ],
+    "secondarySlugs": [
+      "triceps",
+      "chest"
+    ],
+    "shortDescription": "Seated overhead shoulder press on a leverage or selectorized machine for stable deltoid hypertrophy.",
+    "steps": {
+      "prepare": [
+        "Adjust the seat height so the machine handles start at roughly shoulder or ear level.",
+        "Sit tall with your back pressed firmly against the pad, plant your feet flat, and grip the handles."
+      ],
+      "execution": [
+        "Press the handles smoothly overhead until your arms are extended without locking your elbows harshly.",
+        "Pause briefly at the top while keeping your shoulders down away from your ears.",
+        "Lower the handles slowly back to shoulder height under full control.",
+        "Form cue: Keep back glued to the backrest",
+        "Form cue: Wrists stacked under handles",
+        "Form cue: Controlled negative to ear level"
+      ],
+      "breathing": [
+        "Exhale as you press the handles overhead, and inhale as you lower them back to shoulder level.",
+        "Avoid: Arching the lower back off the pad",
+        "Avoid: Letting the weight stack slam between reps"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Điều chỉnh độ cao yên ghế sao cho tay cầm của máy ở ngang tầm vai hoặc ngang tai khi bắt đầu.",
+        "Ngồi thẳng lưng áp sát vào đệm tựa, đặt hai bàn chân vững chắc trên sàn và nắm chặt hai tay cầm."
+      ],
+      "execution": [
+        "Đẩy mượt mà hai tay cầm thẳng lên qua đầu cho đến khi hai cánh tay duỗi thẳng tự nhiên mà không khóa cứng khớp khuỷu tay.",
+        "Dừng một nhịp ngắn ở điểm cao nhất trong khi vẫn giữ cầu vai hạ thấp cách xa tai.",
+        "Từ từ hạ tay cầm trở lại ngang tầm vai với sự kiểm soát hoàn toàn.",
+        "Lưu ý kỹ thuật: Luôn giữ lưng áp sát đệm tựa ghế",
+        "Lưu ý kỹ thuật: Giữ cổ tay thẳng ngay dưới tay cầm",
+        "Lưu ý kỹ thuật: Hạ tạ chậm có kiểm soát về ngang tai"
+      ],
+      "breathing": [
+        "Thở ra khi đẩy tay cầm lên qua đầu, và hít vào khi hạ tay cầm trở lại ngang tầm vai.",
+        "Tránh: Ưỡn võng lưng dưới tách rời khỏi đệm tựa",
+        "Tránh: Thả rơi tạ làm va đập các bánh tạ giữa các lần lặp"
+      ]
+    }
+  },
+  {
+    "id": "0380",
+    "slug": "dumbbell-rear-delt-fly",
+    "name": "Dumbbell Rear Delt Fly (Bent-Over Reverse Fly)",
+    "nameVi": "Gập người dang tạ đơn tập vai sau",
+    "aliases": [
+      "rear delt fly",
+      "dumbbell rear lateral raise",
+      "bent over lateral raise",
+      "reverse dumbbell fly"
+    ],
+    "category": "Shoulders",
+    "equipment": "Dumbbell",
+    "videoUrl": "/videos/dumbbell-rear-lateral-raise-0380.mp4",
+    "primaryMuscles": [
+      "Rear Delts"
+    ],
+    "secondaryMuscles": [
+      "Upper Back",
+      "Traps"
+    ],
+    "primarySlugs": [
+      "deltoids"
+    ],
+    "secondarySlugs": [
+      "upper-back",
+      "trapezius"
+    ],
+    "shortDescription": "Bent-over dumbbell reverse fly isolating the posterior deltoids and upper back.",
+    "steps": {
+      "prepare": [
+        "Stand with feet hip-width apart holding a dumbbell in each hand, and hinge forward at the hips until your torso is nearly parallel to the floor.",
+        "Let the dumbbells hang beneath your chest with palms facing each other and a slight bend in your elbows."
+      ],
+      "execution": [
+        "Sweep the dumbbells out and up in a wide arc until your upper arms are in line with your back.",
+        "Pause briefly at the top to feel the contraction in the back of your shoulders.",
+        "Lower the dumbbells slowly along the same arc back to the starting position.",
+        "Form cue: Lead with the backs of your wrists and elbows",
+        "Form cue: Keep torso angle stationary",
+        "Form cue: Avoid pinching traps excessively"
+      ],
+      "breathing": [
+        "Exhale as you raise the dumbbells out to the sides, and inhale as you lower them under control.",
+        "Avoid: Swinging the torso upright to throw the weights up",
+        "Avoid: Bending the elbows and turning the movement into a row"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Đứng hai chân rộng bằng hông, mỗi tay cầm một quả tạ đơn và gập người về trước từ khớp hông cho đến khi thân người gần song song với mặt sàn.",
+        "Để hai quả tạ thả dọc dưới ngực với hai lòng bàn tay hướng vào nhau và khuỷu tay hơi cong nhẹ cố định."
+      ],
+      "execution": [
+        "Dang rộng hai quả tạ đơn sang hai bên và nâng lên theo đường vòng cung cho đến khi bắp tay ngang với mặt phẳng lưng.",
+        "Dừng một nhịp ngắn ở điểm cao nhất để cảm nhận cơ vai sau co thắt.",
+        "Chậm rãi hạ hai quả tạ theo đúng quỹ đạo cũ trở về vị trí bắt đầu.",
+        "Lưu ý kỹ thuật: Dẫn hướng chuyển động bằng mu cổ tay và khuỷu tay",
+        "Lưu ý kỹ thuật: Giữ nguyên góc gập thân người cố định",
+        "Lưu ý kỹ thuật: Tránh nhún co cơ cầu vai quá nhiều"
+      ],
+      "breathing": [
+        "Thở ra khi dang tạ đơn sang hai bên, và hít vào khi hạ tạ xuống có kiểm soát.",
+        "Tránh: Đung đưa nhổm thân người lên để vung tạ",
+        "Tránh: Gập khuỷu tay quá nhiều biến động tác thành bài chèo tạ"
+      ]
+    }
+  },
+  {
+    "id": "0576",
+    "slug": "machine-seated-chest-press",
+    "name": "Machine Seated Chest Press",
+    "nameVi": "Ngồi đẩy ngực trên máy tập",
+    "aliases": [
+      "seated chest press machine",
+      "lever chest press",
+      "machine bench press"
+    ],
+    "category": "Chest",
+    "equipment": "Machine",
+    "videoUrl": "/videos/lever-chest-press-0576.mp4",
+    "primaryMuscles": [
+      "Chest"
+    ],
+    "secondaryMuscles": [
+      "Front Delts",
+      "Triceps"
+    ],
+    "primarySlugs": [
+      "chest"
+    ],
+    "secondarySlugs": [
+      "deltoids",
+      "triceps"
+    ],
+    "shortDescription": "Seated horizontal chest press machine providing stable, guided resistance for the pectorals.",
+    "steps": {
+      "prepare": [
+        "Adjust the seat height so the handles align with your mid-to-lower chest.",
+        "Sit back with your shoulder blades retracted against the pad and grip the handles firmly."
+      ],
+      "execution": [
+        "Press the handles forward until your arms are extended in front of your chest.",
+        "Squeeze your chest briefly at full extension while keeping your shoulders pinned back.",
+        "Return the handles slowly until you feel a comfortable stretch across your chest.",
+        "Form cue: Keep shoulder blades pinned to pad",
+        "Form cue: Elbows slightly below shoulder height",
+        "Form cue: Smooth controlled eccentric"
+      ],
+      "breathing": [
+        "Exhale as you press the handles forward, and inhale as you return them toward your chest.",
+        "Avoid: Letting your shoulders roll forward at the end of the press",
+        "Avoid: Bouncing the weight stack at the bottom"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Điều chỉnh độ cao yên ghế sao cho hai tay cầm nằm ngang tầm ngực giữa hoặc ngực dưới.",
+        "Ngồi tựa lưng với hai xương bả vai ép chặt vào đệm ghế và nắm chắc tay cầm."
+      ],
+      "execution": [
+        "Đẩy hai tay cầm về phía trước cho đến khi hai cánh tay duỗi thẳng trước ngực.",
+        "Siết chặt cơ ngực một nhịp ở điểm duỗi tay trong khi vẫn giữ hai vai ghìm sát đệm lưng.",
+        "Từ từ thu tay cầm trở lại cho đến khi cảm nhận cơ ngực được kéo giãn thoải mái.",
+        "Lưu ý kỹ thuật: Luôn ghìm chặt hai bả vai vào đệm tựa",
+        "Lưu ý kỹ thuật: Giữ khuỷu tay thấp hơn vai một chút",
+        "Lưu ý kỹ thuật: Kiểm soát nhịp trả tạ chậm rãi"
+      ],
+      "breathing": [
+        "Thở ra khi đẩy tay cầm về phía trước, và hít vào khi thu tay cầm về gần ngực.",
+        "Tránh: Để hai vai bị nhô cuộn về phía trước khi duỗi tay",
+        "Tránh: Thả tạ rơi tự do làm nảy các bánh tạ"
+      ]
+    }
+  },
+  {
+    "id": "0474",
+    "slug": "hanging-straight-leg-raise",
+    "name": "Hanging Straight Leg Raise",
+    "nameVi": "Treo người trên xà nâng thẳng hai chân tập bụng",
+    "aliases": [
+      "hanging leg raise",
+      "toes to bar",
+      "hanging abs raise"
+    ],
+    "category": "Core",
+    "equipment": "Bodyweight",
+    "videoUrl": "/videos/hanging-straight-leg-raise-0474.mp4",
+    "primaryMuscles": [
+      "Abs",
+      "Hip Flexors"
+    ],
+    "secondaryMuscles": [
+      "Obliques",
+      "Forearms"
+    ],
+    "primarySlugs": [
+      "abs",
+      "adductors"
+    ],
+    "secondarySlugs": [
+      "obliques",
+      "forearm"
+    ],
+    "shortDescription": "Advanced hanging core exercise lifting straight legs while curling the pelvis upward.",
+    "steps": {
+      "prepare": [
+        "Hang from an overhead pull-up bar with a shoulder-width overhand grip and engage your shoulders lightly.",
+        "Keep your legs straight and together with your pelvis slightly tucked."
+      ],
+      "execution": [
+        "Curl your pelvis upward and raise your straight legs in front of you until they are at least parallel to the floor.",
+        "Pause briefly at the top while contracting your lower abs.",
+        "Lower your legs slowly under control without swinging your body.",
+        "Form cue: Curl the pelvis up, don't just lift from the hips",
+        "Form cue: Control the descent to prevent swinging",
+        "Form cue: Keep shoulders active on the bar"
+      ],
+      "breathing": [
+        "Exhale as you raise your legs up, and inhale as you lower them back to a dead hang.",
+        "Avoid: Using momentum and swinging back and forth",
+        "Avoid: Bending the knees excessively unless performing knee raises"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Treo người trên thanh xà đơn với hai tay nắm rộng bằng vai và kích hoạt nhẹ cơ vai để giữ ổn định.",
+        "Duỗi thẳng hai chân khép sát cạnh nhau và hơi cuộn nhẹ khung chậu."
+      ],
+      "execution": [
+        "Cuộn khung chậu hướng lên và nâng hai chân thẳng ra phía trước cho đến khi ít nhất song song với mặt sàn.",
+        "Dừng một nhịp ngắn ở điểm cao nhất đồng thời siết chặt cơ bụng dưới.",
+        "Từ từ hạ hai chân xuống có kiểm soát mà không để cơ thể đung đưa.",
+        "Lưu ý kỹ thuật: Cuộn khung chậu lên để vào cơ bụng thay vì chỉ gập hông",
+        "Lưu ý kỹ thuật: Hạ chân chậm để chống đung đưa người",
+        "Lưu ý kỹ thuật: Giữ vai chắc chắn khi treo trên xà"
+      ],
+      "breathing": [
+        "Thở ra khi nâng hai chân lên cao, và hít vào khi hạ chân trở lại vị trí treo thẳng.",
+        "Tránh: Đung đưa lấy đà qua lại khi thực hiện động tác",
+        "Tránh: Co gập đầu gối quá nhiều khi đang tập biến thể thẳng chân"
+      ]
+    }
+  },
+  {
+    "id": "1764",
+    "slug": "hanging-knee-hip-raise",
+    "name": "Hanging Knee & Hip Raise",
+    "nameVi": "Treo người trên xà co gối nâng hông tập bụng",
+    "aliases": [
+      "hanging knee raise",
+      "captain's chair knee raise",
+      "hanging leg hip raise"
+    ],
+    "category": "Core",
+    "equipment": "Bodyweight",
+    "videoUrl": "/videos/hanging-leg-hip-raise-1764.mp4",
+    "primaryMuscles": [
+      "Abs"
+    ],
+    "secondaryMuscles": [
+      "Hip Flexors",
+      "Obliques",
+      "Forearms"
+    ],
+    "primarySlugs": [
+      "abs"
+    ],
+    "secondarySlugs": [
+      "adductors",
+      "obliques",
+      "forearm"
+    ],
+    "shortDescription": "Hanging abdominal raise tucking the knees toward the chest with a posterior pelvic tilt.",
+    "steps": {
+      "prepare": [
+        "Grip a pull-up bar with a firm overhand grip and hang with your body steady.",
+        "Brace your core and slightly bend your knees."
+      ],
+      "execution": [
+        "Draw your knees up toward your chest while curling your tailbone forward and up.",
+        "Squeeze your abs hard at the top of the movement for a brief pause.",
+        "Lower your legs slowly back to the starting hang position without swinging.",
+        "Form cue: Tuck tailbone up at the top",
+        "Form cue: Keep torso still",
+        "Form cue: Slow controlled lowering phase"
+      ],
+      "breathing": [
+        "Exhale forcefully as you curl your knees up toward your chest, and inhale on the way down.",
+        "Avoid: Swinging the torso to generate momentum",
+        "Avoid: Stopping at 90 degrees without curling the pelvis"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Nắm chắc thanh xà đơn bằng tay cầm úp và treo thẳng cơ thể ở trạng thái ổn định.",
+        "Gồng cơ bụng và hơi co nhẹ hai đầu gối."
+      ],
+      "execution": [
+        "Kéo hai đầu gối lên cao về phía ngực đồng thời cuộn xương cụt hướng lên trên.",
+        "Siết chặt cơ bụng và giữ một nhịp ngắn ở đỉnh động tác.",
+        "Từ từ hạ hai chân trở lại tư thế treo ban đầu mà không đung đưa người.",
+        "Lưu ý kỹ thuật: Cuộn xương cụt lên ở đỉnh động tác để ăn vào cơ bụng",
+        "Lưu ý kỹ thuật: Giữ thân người ổn định không lắc lư",
+        "Lưu ý kỹ thuật: Hạ chân xuống chậm rãi có kiểm soát"
+      ],
+      "breathing": [
+        "Thở ra mạnh khi cuộn đầu gối lên sát ngực, và hít vào khi hạ chân xuống.",
+        "Tránh: Đung đưa thân người để lấy đà",
+        "Tránh: Chỉ nâng đùi đến 90 độ mà không cuộn khung chậu"
+      ]
+    }
+  },
+  {
+    "id": "0796",
+    "slug": "ab-wheel-rollout",
+    "name": "Ab Wheel Rollout",
+    "nameVi": "Quỳ lăn bánh xe tập cơ bụng",
+    "aliases": [
+      "ab rollout",
+      "ab wheel",
+      "standing wheel rollout",
+      "kneeling ab wheel rollout"
+    ],
+    "category": "Core",
+    "equipment": "Bodyweight",
+    "videoUrl": "/videos/standing-wheel-rollout-0796.mp4",
+    "primaryMuscles": [
+      "Abs",
+      "Core"
+    ],
+    "secondaryMuscles": [
+      "Lats",
+      "Shoulders",
+      "Obliques"
+    ],
+    "primarySlugs": [
+      "abs"
+    ],
+    "secondarySlugs": [
+      "upper-back",
+      "deltoids",
+      "obliques"
+    ],
+    "shortDescription": "High-tension anti-extension core exercise rolling an ab wheel forward while maintaining a braced spine.",
+    "steps": {
+      "prepare": [
+        "Kneel (or stand) on the floor holding the ab wheel handles directly beneath your shoulders with arms straight.",
+        "Tuck your pelvis slightly (posterior pelvic tilt) and brace your abs and glutes tightly."
+      ],
+      "execution": [
+        "Roll the wheel forward slowly while keeping your core locked and preventing your lower back from sagging.",
+        "Extend as far forward as you can maintain a flat or slightly rounded lower back.",
+        "Pull through your abs and lats to roll the wheel back under your shoulders.",
+        "Form cue: Keep ribs down and pelvis tucked",
+        "Form cue: Brace glutes and abs together",
+        "Form cue: Only roll as far as your lower back stays supported"
+      ],
+      "breathing": [
+        "Inhale and brace as you roll forward, and exhale as you pull the wheel back to the start.",
+        "Avoid: Letting the lower back arch or sag toward the floor",
+        "Avoid: Sitting your hips backward toward your heels before pulling with your abs"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Quỳ gối (hoặc đứng) trên sàn, hai tay nắm tay cầm bánh xe tập bụng đặt ngay dưới vai với hai cánh tay duỗi thẳng.",
+        "Hơi cuộn nhẹ khung chậu vào trong và gồng cứng cả cơ bụng lẫn cơ mông."
+      ],
+      "execution": [
+        "Từ từ đẩy bánh xe lăn về phía trước trong khi vẫn khóa chặt cơ bụng và giữ cho lưng dưới không bị võng xuống.",
+        "Vươn người ra xa nhất trong khả năng vẫn giữ được lưng phẳng hoặc hơi cuộn nhẹ.",
+        "Phát lực từ cơ bụng và cơ xô để kéo bánh xe lăn ngược trở về ngay dưới vai.",
+        "Lưu ý kỹ thuật: Khép khung sườn và cuộn nhẹ khung chậu",
+        "Lưu ý kỹ thuật: Gồng chặt cơ mông và cơ bụng cùng lúc",
+        "Lưu ý kỹ thuật: Chỉ lăn xa trong tầm kiểm soát của lưng dưới"
+      ],
+      "breathing": [
+        "Hít sâu và gồng bụng khi lăn bánh xe ra trước, và thở ra khi kéo bánh xe thu về.",
+        "Tránh: Để lưng dưới bị võng sụp xuống về phía mặt sàn",
+        "Tránh: Đẩy lùi mông ngồi về phía gót chân thay vì dùng cơ bụng kéo về"
+      ]
+    }
+  },
+  {
+    "id": "0851",
+    "slug": "weighted-sissy-squat",
+    "name": "Sissy Squat (Weighted / Bodyweight)",
+    "nameVi": "Quỳ ngả người gánh đùi trước",
+    "aliases": [
+      "sissy squat",
+      "weighted sissy squat",
+      "quad isolation squat"
+    ],
+    "category": "Quads",
+    "equipment": "Bodyweight",
+    "videoUrl": "/videos/weighted-sissy-squat-0851.mp4",
+    "primaryMuscles": [
+      "Quads"
+    ],
+    "secondaryMuscles": [
+      "Core",
+      "Calves"
+    ],
+    "primarySlugs": [
+      "quadriceps"
+    ],
+    "secondarySlugs": [
+      "abs",
+      "calves"
+    ],
+    "shortDescription": "Extreme knee-flexion quad isolation squat leaning the torso and hips back as the knees travel forward.",
+    "steps": {
+      "prepare": [
+        "Stand tall holding a sturdy support with one hand and optionally a weight plate against your chest.",
+        "Rise slightly onto the balls of your feet and brace your abs and glutes so your hips and torso form a straight line."
+      ],
+      "execution": [
+        "Push your knees forward and lean your entire body backward as one straight plank from knees to shoulders.",
+        "Lower until you feel a deep stretch in your quadriceps while keeping your hips fully extended.",
+        "Extend your knees to drive yourself back up to the starting position.",
+        "Form cue: Keep hips locked in line with torso and thighs",
+        "Form cue: Push knees forward under control",
+        "Form cue: Use a support hand for balance"
+      ],
+      "breathing": [
+        "Inhale as you lean back and bend your knees, and exhale as you drive back up.",
+        "Avoid: Bending at the hips and sitting backward at the bottom",
+        "Avoid: Dropping into the bottom position without control"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Đứng thẳng, một tay vịn vào điểm tựa chắc chắn và tay kia có thể ôm thêm bánh tạ trước ngực.",
+        "Nhón nhẹ lên phần mũi bàn chân, đồng thời gồng chặt cơ bụng và cơ mông sao cho từ đầu gối qua hông đến vai tạo thành một đường thẳng."
+      ],
+      "execution": [
+        "Đẩy hai đầu gối về phía trước và ngả toàn bộ thân người ra sau như một tấm ván thẳng từ đầu gối đến vai.",
+        "Hạ thấp xuống cho đến khi cảm nhận cơ đùi trước căng giãn mạnh mà vẫn giữ khớp hông duỗi thẳng.",
+        "Duỗi khớp gối để đẩy cơ thể nâng lên trở lại vị trí bắt đầu.",
+        "Lưu ý kỹ thuật: Giữ khớp hông thẳng hàng với thân người và đùi",
+        "Lưu ý kỹ thuật: Đẩy đầu gối ra trước có kiểm soát",
+        "Lưu ý kỹ thuật: Vịn tay vào điểm tựa để giữ thăng bằng"
+      ],
+      "breathing": [
+        "Hít vào khi ngả người ra sau hạ thấp gối, và thở ra khi đạp duỗi gối nâng người lên.",
+        "Tránh: Gập khớp hông đẩy mông ra sau ở điểm thấp nhất",
+        "Tránh: Hạ người đột ngột không kiểm soát gây áp lực lên khớp gối"
+      ]
+    }
+  },
+  {
+    "id": "0284",
+    "slug": "donkey-calf-raise",
+    "name": "Donkey Calf Raise",
+    "nameVi": "Gập người nhón bắp chân",
+    "aliases": [
+      "donkey calf raise",
+      "bent over calf raise"
+    ],
+    "category": "Calves",
+    "equipment": "Bodyweight",
+    "videoUrl": "/videos/donkey-calf-raise-0284.mp4",
+    "primaryMuscles": [
+      "Calves"
+    ],
+    "secondaryMuscles": [],
+    "primarySlugs": [
+      "calves"
+    ],
+    "secondarySlugs": [],
+    "shortDescription": "Hinged-hip calf raise placing the gastrocnemius under a deep stretch at the bottom of every rep.",
+    "steps": {
+      "prepare": [
+        "Stand with the balls of your feet on an elevated block or step and hinge forward at the hips to place your hands or forearms on a support.",
+        "Keep your knees straight (with a micro-bend) and your back flat."
+      ],
+      "execution": [
+        "Lower your heels as far below the block as possible until you feel a deep stretch in your calves.",
+        "Drive up onto the balls of your feet as high as you can and pause for 1 second at peak contraction.",
+        "Lower slowly back into the full stretch position.",
+        "Form cue: Full pause at top and bottom",
+        "Form cue: Keep hips hinged at 90 degrees",
+        "Form cue: Drive straight through big toe"
+      ],
+      "breathing": [
+        "Inhale as your heels lower into the stretch, and exhale as you press up onto your toes.",
+        "Avoid: Bouncing quickly out of the bottom stretch",
+        "Avoid: Bending and straightening the knees to assist the lift"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Đứng đặt phần ức bàn chân lên bục kê cao và gập người về trước từ khớp hông, hai tay hoặc cẳng tay tỳ lên điểm tựa phía trước.",
+        "Giữ hai chân thẳng (khớp gối hơi mở nhẹ tự nhiên) và lưng phẳng."
+      ],
+      "execution": [
+        "Hạ hai gót chân xuống thấp nhất có thể bên dưới mặt bục cho đến khi cảm nhận cơ bắp chân căng giãn sâu.",
+        "Nhón mạnh lên phần ức bàn chân cao hết mức có thể và giữ 1 giây ở đỉnh co cơ.",
+        "Từ từ hạ chậm gót chân trở lại vị trí kéo giãn hoàn toàn.",
+        "Lưu ý kỹ thuật: Dừng 1 giây ở cả điểm cao nhất và điểm thấp nhất",
+        "Lưu ý kỹ thuật: Giữ góc gập hông cố định khoảng 90 độ",
+        "Lưu ý kỹ thuật: Đạp lực thẳng qua phần ức ngón chân cái"
+      ],
+      "breathing": [
+        "Hít vào khi hạ gót chân xuống kéo giãn, và thở ra khi nhón cao mũi chân lên.",
+        "Tránh: Nhún nảy nhanh ở điểm dưới cùng làm mất tác dụng vào cơ bắp chân",
+        "Tránh: Nhún gập đầu gối để ăn gian lấy đà"
+      ]
+    }
+  },
+  {
+    "id": "0339",
+    "slug": "dumbbell-lying-leg-curl",
+    "name": "Dumbbell Lying Leg Curl (Hamstring Curl)",
+    "nameVi": "Nằm sấp cuốn tạ đơn tập đùi sau",
+    "aliases": [
+      "dumbbell leg curl",
+      "dumbbell lying leg curl",
+      "dumbbell hamstring curl",
+      "lying femoral curl",
+      "leg curl with dumbbell",
+      "dumbbell hamstring curl lying"
+    ],
+    "category": "Hamstrings",
+    "equipment": "Dumbbell",
+    "videoUrl": "/videos/dumbbell-lying-femoral-0339.mp4",
+    "primaryMuscles": [
+      "Hamstrings"
+    ],
+    "secondaryMuscles": [
+      "Glutes",
+      "Calves"
+    ],
+    "primarySlugs": [
+      "hamstring"
+    ],
+    "secondarySlugs": [
+      "gluteal",
+      "calves"
+    ],
+    "shortDescription": "Classic prone dumbbell leg curl targeting the hamstrings.",
+    "steps": {
+      "prepare": [
+        "Lie face down on a flat gym bench with your knees at the edge and a dumbbell standing upright at the foot of the bench.",
+        "Secure the handle of the dumbbell between the arches of your feet, keeping your legs fully extended."
+      ],
+      "execution": [
+        "Curl your legs upward by bending at the knees until your lower legs are near vertical.",
+        "Squeeze your hamstrings firmly at the top of the movement.",
+        "Slowly lower the dumbbell back down under full control until your legs are nearly straight.",
+        "Form cue: Keep your hips pressed firmly into the bench",
+        "Form cue: Squeeze feet together to secure the dumbbell"
+      ],
+      "breathing": [
+        "Exhale as you curl the dumbbell toward your glutes, and inhale as you lower it back down.",
+        "Avoid: Lifting your hips off the bench during the curl",
+        "Avoid: Letting the dumbbell drop quickly"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Nằm sấp trên ghế tập phẳng với hai đầu gối ở mép ghế và kẹp tạ đơn thẳng đứng giữa hai lòng bàn chân.",
+        "Giữ chặt thân tạ giữa hai bàn chân, hai chân duỗi thẳng về phía sau."
+      ],
+      "execution": [
+        "Gập đầu gối cuốn cẳng chân lên trên cho đến khi cẳng chân vuông góc với đùi.",
+        "Gồng siết cơ đùi sau thật chặt ở vị trí cao nhất.",
+        "Từ từ hạ tạ xuống có kiểm soát cho đến khi hai chân gần như duỗi thẳng hoàn toàn.",
+        "Lưu ý kỹ thuật: Giữ chặt xương chậu áp sát mặt ghế",
+        "Lưu ý kỹ thuật: Kẹp chặt hai bàn chân để tạ không bị trượt"
+      ],
+      "breathing": [
+        "Thở ra khi cuốn tạ lên về phía mông, hít vào khi hạ tạ từ từ xuống.",
+        "Tránh: Nhấc hông lên khỏi mặt ghế khi cuốn tạ",
+        "Tránh: Thả tạ rơi tự do quá nhanh"
+      ]
+    }
+  },
+  {
+    "id": "0826",
+    "slug": "captains-chair-leg-raise",
+    "name": "Captain's Chair Leg Raise (Vertical Leg Raise)",
+    "nameVi": "Tựa khuỷu tay nâng chân tập cơ bụng dưới",
+    "aliases": [
+      "captain chair",
+      "captains chair leg raise",
+      "vertical leg raise",
+      "parallel bar leg raise",
+      "hanging leg raise alternative",
+      "captain's chair",
+      "tower leg raise"
+    ],
+    "category": "Core",
+    "equipment": "Bodyweight",
+    "videoUrl": "/videos/vertical-leg-raise-on-parallel-bars-0826.mp4",
+    "primaryMuscles": [
+      "Abs"
+    ],
+    "secondaryMuscles": [
+      "Hip Flexors",
+      "Obliques"
+    ],
+    "primarySlugs": [
+      "abs"
+    ],
+    "secondarySlugs": [
+      "adductors",
+      "obliques"
+    ],
+    "shortDescription": "Staple lower-abs exercise performed on the captain's chair tower.",
+    "steps": {
+      "prepare": [
+        "Step into the captain's chair tower and rest your forearms on the padded armrests, gripping the handles firmly.",
+        "Press your lower back flat against the back pad and let your legs hang straight down."
+      ],
+      "execution": [
+        "Engage your abs and raise your legs or knees up in front of you until your thighs are parallel to the floor or higher.",
+        "Curl your pelvis slightly upward at the top to fully contract the lower abdominals.",
+        "Slowly lower your legs back to the starting hanging position without swinging.",
+        "Form cue: Drive with your abs rather than swinging with hip momentum",
+        "Form cue: Keep your shoulders depressed away from your ears"
+      ],
+      "breathing": [
+        "Exhale as you lift your legs upward, and inhale as you lower them back under control.",
+        "Avoid: Swinging your torso back and forth to generate momentum",
+        "Avoid: Shrugging your shoulders up toward your neck"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Bước vào khung tập nâng bụng chuyên dụng, đặt hai cẳng tay lên đệm lót và nắm chặt tay cầm.",
+        "Tựa chắc toàn bộ lưng vào đệm lưng phía sau, để hai chân buông thẳng tự nhiên."
+      ],
+      "execution": [
+        "Gồng chặt cơ bụng và nâng thẳng hai chân hoặc co gối lên phía trước cho đến khi đùi song song với sàn.",
+        "Hơi cuộn nhẹ xương chậu lên trên ở điểm cao nhất để tác động tối đa vào nhóm cơ bụng dưới.",
+        "Từ từ hạ chân về vị trí ban đầu có kiểm soát mà không để người bị đung đưa.",
+        "Lưu ý kỹ thuật: Dùng lực cơ bụng để nâng chân thay vì lấy đà văng người",
+        "Lưu ý kỹ thuật: Ghì vai xuống thấp, không rụt cổ vào vai"
+      ],
+      "breathing": [
+        "Thở ra khi nâng hai chân lên cao, hít vào khi từ từ hạ chân xuống.",
+        "Tránh: Lấy đà đung đưa người qua lại để nâng chân",
+        "Tránh: Rụt vai lên sát tai trong suốt bài tập"
+      ]
+    }
+  },
+  {
+    "id": "0705",
+    "slug": "side-plank",
+    "name": "Side Plank (Side Bridge)",
+    "nameVi": "Nằm nghiêng chống cùi chỏ giữ thân người",
+    "aliases": [
+      "side plank",
+      "side bridge",
+      "oblique plank",
+      "side core plank",
+      "side bridge hold"
+    ],
+    "category": "Core",
+    "equipment": "Bodyweight",
+    "videoUrl": "/videos/side-bridge-side-plank-0705.mp4",
+    "primaryMuscles": [
+      "Obliques"
+    ],
+    "secondaryMuscles": [
+      "Abs",
+      "Glutes"
+    ],
+    "primarySlugs": [
+      "obliques"
+    ],
+    "secondarySlugs": [
+      "abs",
+      "gluteal"
+    ],
+    "shortDescription": "Isometric core exercise targeting the obliques and lateral stabilizers.",
+    "steps": {
+      "prepare": [
+        "Lie on your side on an exercise mat with your legs extended straight and your feet stacked.",
+        "Place your lower elbow directly beneath your shoulder with your forearm flat on the ground pointing forward."
+      ],
+      "execution": [
+        "Engage your obliques and lift your hips off the floor until your body forms a straight line from head to ankles.",
+        "Hold this rigid straight position for the prescribed duration while keeping your neck neutral.",
+        "Slowly lower your hips back to the mat with control before repeating on the opposite side.",
+        "Form cue: Keep hips high and do not let them sag toward the floor",
+        "Form cue: Keep your chest open and shoulders square"
+      ],
+      "breathing": [
+        "Breathe smoothly and rhythmically throughout the hold without holding your breath.",
+        "Avoid: Letting your hips drop toward the floor",
+        "Avoid: Rolling your top shoulder forward"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Nằm nghiêng một bên trên thảm tập với hai chân duỗi thẳng và xếp chồng lên nhau.",
+        "Đặt cùi chỏ tay dưới ngay dưới khớp vai, cẳng tay áp sát sàn và hướng về phía trước."
+      ],
+      "execution": [
+        "Gồng chặt cơ liên sườn và nâng hông lên khỏi mặt sàn cho đến khi thân người tạo thành một đường thẳng.",
+        "Giữ vững tư thế thẳng người này trong khoảng thời gian quy định, giữ cổ thẳng tự nhiên.",
+        "Từ từ hạ hông tiếp đất có kiểm soát rồi đổi sang thực hiện cho bên còn lại.",
+        "Lưu ý kỹ thuật: Giữ hông luôn được đẩy lên cao, không để võng hông xuống sàn",
+        "Lưu ý kỹ thuật: Mở rộng lồng ngực và giữ hai vai thẳng hàng"
+      ],
+      "breathing": [
+        "Duy trì nhịp hít thở đều đặn và sâu trong suốt thời gian giữ tư thế, không nín thở.",
+        "Tránh: Để hông bị chùng võng chạm sàn",
+        "Tránh: Đổ vai trên về phía trước làm lệch cột sống"
+      ]
+    }
+  },
+  {
+    "id": "1731",
+    "slug": "dumbbell-close-grip-press",
+    "name": "Dumbbell Close-Grip Press (Hex Press / Crush Press)",
+    "nameVi": "Nằm ghế ép hai tạ đơn đẩy ngực và tay sau",
+    "aliases": [
+      "hex press",
+      "crush press",
+      "dumbbell hex press",
+      "close grip dumbbell press",
+      "squeeze press",
+      "dumbbell crush press"
+    ],
+    "category": "Chest",
+    "equipment": "Dumbbell",
+    "videoUrl": "/videos/dumbbell-close-grip-press-1731.mp4",
+    "primaryMuscles": [
+      "Chest",
+      "Triceps"
+    ],
+    "secondaryMuscles": [
+      "Front Delts"
+    ],
+    "primarySlugs": [
+      "chest",
+      "triceps"
+    ],
+    "secondarySlugs": [
+      "deltoids"
+    ],
+    "shortDescription": "Flat bench close dumbbell press with weights pressed together for inner chest and triceps tension.",
+    "steps": {
+      "prepare": [
+        "Lie flat on a gym bench holding a pair of dumbbells pressed tightly together over your sternum with neutral palms.",
+        "Plant your feet firmly on the floor and pull your shoulder blades together into the bench."
+      ],
+      "execution": [
+        "While continuously squeezing the dumbbells together, slowly lower them to touch the middle of your chest.",
+        "Pause for a brief second on your chest while maintaining inward squeezing pressure.",
+        "Press the dumbbells back up to full arm extension, focusing on inner chest and tricep contraction.",
+        "Form cue: Constantly press the dumbbells inward against each other",
+        "Form cue: Keep your elbows tucked at roughly 45 degrees"
+      ],
+      "breathing": [
+        "Inhale as you lower the dumbbells to your chest, exhale forcefully as you press them up to lockout.",
+        "Avoid: Letting the dumbbells separate during the rep",
+        "Avoid: Flaring elbows straight out to the sides"
+      ]
+    },
+    "stepsVi": {
+      "prepare": [
+        "Nằm ngửa trên ghế tập phẳng, hai tay cầm tạ đơn ép chặt vào nhau ngay phía trên ngực với lòng bàn tay hướng vào nhau.",
+        "Đặt hai bàn chân vững chắc trên sàn và ép chặt hai bả vai vào mặt ghế."
+      ],
+      "execution": [
+        "Duy trì lực ép hai quả tạ vào nhau liên tục, từ từ hạ tạ xuống chạm nhẹ vào giữa ngực.",
+        "Dừng lại một giây ở vị trí thấp nhất trên ngực trong khi vẫn duy trì áp lực ép chặt tạ.",
+        "Đẩy hai quả tạ thẳng lên trên cho đến khi hai tay duỗi thẳng, tập trung siết chặt cơ ngực và tay sau.",
+        "Lưu ý kỹ thuật: Luôn ép chặt hai quả tạ vào nhau trong suốt toàn bộ chuyển động",
+        "Lưu ý kỹ thuật: Giữ khuỷu tay chếch một góc khoảng 45 độ so với thân người"
+      ],
+      "breathing": [
+        "Hít vào khi từ từ hạ tạ xuống ngực, thở mạnh ra khi đẩy tạ lên vị trí cao nhất.",
+        "Tránh: Để hai quả tạ tách rời nhau trong lúc đẩy",
+        "Tránh: Mở rộng khuỷu tay sang hai bên quá mức gây áp lực lên vai"
       ]
     }
   }
