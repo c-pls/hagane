@@ -7,6 +7,7 @@ import {
   UI_TEXT,
 } from '../i18n/translations';
 import { ExercisePickerModal } from './ExercisePickerModal';
+import { triggerHapticLight, triggerHapticMedium } from '../services/native';
 
 interface RoutineDetailProps {
   routine: Routine;
@@ -44,6 +45,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     field: 'weight' | 'reps',
     value: number
   ) => {
+    triggerHapticLight();
     const nextExercises = routine.exercises.map((item, idx) => {
       if (idx !== exIndex) return item;
       const nextSets = item.sets.map((s, sIdx) =>
@@ -55,6 +57,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   };
 
   const handleSaveExerciseNote = (exIndex: number, text: string) => {
+    triggerHapticLight();
     const nextExercises = routine.exercises.map((item, idx) =>
       idx === exIndex ? { ...item, note: text.trim() } : item
     );
@@ -63,6 +66,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   };
 
   const handleAddSet = (exIndex: number) => {
+    triggerHapticLight();
     const nextExercises = routine.exercises.map((item, idx) => {
       if (idx !== exIndex) return item;
       const lastSet =
@@ -75,6 +79,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   };
 
   const handleRemoveLastSet = (exIndex: number) => {
+    triggerHapticLight();
     const nextExercises = routine.exercises.map((item, idx) => {
       if (idx !== exIndex || item.sets.length <= 1) return item;
       return { ...item, sets: item.sets.slice(0, -1) };
@@ -83,12 +88,14 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   };
 
   const handleRemoveExercise = (exIndex: number) => {
+    triggerHapticLight();
     const nextExercises = routine.exercises.filter((_, idx) => idx !== exIndex);
     onUpdateRoutine({ ...routine, exercises: nextExercises });
   };
 
   const handleReorderExercises = (fromIdx: number, toIdx: number) => {
     if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return;
+    triggerHapticMedium();
     const nextExercises = [...routine.exercises];
     const [moved] = nextExercises.splice(fromIdx, 1);
     nextExercises.splice(toIdx, 0, moved);
@@ -218,6 +225,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
 
           <button
             onClick={() => {
+              triggerHapticLight();
               setIsEditMode(!isEditMode);
               setIsEditingTitle(false);
               setEditingNoteIdx(null);
@@ -303,7 +311,10 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                   {/* Drag Handle in Edit Mode */}
                   {isEditMode && (
                     <div
-                      onTouchStart={() => setDraggedIdx(exIdx)}
+                      onTouchStart={() => {
+                        triggerHapticLight();
+                        setDraggedIdx(exIdx);
+                      }}
                       onTouchMove={handleTouchMove}
                       onTouchEnd={handleTouchEnd}
                       title={t.dragHint}

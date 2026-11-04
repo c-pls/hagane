@@ -1,4 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { App as CapApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { ActiveTab, Exercise, Language, Routine, ScreenRoute } from './types/gym';
 import {
   translateEquipment,
@@ -22,6 +24,11 @@ import { RoutineDetail } from './components/RoutineDetail';
 import { ExerciseWiki } from './components/ExerciseWiki';
 import { ExerciseDetail } from './components/ExerciseDetail';
 import { BackupSync } from './components/BackupSync';
+import {
+  initNativeStatusBar,
+  triggerHapticLight,
+  triggerHapticSelection,
+} from './services/native';
 
 export const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => loadLanguage());
@@ -43,8 +50,122 @@ export const App: React.FC = () => {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
+  const lastBackPressRef = useRef<number>(0);
 
   const t = UI_TEXT[lang];
+
+  // Initialize Native Android / iOS Status Bar
+  useEffect(() => {
+    initNativeStatusBar();
+  }, []);
+
+  // Native Android Hardware / Gesture Edge-Swipe Back Button Listener
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let backListener: { remove: () => void } | null = null;
+    CapApp.addListener('backButton', () => {
+      if (route.name === 'exerciseInfo') {
+        setRoute(route.returnTo);
+        triggerHapticLight();
+      } else if (route.name === 'routineDetail') {
+        setRoute({ name: 'routineList' });
+        setActiveTab('routines');
+        triggerHapticLight();
+      } else {
+        const now = Date.now();
+        if (now - lastBackPressRef.current < 2000) {
+          CapApp.exitApp();
+        } else {
+          lastBackPressRef.current = now;
+          showToast(
+            lang === 'vi'
+              ? 'Nhấn quay lại lần nữa để thoát'
+              : 'Press back again to exit'
+          );
+          triggerHapticLight();
+        }
+      }
+    }).then((handle) => {
+      backListener = handle;
+    });
+
+    return () => {
+      if (backListener) backListener.remove();
+    };
+  }, [route, lang]);
+
+  // In-App Edge Swipe-to-Go-Back Gesture
+  const canGoBack =
+    route.name === 'exerciseInfo' || route.name === 'routineDetail';
+
+  const handleNavigateBack = () => {
+    if (route.name === 'exerciseInfo') {
+      setRoute(route.returnTo);
+      triggerHapticLight();
+    } else if (route.name === 'routineDetail') {
+      setRoute({ name: 'routineList' });
+      setActiveTab('routines');
+      triggerHapticLight();
+    }
+  };
+
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(
+    null
+  );
+  const [swipeProgress, setSwipeProgress] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!canGoBack) return;
+    const touch = e.touches[0];
+    if (touch && touch.clientX <= 48) {
+      touchStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
+      };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || !canGoBack) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const dx = touch.clientX - touchStartRef.current.x;
+    const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+
+    if (dy > 45 && dx < 35) {
+      touchStartRef.current = null;
+      setSwipeProgress(null);
+      return;
+    }
+    if (dx > 0) {
+      setSwipeProgress(Math.min(100, Math.round((dx / 120) * 100)));
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || !canGoBack) {
+      setSwipeProgress(null);
+      return;
+    }
+    const touch = e.changedTouches[0];
+    if (!touch) {
+      touchStartRef.current = null;
+      setSwipeProgress(null);
+      return;
+    }
+    const dx = touch.clientX - touchStartRef.current.x;
+    const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+    const dt = Date.now() - touchStartRef.current.time;
+
+    touchStartRef.current = null;
+    setSwipeProgress(null);
+
+    if ((dx > 75 || (dx > 40 && dt < 280)) && dy < 60) {
+      handleNavigateBack();
+    }
+  };
 
   const handleToggleLanguage = (nextLang: Language) => {
     setLang(nextLang);
@@ -226,7 +347,40 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f2f4f7] text-slate-900 flex flex-col pb-20">
+    <div
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className="min-h-screen bg-[#f2f4f7] text-slate-900 flex flex-col pb-20"
+    >
+      {/* Edge Swipe Back Visual Chevron Indicator */}
+      {swipeProgress !== null && swipeProgress > 15 && (
+        <div
+          style={{
+            transform: `translateY(-50%) translateX(${Math.min(
+              swipeProgress * 0.35,
+              35
+            )}px)`,
+            opacity: Math.min(1, swipeProgress / 40),
+          }}
+          className="fixed left-2 top-1/2 z-50 bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-transform pointer-events-none"
+        >
+          <svg
+            className="w-5 h-5 -translate-x-0.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </div>
+      )}
+
       {/* Top Sticky App Bar */}
       <header className="bg-white/95 backdrop-blur-xs border-b border-slate-200/70 sticky top-0 z-30">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
@@ -247,7 +401,10 @@ export const App: React.FC = () => {
             >
               <button
                 type="button"
-                onClick={() => handleToggleLanguage('en')}
+                onClick={() => {
+                  triggerHapticSelection();
+                  handleToggleLanguage('en');
+                }}
                 aria-pressed={lang === 'en'}
                 className={`px-2.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
                   lang === 'en'
@@ -260,7 +417,10 @@ export const App: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => handleToggleLanguage('vi')}
+                onClick={() => {
+                  triggerHapticSelection();
+                  handleToggleLanguage('vi');
+                }}
                 aria-pressed={lang === 'vi'}
                 className={`px-2.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
                   lang === 'vi'
@@ -373,11 +533,14 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Bottom Sticky Navigation Bar */}
+      {/* Bottom Sticky Navigation Bar (Clean 2-Tab: Workouts & Wiki) */}
       <nav className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-xs border-t border-slate-200/80 z-30">
-        <div className="max-w-lg mx-auto px-4 py-2 grid grid-cols-3 gap-2">
+        <div className="max-w-md mx-auto px-6 py-2 grid grid-cols-2 gap-4">
           <button
-            onClick={() => handleSwitchTab('routines')}
+            onClick={() => {
+              triggerHapticSelection();
+              handleSwitchTab('routines');
+            }}
             className={`flex flex-col items-center justify-center py-1.5 rounded-2xl text-xs transition cursor-pointer ${
               activeTab === 'routines'
                 ? 'text-blue-600 bg-blue-50 font-bold'
@@ -401,7 +564,10 @@ export const App: React.FC = () => {
           </button>
 
           <button
-            onClick={() => handleSwitchTab('wiki')}
+            onClick={() => {
+              triggerHapticSelection();
+              handleSwitchTab('wiki');
+            }}
             className={`flex flex-col items-center justify-center py-1.5 rounded-2xl text-xs transition cursor-pointer ${
               activeTab === 'wiki'
                 ? 'text-blue-600 bg-blue-50 font-bold'
@@ -422,30 +588,6 @@ export const App: React.FC = () => {
               />
             </svg>
             <span>{t.tabWiki}</span>
-          </button>
-
-          <button
-            onClick={() => handleSwitchTab('backup')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-2xl text-xs transition cursor-pointer ${
-              activeTab === 'backup'
-                ? 'text-blue-600 bg-blue-50 font-bold'
-                : 'text-slate-500 hover:bg-slate-100 font-semibold'
-            }`}
-          >
-            <svg
-              className="w-5 h-5 mb-0.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-              />
-            </svg>
-            <span>{t.tabBackup}</span>
           </button>
         </div>
       </nav>
