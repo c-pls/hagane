@@ -20,6 +20,10 @@
 
 ### 📋 Custom Routine Builder & Tracker
 - **Read-Only Mode by Default:** Distraction-free view during training to log weights and reps without accidental edits.
+- **🔥 Warm-up Exercises & Primer Sets:**
+  - **Dedicated Warm-up Section:** Separate mobility primers, dynamic stretches, and light-weight warm-up movements from your heavy working lifts.
+  - **'W' Warm-up Set Badges:** Mark introductory sets as warm-up (`W`), automatically numbering subsequent heavy working sets (`1, 2, 3...`).
+  - **1-Tap Toggles:** Tap any set number in Edit Mode to toggle between `W` and working sets, or tap `To Main` / `To Warm-up` to shift exercises between sections.
 - **Interactive Edit Mode (`✎ Edit`):**
   - **Drag-and-Drop Reordering (`⋮⋮`):** Touch and drag exercises up or down to customize exercise order.
   - **Flexible Sets & Reps:** Instant `+` / `−` adjustments for weights (`kg`) and reps with physical haptic ticks.

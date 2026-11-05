@@ -23,19 +23,30 @@ const DEFAULT_ROUTINES: Routine[] = [
     exercises: [
       {
         exerciseId: '1435', // Barbell Back Squat
+        isWarmup: true,
+        note: 'Light warmup to prime hip mobility & knees',
+        sets: [
+          { weight: 20, reps: 15, type: 'warmup' },
+          { weight: 40, reps: 10, type: 'warmup' },
+        ],
+      },
+      {
+        exerciseId: '1435', // Barbell Back Squat
+        isWarmup: false,
         note: 'Rack pin #11. Focus on bracing core and driving knees out.',
         sets: [
-          { weight: 60, reps: 10 },
-          { weight: 60, reps: 10 },
-          { weight: 60, reps: 10 },
+          { weight: 50, reps: 8, type: 'warmup' },
+          { weight: 70, reps: 10, type: 'normal' },
+          { weight: 70, reps: 10, type: 'normal' },
         ],
       },
       {
         exerciseId: '0116', // Barbell Straight Leg Deadlift
+        isWarmup: false,
         sets: [
-          { weight: 70, reps: 10 },
-          { weight: 70, reps: 10 },
-          { weight: 70, reps: 10 },
+          { weight: 50, reps: 10, type: 'warmup' },
+          { weight: 80, reps: 10, type: 'normal' },
+          { weight: 80, reps: 10, type: 'normal' },
         ],
       },
     ],
@@ -47,18 +58,20 @@ const DEFAULT_ROUTINES: Routine[] = [
     exercises: [
       {
         exerciseId: '0025', // Barbell Bench Press
+        isWarmup: false,
         sets: [
-          { weight: 60, reps: 10 },
-          { weight: 60, reps: 10 },
-          { weight: 60, reps: 10 },
+          { weight: 40, reps: 10, type: 'warmup' },
+          { weight: 60, reps: 10, type: 'normal' },
+          { weight: 60, reps: 10, type: 'normal' },
         ],
       },
       {
         exerciseId: '0027', // Barbell Underhand Bent-Over Row
+        isWarmup: false,
         sets: [
-          { weight: 50, reps: 10 },
-          { weight: 50, reps: 10 },
-          { weight: 50, reps: 10 },
+          { weight: 30, reps: 12, type: 'warmup' },
+          { weight: 50, reps: 10, type: 'normal' },
+          { weight: 50, reps: 10, type: 'normal' },
         ],
       },
     ],

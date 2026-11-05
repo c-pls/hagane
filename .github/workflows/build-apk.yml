@@ -89,12 +89,14 @@ jobs:
 
             ---
             ### ✨ Features in this release:
+            - **Warm-up Exercises & Sets**: Dedicated Warm-up section with light-weight sets + 'W' warm-up set tags for main compound movements.
+            - **Native Smartphone Gestures**: Edge swipe-to-go-back, tactile haptic vibrations on tap, and edge-to-edge immersive status bar.
             - **199 Offline Exercises**: Full 1080p 30-FPS male demo videos bundled directly in the app.
             - **1-Click Language Switcher**: Tap `🇺🇸 EN` or `🇻🇳 VI` in the header for instant switching.
             - **Pure Vietnamese Translations**: 1-to-1 instructions with natural Vietnamese gym terminology.
             - **Custom Workout Routines**: Drag-and-drop (`⋮⋮`) to reorder exercises, track sets, weight (kg), and reps.
             - **Read-Only & Edit Mode**: Clean workout viewing by default, quick editing toggle.
-            - **Offline & Backup**: 100% offline functionality with JSON import/export & QR transfer between PC and phone.
+            - **Offline & Backup**: 100% offline functionality.
 
             ---
             ### 📱 How to install on your Samsung Galaxy (Android):

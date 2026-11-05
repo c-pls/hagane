@@ -267,9 +267,9 @@ export const App: React.FC = () => {
           exerciseId,
           note: '',
           sets: [
-            { weight: 60, reps: 10 },
-            { weight: 60, reps: 10 },
-            { weight: 60, reps: 10 },
+            { weight: 40, reps: 10, type: 'warmup' },
+            { weight: 60, reps: 10, type: 'normal' },
+            { weight: 60, reps: 10, type: 'normal' },
           ],
         },
       ],

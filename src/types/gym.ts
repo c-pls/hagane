@@ -27,12 +27,14 @@ export interface Exercise {
 export interface WorkoutSet {
   weight: number;
   reps: number;
+  type?: 'normal' | 'warmup' | 'drop';
 }
 
 export interface RoutineExerciseItem {
   exerciseId: string;
   sets: WorkoutSet[];
   note?: string;
+  isWarmup?: boolean;
 }
 
 export interface Routine {
