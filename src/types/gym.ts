@@ -35,6 +35,7 @@ export interface RoutineExerciseItem {
   sets: WorkoutSet[];
   note?: string;
   isWarmup?: boolean;
+  supersetId?: string;
 }
 
 export interface Routine {

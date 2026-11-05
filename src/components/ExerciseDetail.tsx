@@ -1,7 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Exercise, Language, Routine } from '../types/gym';
-import { translateRoutineText, UI_TEXT } from '../i18n/translations';
+import {
+  translateEquipment,
+  translateRoutineText,
+  UI_TEXT,
+} from '../i18n/translations';
 import { AnatomicalMuscleMap } from './AnatomicalMuscleMap';
+import { getSimilarExercises } from '../utils/exerciseAlternatives';
+import { triggerHapticLight } from '../services/native';
 
 interface ExerciseDetailProps {
   exercise: Exercise;
@@ -19,6 +25,8 @@ interface ExerciseDetailProps {
   activeRoutineId?: string;
   asWarmup?: boolean;
   replacingExIdx?: number | null;
+  allExercises?: Exercise[];
+  onSelectExercise?: (exerciseId: string) => void;
 }
 
 export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
@@ -27,10 +35,17 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   showComment,
   comment,
   onSaveComment,
+  allExercises = [],
+  onSelectExercise,
 }) => {
   const t = UI_TEXT[lang];
   const [noteText, setNoteText] = useState(comment);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const similarAlternatives = useMemo(() => {
+    if (!allExercises || allExercises.length === 0) return [];
+    return getSimilarExercises(exercise, allExercises, 6);
+  }, [exercise, allExercises]);
 
   useEffect(() => {
     setNoteText(comment);
@@ -157,6 +172,63 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
       <div>
         <AnatomicalMuscleMap exercise={exercise} lang={lang} />
       </div>
+
+      {/* FULL-WIDTH BOTTOM SECTION: ⚡ SIMILAR & ALTERNATIVE EXERCISES */}
+      {similarAlternatives.length > 0 && onSelectExercise && (
+        <div className="lg:col-span-2 pt-2 space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
+                <span>⚡</span>
+                <span>{t.similarExercisesTitle}</span>
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                {t.similarExercisesSubtitle}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {similarAlternatives.map((alt) => {
+              const altEx = alt.exercise;
+              const displayName =
+                lang === 'vi' && altEx.nameVi ? altEx.nameVi : altEx.name;
+              const reasonText = lang === 'vi' ? alt.reasonVi : alt.reasonEn;
+
+              return (
+                <div
+                  key={altEx.id}
+                  onClick={() => {
+                    triggerHapticLight();
+                    onSelectExercise(altEx.id);
+                  }}
+                  className="p-3 rounded-2xl bg-white hover:bg-blue-50/60 active:scale-[0.98] border border-slate-200/80 hover:border-blue-300 shadow-xs transition cursor-pointer flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-700 transition">
+                        {translateEquipment(altEx.equipment, lang)}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-400 group-hover:text-blue-500 transition">
+                        {altEx.primaryMuscles[0]}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-600 transition line-clamp-2 leading-snug">
+                      {displayName}
+                    </h4>
+                  </div>
+
+                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md truncate max-w-full">
+                      {reasonText}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

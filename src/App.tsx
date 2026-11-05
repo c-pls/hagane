@@ -732,6 +732,13 @@ export const App: React.FC = () => {
             activeRoutineId={route.routineId}
             asWarmup={route.asWarmup}
             replacingExIdx={route.replacingExIdx}
+            allExercises={allExercises}
+            onSelectExercise={(newExId) => {
+              setRoute({
+                ...route,
+                exerciseId: newExId,
+              });
+            }}
             onAddExerciseToRoutine={(
               routineId,
               exerciseId,

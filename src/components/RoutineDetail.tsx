@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Exercise,
   Language,
@@ -186,6 +186,93 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
+  // Map of exercise index to superset group info (e.g. A1, A2, B1, B2)
+  const supersetInfoMap = useMemo(() => {
+    const map: Record<
+      number,
+      {
+        groupLetter: string;
+        label: string;
+        isFirst: boolean;
+        isLast: boolean;
+        groupSize: number;
+      }
+    > = {};
+
+    const groups: Record<string, number[]> = {};
+    routine.exercises.forEach((item, idx) => {
+      if (item.supersetId) {
+        if (!groups[item.supersetId]) groups[item.supersetId] = [];
+        groups[item.supersetId].push(idx);
+      }
+    });
+
+    let letterCode = 65; // ASCII 'A'
+    Object.keys(groups).forEach((id) => {
+      const indices = groups[id];
+      if (indices.length >= 2) {
+        const letter = String.fromCharCode(letterCode++);
+        indices.forEach((idx, pos) => {
+          map[idx] = {
+            groupLetter: letter,
+            label: `${letter}${pos + 1}`,
+            isFirst: pos === 0,
+            isLast: pos === indices.length - 1,
+            groupSize: indices.length,
+          };
+        });
+      }
+    });
+
+    return map;
+  }, [routine.exercises]);
+
+  const handleLinkSupersetWithNext = (exIndex: number) => {
+    triggerHapticLight();
+    const current = routine.exercises[exIndex];
+    const nextIdx = exIndex + 1;
+    if (nextIdx >= routine.exercises.length) return;
+    const next = routine.exercises[nextIdx];
+
+    const groupId = current.supersetId || next.supersetId || `ss-${Date.now()}`;
+
+    const nextExercises = routine.exercises.map((item, idx) => {
+      if (idx === exIndex || idx === nextIdx) {
+        return { ...item, supersetId: groupId };
+      }
+      return item;
+    });
+
+    onUpdateRoutine({ ...routine, exercises: nextExercises });
+  };
+
+  const handleUnlinkSuperset = (exIndex: number) => {
+    triggerHapticLight();
+    const target = routine.exercises[exIndex];
+    if (!target.supersetId) return;
+
+    const targetGroupId = target.supersetId;
+    const remainingInGroup = routine.exercises.filter(
+      (item, idx) => idx !== exIndex && item.supersetId === targetGroupId
+    );
+
+    const nextExercises = routine.exercises.map((item, idx) => {
+      if (idx === exIndex) {
+        const copy = { ...item };
+        delete copy.supersetId;
+        return copy;
+      }
+      if (item.supersetId === targetGroupId && remainingInGroup.length < 2) {
+        const copy = { ...item };
+        delete copy.supersetId;
+        return copy;
+      }
+      return item;
+    });
+
+    onUpdateRoutine({ ...routine, exercises: nextExercises });
+  };
+
   const handleSetChange = (
     exIndex: number,
     setIndex: number,
@@ -339,6 +426,8 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     const isDragTarget =
       dragOverIdx === exIdx && draggedIdx !== null && draggedIdx !== exIdx;
     const isWarmupEx = Boolean(item.isWarmup);
+    const supersetInfo = supersetInfoMap[exIdx];
+    const isSuperset = Boolean(supersetInfo);
 
     return (
       <div
@@ -374,7 +463,11 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             ? 'ring-2 ring-blue-500 bg-blue-50/20'
             : ''
         } ${
-          isWarmupEx ? 'border-l-4 border-l-amber-500' : ''
+          isSuperset
+            ? 'border-l-4 border-l-purple-500 shadow-purple-500/5'
+            : isWarmupEx
+            ? 'border-l-4 border-l-amber-500'
+            : 'border border-slate-200/80'
         } ${isBeingDragged ? 'opacity-50 scale-[0.98]' : ''} ${
           isDragTarget ? 'ring-2 ring-blue-500 bg-blue-50/20' : ''
         }`}
@@ -414,6 +507,11 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                     🔥 {t.warmupBadge}
                   </span>
                 )}
+                {supersetInfo && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-purple-100 text-purple-700 border border-purple-200">
+                    ⚡ {t.supersetBadge} {supersetInfo.label}
+                  </span>
+                )}
               </div>
               <span className="text-xs text-slate-400 font-medium block mt-0.5">
                 {ex.primaryMuscles
@@ -427,6 +525,49 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
           <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
             {isEditMode && (
               <>
+                {/* Superset Link / Unlink Button */}
+                {isSuperset ? (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleUnlinkSuperset(exIdx)}
+                      className="px-2 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold transition cursor-pointer"
+                      title={t.unlinkSupersetBtn}
+                    >
+                      {t.unlinkSupersetBtn}
+                    </button>
+                    {/* If next exercise exists and is not yet in this superset, allow adding it to form a tri-set */}
+                    {exIdx + 1 < routine.exercises.length &&
+                      routine.exercises[exIdx + 1].supersetId !==
+                        item.supersetId &&
+                      Boolean(routine.exercises[exIdx + 1].isWarmup) ===
+                        isWarmupEx && (
+                        <button
+                          type="button"
+                          onClick={() => handleLinkSupersetWithNext(exIdx)}
+                          className="px-2 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold transition cursor-pointer"
+                          title={t.addNextToSupersetBtn}
+                        >
+                          {t.addNextToSupersetBtn}
+                        </button>
+                      )}
+                  </div>
+                ) : (
+                  /* Can link with next exercise if exists in same section */
+                  exIdx + 1 < routine.exercises.length &&
+                  Boolean(routine.exercises[exIdx + 1].isWarmup) ===
+                    isWarmupEx && (
+                    <button
+                      type="button"
+                      onClick={() => handleLinkSupersetWithNext(exIdx)}
+                      className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-purple-50 text-slate-600 hover:text-purple-700 text-xs font-semibold transition cursor-pointer"
+                      title={t.linkSupersetBtn}
+                    >
+                      {t.linkSupersetBtn}
+                    </button>
+                  )
+                )}
+
                 {/* Change / Swap Exercise Button */}
                 <button
                   type="button"
@@ -776,9 +917,19 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             {warmupIndices.length > 0 ? (
               <div className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                  {warmupIndices.map((idx) =>
-                    renderExerciseCard(routine.exercises[idx], idx)
-                  )}
+                  {warmupIndices.map((idx) => (
+                    <React.Fragment key={`${routine.exercises[idx].exerciseId}-${idx}`}>
+                      {renderExerciseCard(routine.exercises[idx], idx)}
+                      {supersetInfoMap[idx] && !supersetInfoMap[idx].isLast && (
+                        <div className="flex items-center justify-center -my-1 py-1 col-span-full">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-purple-100 text-purple-700 border border-purple-200">
+                            <span>⚡</span>
+                            <span>{t.supersetConnector}</span>
+                          </span>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  ))}
                 </div>
                 {/* Button to add more warm-up exercises inside the warm-up zone */}
                 <button
@@ -838,9 +989,19 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                {mainIndices.map((idx) =>
-                  renderExerciseCard(routine.exercises[idx], idx)
-                )}
+                {mainIndices.map((idx) => (
+                  <React.Fragment key={`${routine.exercises[idx].exerciseId}-${idx}`}>
+                    {renderExerciseCard(routine.exercises[idx], idx)}
+                    {supersetInfoMap[idx] && !supersetInfoMap[idx].isLast && (
+                      <div className="flex items-center justify-center -my-1 py-1 col-span-full">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-purple-100 text-purple-700 border border-purple-200">
+                          <span>⚡</span>
+                          <span>{t.supersetConnector}</span>
+                        </span>
+                      </div>
+                    )}
+                  </React.Fragment>
+                ))}
               </div>
             </div>
           )}

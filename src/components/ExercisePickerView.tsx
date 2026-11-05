@@ -8,6 +8,7 @@ import {
 } from '../i18n/translations';
 import { searchAndRankExercises } from '../utils/search';
 import { triggerHapticLight } from '../services/native';
+import { getSimilarExercises } from '../utils/exerciseAlternatives';
 
 interface ExercisePickerViewProps {
   routine: Routine;
@@ -78,6 +79,18 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
   const [activeTab, setActiveTab] = useState<'most_used' | 'all'>('most_used');
   const [muscleFilter, setMuscleFilter] = useState(initialMuscle);
   const [equipmentFilter, setEquipmentFilter] = useState(initialEquipment);
+
+  const replacedExercise = useMemo(() => {
+    if (replacingExIdx === null || !routine.exercises[replacingExIdx])
+      return null;
+    const exId = routine.exercises[replacingExIdx].exerciseId;
+    return allExercises.find((e) => e.id === exId) || null;
+  }, [replacingExIdx, routine.exercises, allExercises]);
+
+  const suggestedAlternatives = useMemo(() => {
+    if (!replacedExercise) return [];
+    return getSimilarExercises(replacedExercise, allExercises, 4);
+  }, [replacedExercise, allExercises]);
 
   // If user types a search query, search across all exercises automatically
   const baseExercises = useMemo(() => {
@@ -252,6 +265,63 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
           {filtered.length} {t.exercisesAvailable}
         </span>
       </div>
+
+      {/* ⚡ Suggested Alternatives when Swapping an Exercise */}
+      {replacingExIdx !== null &&
+        search.trim() === '' &&
+        muscleFilter === 'All' &&
+        suggestedAlternatives.length > 0 && (
+          <div className="bg-gradient-to-br from-blue-50/90 to-indigo-50/70 rounded-[24px] p-4 border border-blue-200/80 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                <span>⚡</span>
+                <span>{t.suggestedAlternativesTitle}</span>
+              </span>
+              <span className="text-[11px] font-medium text-blue-600">
+                {t.suggestedAlternativesSubtitle}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {suggestedAlternatives.map((alt) => {
+                const altEx = alt.exercise;
+                const displayName =
+                  lang === 'vi' && altEx.nameVi ? altEx.nameVi : altEx.name;
+                const reasonText =
+                  lang === 'vi' ? alt.reasonVi : alt.reasonEn;
+
+                return (
+                  <div
+                    key={`swap-alt-${altEx.id}`}
+                    onClick={() => {
+                      triggerHapticLight();
+                      onSelectExercise(altEx.id);
+                    }}
+                    className="p-3 rounded-2xl bg-white hover:bg-blue-50/80 active:scale-[0.98] border border-blue-100 hover:border-blue-300 shadow-xs transition cursor-pointer flex items-center justify-between gap-2.5 group"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-600 transition truncate">
+                        {displayName}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                        {translateEquipment(altEx.equipment, lang)} •{' '}
+                        <span className="text-blue-600 font-semibold">
+                          {reasonText}
+                        </span>
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="px-2.5 py-1.5 rounded-xl bg-blue-600 group-hover:bg-blue-700 text-white font-bold text-xs shrink-0 transition"
+                    >
+                      {t.changeExerciseBtn}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
       {/* 3. EXERCISE LIST (CLEAN WHITE CARD WITH DIVIDERS & (?) BUTTONS ON RIGHT) */}
       <div className="bg-white rounded-[24px] shadow-xs overflow-hidden divide-y divide-slate-100">
