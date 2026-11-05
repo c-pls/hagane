@@ -54,22 +54,22 @@ jobs:
         run: |
           chmod +x android/gradlew
 
-      - name: Build Android Debug APK
+      - name: Build Android Release APK
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare APK Artifact
         run: |
           mkdir -p release-output
-          cp android/app/build/outputs/apk/debug/app-debug.apk release-output/shaken-debug.apk
-          ls -lh release-output/shaken-debug.apk
+          cp android/app/build/outputs/apk/release/app-release.apk release-output/shaken.apk
+          ls -lh release-output/shaken.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shaken-debug-apk
-          path: release-output/shaken-debug.apk
+          name: shaken-apk
+          path: release-output/shaken.apk
           if-no-files-found: error
           retention-days: 30
 
@@ -78,14 +78,14 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: "Shaken v1.0.${{ github.run_number }} (Android APK)"
+          name: "Shaken v1.0.${{ github.run_number }}"
           make_latest: true
           generate_release_notes: true
           body: |
             ## 🏋️ Shaken - Offline Gym Companion APK
 
             Download and install the APK directly on your Samsung Galaxy or Android phone:
-            👉 **[Download shaken-debug.apk](https://github.com/${{ github.repository }}/releases/download/v1.0.${{ github.run_number }}/shaken-debug.apk)**
+            👉 **[Download shaken.apk](https://github.com/${{ github.repository }}/releases/download/v1.0.${{ github.run_number }}/shaken.apk)**
 
             ---
             ### ✨ Features in this release:
@@ -99,15 +99,15 @@ jobs:
             - **Pure Vietnamese Translations**: 1-to-1 instructions with natural Vietnamese gym terminology.
             - **Custom Workout Routines**: Drag-and-drop (`⋮⋮`) to reorder exercises, track sets, weight (kg), and reps.
             - **Read-Only & Edit Mode**: Clean workout viewing by default, quick editing toggle.
-            - **Offline & Backup**: 100% offline functionality.
+            - **Offline & Backup**: 100% offline functionality with persistent device storage.
 
             ---
             ### 📱 How to install on your Samsung Galaxy (Android):
             1. Tap the download link above in Samsung Internet or Chrome on your phone.
-            2. Tap the downloaded file `shaken-debug.apk`.
-            3. Tap **Install** (if prompted, toggle **Allow from this source**).
+            2. Tap the downloaded file `shaken.apk`.
+            3. Tap **Install** / **Update**.
             4. Open **Shaken** and enjoy your workouts!
-          files: release-output/shaken-debug.apk
+          files: release-output/shaken.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -115,8 +115,8 @@ jobs:
         run: |
           echo "### 🏋️ Shaken Android APK Built Successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The offline Android APK for **Shaken** has been built, uploaded as an artifact, and published to GitHub Releases." >> $GITHUB_STEP_SUMMARY
+          echo "The official Android APK for **Shaken** has been built, signed, uploaded as an artifact, and published to GitHub Releases." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "#### How to install on your Samsung Galaxy (Android):" >> $GITHUB_STEP_SUMMARY
           echo "1. Go to the **Releases** tab on your GitHub repository (or download from the release link above)." >> $GITHUB_STEP_SUMMARY
-          echo "2. Tap \`shaken-debug.apk\` to download and install directly on your phone." >> $GITHUB_STEP_SUMMARY
+          echo "2. Tap \`shaken.apk\` to download and install directly on your phone." >> $GITHUB_STEP_SUMMARY
