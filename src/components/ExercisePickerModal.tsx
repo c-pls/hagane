@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Exercise, Language } from '../types/gym';
 import {
   translateEquipment,
   translateMuscle,
   UI_TEXT,
 } from '../i18n/translations';
+import { triggerHapticLight } from '../services/native';
 
 interface ExercisePickerModalProps {
   isOpen: boolean;
@@ -39,6 +40,14 @@ export const ExercisePickerModal: React.FC<ExercisePickerModalProps> = ({
   const t = UI_TEXT[lang];
   const [search, setSearch] = useState('');
   const [muscleFilter, setMuscleFilter] = useState('All');
+
+  // Clear search and filter every time the picker modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSearch('');
+      setMuscleFilter('All');
+    }
+  }, [isOpen]);
 
   const filtered = useMemo(() => {
     const normalize = (s: string) =>
@@ -86,26 +95,52 @@ export const ExercisePickerModal: React.FC<ExercisePickerModalProps> = ({
             </p>
           </div>
           <button
-            onClick={onClose}
+            type="button"
+            onClick={() => {
+              setSearch('');
+              onClose();
+            }}
             className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm flex items-center justify-center cursor-pointer"
           >
             ✕
           </button>
         </div>
 
-        {/* Search Input */}
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={t.searchExercisePlaceholder}
-          className="w-full rounded-2xl bg-slate-100 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        {/* Search Input with 1-click Clear Button & No Cache */}
+        <div className="relative">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onFocus={(e) => e.target.select()}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            name="picker-search-clean"
+            placeholder={t.searchExercisePlaceholder}
+            className="w-full rounded-2xl bg-slate-100 pl-4 pr-10 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {search ? (
+            <button
+              type="button"
+              onClick={() => {
+                triggerHapticLight();
+                setSearch('');
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold text-xs flex items-center justify-center cursor-pointer transition"
+              title="Clear search"
+            >
+              ✕
+            </button>
+          ) : null}
+        </div>
 
         {/* Muscle Category Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           {MUSCLE_FILTERS.map((m) => (
             <button
+              type="button"
               key={m}
               onClick={() => setMuscleFilter(m)}
               className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition cursor-pointer ${
@@ -140,7 +175,12 @@ export const ExercisePickerModal: React.FC<ExercisePickerModalProps> = ({
                 </div>
               </div>
               <button
-                onClick={() => onSelectExercise(ex.id)}
+                type="button"
+                onClick={() => {
+                  onSelectExercise(ex.id);
+                  setSearch('');
+                  setMuscleFilter('All');
+                }}
                 className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shrink-0 cursor-pointer transition"
               >
                 {t.addBtn}

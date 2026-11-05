@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Exercise, Language } from '../types/gym';
 import {
   translateEquipment,
   translateMuscle,
   UI_TEXT,
 } from '../i18n/translations';
+import { triggerHapticLight } from '../services/native';
 
 interface ExerciseWikiProps {
   exercises: Exercise[];
@@ -68,6 +69,17 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
   const [muscleFilter, setMuscleFilter] = useState('All');
   const [equipmentFilter, setEquipmentFilter] = useState('All');
   const [showAddCustom, setShowAddCustom] = useState(false);
+
+  // Always begin at the beginning (top) of the wiki page on open/mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    const raf = requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   // Custom Exercise Form State
   const [customName, setCustomName] = useState('');
@@ -177,14 +189,62 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
           </button>
         </div>
 
-        {/* Search Input */}
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={t.searchExercisePlaceholder}
-          className="w-full rounded-2xl bg-slate-100 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        {/* Search Input with 1-click Clear Button & No Cache */}
+        <div className="relative">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onFocus={(e) => e.target.select()}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            name="wiki-search-clean"
+            placeholder={t.searchExercisePlaceholder}
+            className="w-full rounded-2xl bg-slate-100 pl-4 pr-10 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {search ? (
+            <button
+              type="button"
+              onClick={() => {
+                triggerHapticLight();
+                setSearch('');
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold text-xs flex items-center justify-center cursor-pointer transition"
+              title="Clear search"
+            >
+              ✕
+            </button>
+          ) : null}
+        </div>
+
+        {/* Active search or filter reset bar */}
+        {(search || muscleFilter !== 'All' || equipmentFilter !== 'All') && (
+          <div className="flex items-center justify-between px-1 pt-0.5">
+            <span className="text-xs text-blue-600 font-medium truncate">
+              {search && <span>"{search}" </span>}
+              {muscleFilter !== 'All' && (
+                <span>• {translateMuscle(muscleFilter, lang)} </span>
+              )}
+              {equipmentFilter !== 'All' && (
+                <span>• {translateEquipment(equipmentFilter, lang)} </span>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                triggerHapticLight();
+                setSearch('');
+                setMuscleFilter('All');
+                setEquipmentFilter('All');
+              }}
+              className="text-xs font-semibold text-slate-500 hover:text-red-600 transition cursor-pointer underline shrink-0 ml-2"
+            >
+              {lang === 'vi' ? 'Đặt lại bộ lọc' : 'Clear all'}
+            </button>
+          </div>
+        )}
 
         {/* Muscle Filter Pills */}
         <div className="space-y-1.5">

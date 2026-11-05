@@ -41,6 +41,7 @@ export const App: React.FC = () => {
   );
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('routines');
+  const [wikiNavKey, setWikiNavKey] = useState<number>(0);
   const [route, setRoute] = useState<ScreenRoute>(() => {
     const initial = loadRoutines();
     return initial.length > 0
@@ -59,6 +60,19 @@ export const App: React.FC = () => {
     initNativeStatusBar();
   }, []);
 
+  // When navigating to the wiki, always begin at the beginning (top) of the page
+  useEffect(() => {
+    if (route.name === 'wikiList') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      const raf = requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [route]);
+
   // Native Android Hardware / Gesture Edge-Swipe Back Button Listener
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -66,8 +80,15 @@ export const App: React.FC = () => {
     let backListener: { remove: () => void } | null = null;
     CapApp.addListener('backButton', () => {
       if (route.name === 'exerciseInfo') {
-        setRoute(route.returnTo);
+        const target = route.returnTo;
+        setRoute(target);
         triggerHapticLight();
+        if (target.name === 'wikiList') {
+          setWikiNavKey((k) => k + 1);
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+        }
       } else if (route.name === 'routineDetail') {
         setRoute({ name: 'routineList' });
         setActiveTab('routines');
@@ -101,8 +122,15 @@ export const App: React.FC = () => {
 
   const handleNavigateBack = () => {
     if (route.name === 'exerciseInfo') {
-      setRoute(route.returnTo);
+      const target = route.returnTo;
+      setRoute(target);
       triggerHapticLight();
+      if (target.name === 'wikiList') {
+        setWikiNavKey((k) => k + 1);
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
     } else if (route.name === 'routineDetail') {
       setRoute({ name: 'routineList' });
       setActiveTab('routines');
@@ -201,6 +229,10 @@ export const App: React.FC = () => {
       setRoute({ name: 'routineList' });
     } else if (tab === 'wiki') {
       setRoute({ name: 'wikiList' });
+      setWikiNavKey((k) => k + 1);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
     } else {
       setRoute({ name: 'backup' });
     }
@@ -298,7 +330,7 @@ export const App: React.FC = () => {
       return (
         <div className="flex items-center gap-2.5 min-w-0">
           <button
-            onClick={() => setRoute(route.returnTo)}
+            onClick={handleNavigateBack}
             className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer shrink-0"
           >
             {t.back}
@@ -482,6 +514,7 @@ export const App: React.FC = () => {
 
         {route.name === 'wikiList' && (
           <ExerciseWiki
+            key={wikiNavKey}
             exercises={allExercises}
             lang={lang}
             onSelectExercise={(exerciseId) =>
