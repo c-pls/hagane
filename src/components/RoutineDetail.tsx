@@ -219,14 +219,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     onUpdateRoutine({ ...routine, exercises: nextExercises });
   };
 
-  const handleToggleExerciseWarmup = (exIndex: number) => {
-    triggerHapticLight();
-    const nextExercises = routine.exercises.map((item, idx) =>
-      idx === exIndex ? { ...item, isWarmup: !item.isWarmup } : item
-    );
-    onUpdateRoutine({ ...routine, exercises: nextExercises });
-  };
-
   const handleSaveExerciseNote = (exIndex: number, text: string) => {
     triggerHapticLight();
     const nextExercises = routine.exercises.map((item, idx) =>
@@ -435,20 +427,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
           <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
             {isEditMode && (
               <>
-                {/* Toggle between Warm-up & Main */}
-                <button
-                  type="button"
-                  onClick={() => handleToggleExerciseWarmup(exIdx)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold transition cursor-pointer ${
-                    isWarmupEx
-                      ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                      : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
-                  }`}
-                  title={isWarmupEx ? t.moveToMain : t.moveToWarmup}
-                >
-                  {isWarmupEx ? t.moveToMain : t.moveToWarmup}
-                </button>
-
                 {/* Change / Swap Exercise Button */}
                 <button
                   type="button"
@@ -536,48 +514,20 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
 
                 {/* Weight (kg) */}
                 {isEditMode ? (
-                  <div className="col-span-5 flex items-center justify-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleSetChange(
-                          exIdx,
-                          setIdx,
-                          'weight',
-                          Number((set.weight - 2.5).toFixed(1))
-                        )
-                      }
-                      className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer shrink-0"
-                    >
-                      −
-                    </button>
-                    <div className="flex items-baseline gap-1">
+                  <div className="col-span-5 flex items-center justify-center">
+                    <div className="flex items-center gap-1 bg-slate-100 hover:bg-slate-200/70 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500 rounded-xl px-2.5 py-1.5 transition">
                       <SetNumberInput
                         value={set.weight}
                         isDecimal
                         onChange={(newWeight) =>
                           handleSetChange(exIdx, setIdx, 'weight', newWeight)
                         }
-                        className="w-14 text-center font-bold text-sm text-slate-900 bg-slate-100 hover:bg-slate-200/80 focus:bg-white px-1.5 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition"
+                        className="w-12 text-center font-bold text-sm text-slate-900 bg-transparent focus:outline-none"
                       />
-                      <span className="text-xs text-slate-500 font-medium">
+                      <span className="text-xs text-slate-400 font-semibold select-none">
                         kg
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleSetChange(
-                          exIdx,
-                          setIdx,
-                          'weight',
-                          Number((set.weight + 2.5).toFixed(1))
-                        )
-                      }
-                      className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer shrink-0"
-                    >
-                      +
-                    </button>
                   </div>
                 ) : (
                   <div className="col-span-5 flex items-baseline justify-center gap-1">
@@ -592,43 +542,20 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
 
                 {/* Reps */}
                 {isEditMode ? (
-                  <div className="col-span-5 flex items-center justify-end gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleSetChange(
-                          exIdx,
-                          setIdx,
-                          'reps',
-                          Math.max(1, set.reps - 1)
-                        )
-                      }
-                      className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer shrink-0"
-                    >
-                      −
-                    </button>
-                    <div className="flex items-baseline gap-1">
+                  <div className="col-span-5 flex items-center justify-end pr-1">
+                    <div className="flex items-center gap-1 bg-slate-100 hover:bg-slate-200/70 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500 rounded-xl px-2.5 py-1.5 transition">
                       <SetNumberInput
                         value={set.reps}
                         min={1}
                         onChange={(newReps) =>
                           handleSetChange(exIdx, setIdx, 'reps', newReps)
                         }
-                        className="w-12 text-center font-bold text-sm text-slate-900 bg-slate-100 hover:bg-slate-200/80 focus:bg-white px-1.5 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition"
+                        className="w-10 text-center font-bold text-sm text-slate-900 bg-transparent focus:outline-none"
                       />
-                      <span className="text-xs text-slate-500 font-medium">
+                      <span className="text-xs text-slate-400 font-semibold select-none">
                         {t.repsLabel}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleSetChange(exIdx, setIdx, 'reps', set.reps + 1)
-                      }
-                      className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer shrink-0"
-                    >
-                      +
-                    </button>
                   </div>
                 ) : (
                   <div className="col-span-5 flex items-baseline justify-end gap-1 pr-1">
