@@ -48,7 +48,7 @@ export type ActiveTab = 'routines' | 'wiki' | 'backup';
 
 export type ScreenRoute =
   | { name: 'routineList' }
-  | { name: 'routineDetail'; routineId: string }
+  | { name: 'routineDetail'; routineId: string; initialEditMode?: boolean }
   | { name: 'wikiList' }
   | {
       name: 'exercisePicker';
@@ -58,6 +58,7 @@ export type ScreenRoute =
       searchQuery?: string;
       muscleFilter?: string;
       equipmentFilter?: string;
+      fromEditMode?: boolean;
     }
   | {
       name: 'exerciseInfo';

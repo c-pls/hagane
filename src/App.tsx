@@ -99,7 +99,11 @@ export const App: React.FC = () => {
           document.body.scrollTop = 0;
         }
       } else if (route.name === 'exercisePicker') {
-        setRoute({ name: 'routineDetail', routineId: route.routineId });
+        setRoute({
+          name: 'routineDetail',
+          routineId: route.routineId,
+          initialEditMode: route.fromEditMode ?? false,
+        });
         triggerHapticLight();
       } else if (route.name === 'routineDetail') {
         setRoute({ name: 'routineList' });
@@ -146,7 +150,11 @@ export const App: React.FC = () => {
         document.body.scrollTop = 0;
       }
     } else if (route.name === 'exercisePicker') {
-      setRoute({ name: 'routineDetail', routineId: route.routineId });
+      setRoute({
+        name: 'routineDetail',
+        routineId: route.routineId,
+        initialEditMode: route.fromEditMode ?? false,
+      });
       triggerHapticLight();
     } else if (route.name === 'routineDetail') {
       setRoute({ name: 'routineList' });
@@ -323,16 +331,11 @@ export const App: React.FC = () => {
       return;
     }
 
+    // Default to 1 single set on newly added exercises as requested.
+    // User can customize weight/reps on this 1st set, and tap '+ Hiệp' (+ Add Set) to clone it.
     const defaultSets: WorkoutSet[] = asWarmup
-      ? [
-          { weight: 20, reps: 15, type: 'warmup' },
-          { weight: 30, reps: 12, type: 'warmup' },
-        ]
-      : [
-          { weight: 40, reps: 10, type: 'warmup' },
-          { weight: 60, reps: 10, type: 'normal' },
-          { weight: 60, reps: 10, type: 'normal' },
-        ];
+      ? [{ weight: 20, reps: 15, type: 'warmup' }]
+      : [{ weight: 60, reps: 10, type: 'normal' }];
 
     const nextExercises: RoutineExerciseItem[] = [
       ...targetRoutine.exercises,
@@ -550,6 +553,7 @@ export const App: React.FC = () => {
                 exercises: [],
               }
             }
+            initialEditMode={route.initialEditMode}
             lang={lang}
             exercisesMap={exercisesMap}
             allExercises={allExercises}
@@ -565,12 +569,13 @@ export const App: React.FC = () => {
                 returnTo: route,
               });
             }}
-            onOpenPicker={({ asWarmup, replacingExIdx }) => {
+            onOpenPicker={({ asWarmup, replacingExIdx, fromEditMode }) => {
               setRoute({
                 name: 'exercisePicker',
                 routineId: route.routineId,
                 asWarmup,
                 replacingExIdx,
+                fromEditMode,
               });
             }}
           />
@@ -589,7 +594,11 @@ export const App: React.FC = () => {
             initialMuscle={route.muscleFilter || 'All'}
             initialEquipment={route.equipmentFilter || 'All'}
             onBack={() =>
-              setRoute({ name: 'routineDetail', routineId: route.routineId })
+              setRoute({
+                name: 'routineDetail',
+                routineId: route.routineId,
+                initialEditMode: route.fromEditMode ?? false,
+              })
             }
             onSelectExercise={(exerciseId) => {
               handleAddExerciseToRoutine(
@@ -598,7 +607,11 @@ export const App: React.FC = () => {
                 route.asWarmup,
                 route.replacingExIdx
               );
-              setRoute({ name: 'routineDetail', routineId: route.routineId });
+              setRoute({
+                name: 'routineDetail',
+                routineId: route.routineId,
+                initialEditMode: true,
+              });
             }}
             onOpenWiki={(
               exerciseId,
@@ -679,7 +692,11 @@ export const App: React.FC = () => {
                 asWarmup,
                 replacingExIdx
               );
-              setRoute({ name: 'routineDetail', routineId });
+              setRoute({
+                name: 'routineDetail',
+                routineId,
+                initialEditMode: true,
+              });
             }}
           />
         )}

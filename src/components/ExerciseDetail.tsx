@@ -9,8 +9,8 @@ interface ExerciseDetailProps {
   showComment: boolean;
   comment: string;
   onSaveComment: (comment: string) => void;
-  routines: Routine[];
-  onAddExerciseToRoutine: (
+  routines?: Routine[];
+  onAddExerciseToRoutine?: (
     routineId: string,
     exerciseId: string,
     asWarmup?: boolean,
@@ -27,22 +27,10 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   showComment,
   comment,
   onSaveComment,
-  routines,
-  onAddExerciseToRoutine,
-  activeRoutineId,
-  asWarmup = false,
-  replacingExIdx = null,
 }) => {
   const t = UI_TEXT[lang];
   const [noteText, setNoteText] = useState(comment);
-  const [selectedRoutineId, setSelectedRoutineId] = useState(
-    activeRoutineId || routines[0]?.id || ''
-  );
   const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  const targetRoutine = activeRoutineId
-    ? routines.find((r) => r.id === activeRoutineId)
-    : null;
 
   useEffect(() => {
     setNoteText(comment);
@@ -60,52 +48,9 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-      {/* LEFT / TOP COLUMN: 1. Target Routine Action Banner -> 2. Seamless Loop Video -> 3. Instructions */}
+      {/* LEFT / TOP COLUMN: 1. Seamless Loop Video -> 2. Instructions */}
       <div className="space-y-4">
-        {/* Prominent Action Banner when opened from Add / Swap Exercise in a Routine */}
-        {targetRoutine && (
-          <div className="bg-slate-900 rounded-[24px] p-4 text-white shadow-sm flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  {replacingExIdx !== null
-                    ? t.pickerTitleSwap
-                    : asWarmup
-                    ? t.pickerTitleWarmup
-                    : t.pickerTitleAdd}
-                </span>
-                {asWarmup && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-400 text-amber-950">
-                    🔥 {t.warmupBadge}
-                  </span>
-                )}
-              </div>
-              <p className="font-bold text-sm text-white truncate mt-0.5">
-                → {translateRoutineText(targetRoutine.name, lang)}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                onAddExerciseToRoutine(
-                  targetRoutine.id,
-                  exercise.id,
-                  asWarmup,
-                  replacingExIdx
-                );
-              }}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition cursor-pointer shrink-0 ${
-                asWarmup
-                  ? 'bg-amber-500 hover:bg-amber-400 text-white'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white'
-              }`}
-            >
-              {replacingExIdx !== null ? t.changeExerciseBtn : t.addBtn}
-            </button>
-          </div>
-        )}
-
-        {/* 1. CONTINUOUS LOOP VIDEO CARD (No timeline, no pause, no skip) */}
+        {/* 1. CONTINUOUS LOOP VIDEO CARD (At the very top, clean & distraction-free) */}
         <div className="bg-white rounded-[24px] p-3 shadow-xs overflow-hidden">
           <div className="rounded-2xl overflow-hidden bg-white relative flex items-center justify-center min-h-[220px]">
             <video
@@ -190,38 +135,6 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
                 placeholder={t.commentPlaceholder}
                 className="w-full text-sm text-slate-800 bg-transparent focus:outline-none resize-none placeholder:text-slate-400"
               />
-            </div>
-          </div>
-        )}
-
-        {/* QUICK ADD TO ROUTINE BAR */}
-        {routines.length > 0 && (
-          <div className="bg-white rounded-[24px] p-4 shadow-xs flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-semibold text-slate-500">
-              {t.addToRoutineLabel}
-            </span>
-            <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end">
-              <select
-                value={selectedRoutineId}
-                onChange={(e) => setSelectedRoutineId(e.target.value)}
-                className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none"
-              >
-                {routines.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {translateRoutineText(r.name, lang)}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => {
-                  if (selectedRoutineId) {
-                    onAddExerciseToRoutine(selectedRoutineId, exercise.id);
-                  }
-                }}
-                className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold transition cursor-pointer"
-              >
-                {t.addBtn}
-              </button>
             </div>
           </div>
         )}

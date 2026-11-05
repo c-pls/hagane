@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Exercise,
   Language,
@@ -14,16 +14,113 @@ import {
 } from '../i18n/translations';
 import { triggerHapticLight, triggerHapticMedium } from '../services/native';
 
+interface SetNumberInputProps {
+  value: number;
+  onChange: (value: number) => void;
+  isDecimal?: boolean;
+  className?: string;
+  min?: number;
+}
+
+/**
+ * Mobile-friendly numeric input for weights and reps.
+ * - Allows clearing the field completely without forcing an unwanted '0'.
+ * - Auto-selects existing text on tap so typing immediately replaces the number.
+ * - Opens the phone's native numeric keypad with decimal dot support.
+ */
+const SetNumberInput: React.FC<SetNumberInputProps> = ({
+  value,
+  onChange,
+  isDecimal = false,
+  className = '',
+  min = 0,
+}) => {
+  const [draft, setDraft] = useState<string>(value.toString());
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setDraft(value.toString());
+    }
+  }, [value, isFocused]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+
+    // Filter characters: allow digits and optional single decimal point
+    if (isDecimal) {
+      if (!/^\d*\.?\d*$/.test(raw)) return;
+    } else {
+      if (!/^\d*$/.test(raw)) return;
+    }
+
+    setDraft(raw);
+
+    // If it's a non-empty, non-dot number, update parent immediately
+    if (raw !== '' && raw !== '.') {
+      const parsed = parseFloat(raw);
+      if (!Number.isNaN(parsed)) {
+        onChange(Math.max(min, parsed));
+      }
+    }
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(true);
+    const target = e.target;
+    // Auto-select entire number on tap so typing immediately overwrites old number
+    // Timeout defeats Android WebView touch-release caret placement
+    setTimeout(() => {
+      try {
+        target.select();
+      } catch {
+        // ignore
+      }
+    }, 25);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    if (draft === '' || draft === '.') {
+      onChange(min);
+      setDraft(min.toString());
+    } else {
+      const parsed = parseFloat(draft);
+      const safe = Number.isNaN(parsed) ? min : Math.max(min, parsed);
+      onChange(safe);
+      setDraft(safe.toString());
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode={isDecimal ? 'decimal' : 'numeric'}
+      autoComplete="off"
+      autoCorrect="off"
+      autoCapitalize="off"
+      spellCheck={false}
+      value={isFocused ? draft : value.toString()}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      className={className}
+    />
+  );
+};
+
 interface RoutineDetailProps {
   routine: Routine;
   lang: Language;
   exercisesMap: Record<string, Exercise>;
   allExercises: Exercise[];
+  initialEditMode?: boolean;
   onUpdateRoutine: (updated: Routine) => void;
   onOpenExerciseInfo: (exerciseId: string, routineExIndex: number) => void;
   onOpenPicker: (params: {
     asWarmup: boolean;
     replacingExIdx: number | null;
+    fromEditMode?: boolean;
   }) => void;
 }
 
@@ -31,16 +128,23 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   routine,
   lang,
   exercisesMap,
+  initialEditMode = false,
   onUpdateRoutine,
   onOpenExerciseInfo,
   onOpenPicker,
 }) => {
   const t = UI_TEXT[lang];
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(initialEditMode);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(routine.name);
   const [editingNoteIdx, setEditingNoteIdx] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
+
+  useEffect(() => {
+    if (initialEditMode !== undefined) {
+      setIsEditMode(initialEditMode);
+    }
+  }, [initialEditMode]);
 
   // Drag-and-drop state (supports both desktop drag & mobile touch)
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
@@ -100,10 +204,30 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     triggerHapticLight();
     const nextExercises = routine.exercises.map((item, idx) => {
       if (idx !== exIndex) return item;
+      let nextType: 'normal' | 'warmup' | 'drop' = 'normal';
+      if (item.isWarmup) {
+        nextType = 'warmup';
+      } else if (item.sets.length > 0) {
+        const last = item.sets[item.sets.length - 1];
+        if (last.type === 'warmup' && item.sets.length === 1) {
+          nextType = 'normal';
+        } else {
+          nextType = last.type || 'normal';
+        }
+      }
+
       const lastSet =
         item.sets.length > 0
-          ? { ...item.sets[item.sets.length - 1] }
-          : { weight: 60, reps: 10, type: 'normal' as const };
+          ? {
+              weight: item.sets[item.sets.length - 1].weight,
+              reps: item.sets[item.sets.length - 1].reps,
+              type: nextType,
+            }
+          : {
+              weight: item.isWarmup ? 20 : 60,
+              reps: item.isWarmup ? 15 : 10,
+              type: item.isWarmup ? ('warmup' as const) : ('normal' as const),
+            };
       return { ...item, sets: [...item.sets, lastSet] };
     });
     onUpdateRoutine({ ...routine, exercises: nextExercises });
@@ -289,7 +413,12 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    onOpenPicker({ asWarmup: isWarmupEx, replacingExIdx: exIdx });
+                    triggerHapticLight();
+                    onOpenPicker({
+                      asWarmup: isWarmupEx,
+                      replacingExIdx: exIdx,
+                      fromEditMode: isEditMode,
+                    });
                   }}
                   className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-xs font-semibold transition cursor-pointer"
                 >
@@ -378,24 +507,18 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                           Number((set.weight - 2.5).toFixed(1))
                         )
                       }
-                      className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer"
+                      className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer shrink-0"
                     >
                       −
                     </button>
-                    <div className="flex items-baseline gap-0.5">
-                      <input
-                        type="number"
-                        step="0.5"
+                    <div className="flex items-baseline gap-1">
+                      <SetNumberInput
                         value={set.weight}
-                        onChange={(e) =>
-                          handleSetChange(
-                            exIdx,
-                            setIdx,
-                            'weight',
-                            parseFloat(e.target.value) || 0
-                          )
+                        isDecimal
+                        onChange={(newWeight) =>
+                          handleSetChange(exIdx, setIdx, 'weight', newWeight)
                         }
-                        className="w-11 text-right font-bold text-sm text-slate-900 bg-slate-50 px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded"
+                        className="w-14 text-center font-bold text-sm text-slate-900 bg-slate-100 hover:bg-slate-200/80 focus:bg-white px-1.5 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition"
                       />
                       <span className="text-xs text-slate-500 font-medium">
                         kg
@@ -411,7 +534,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                           Number((set.weight + 2.5).toFixed(1))
                         )
                       }
-                      className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer"
+                      className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer shrink-0"
                     >
                       +
                     </button>
@@ -433,25 +556,25 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                     <button
                       type="button"
                       onClick={() =>
-                        handleSetChange(exIdx, setIdx, 'reps', set.reps - 1)
+                        handleSetChange(
+                          exIdx,
+                          setIdx,
+                          'reps',
+                          Math.max(1, set.reps - 1)
+                        )
                       }
-                      className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer"
+                      className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer shrink-0"
                     >
                       −
                     </button>
                     <div className="flex items-baseline gap-1">
-                      <input
-                        type="number"
+                      <SetNumberInput
                         value={set.reps}
-                        onChange={(e) =>
-                          handleSetChange(
-                            exIdx,
-                            setIdx,
-                            'reps',
-                            parseInt(e.target.value, 10) || 0
-                          )
+                        min={1}
+                        onChange={(newReps) =>
+                          handleSetChange(exIdx, setIdx, 'reps', newReps)
                         }
-                        className="w-9 text-right font-bold text-sm text-slate-900 bg-slate-50 px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded"
+                        className="w-12 text-center font-bold text-sm text-slate-900 bg-slate-100 hover:bg-slate-200/80 focus:bg-white px-1.5 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition"
                       />
                       <span className="text-xs text-slate-500 font-medium">
                         {t.repsLabel}
@@ -462,7 +585,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                       onClick={() =>
                         handleSetChange(exIdx, setIdx, 'reps', set.reps + 1)
                       }
-                      className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer"
+                      className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer shrink-0"
                     >
                       +
                     </button>
@@ -604,30 +727,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
         </div>
 
         {/* Right Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-          {isEditMode && (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  onOpenPicker({ asWarmup: true, replacingExIdx: null });
-                }}
-                className="px-3 py-2 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold transition cursor-pointer border border-amber-200"
-              >
-                {t.addWarmupExerciseBtn}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onOpenPicker({ asWarmup: false, replacingExIdx: null });
-                }}
-                className="px-3.5 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer"
-              >
-                {t.addExerciseBtn}
-              </button>
-            </>
-          )}
-
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={() => {
@@ -655,7 +755,12 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             <button
               type="button"
               onClick={() => {
-                onOpenPicker({ asWarmup: true, replacingExIdx: null });
+                triggerHapticLight();
+                onOpenPicker({
+                  asWarmup: true,
+                  replacingExIdx: null,
+                  fromEditMode: isEditMode,
+                });
               }}
               className="px-4 py-2.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition cursor-pointer shadow-xs"
             >
@@ -664,7 +769,12 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             <button
               type="button"
               onClick={() => {
-                onOpenPicker({ asWarmup: false, replacingExIdx: null });
+                triggerHapticLight();
+                onOpenPicker({
+                  asWarmup: false,
+                  replacingExIdx: null,
+                  fromEditMode: isEditMode,
+                });
               }}
               className="px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition cursor-pointer"
             >
@@ -699,6 +809,23 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                   renderExerciseCard(routine.exercises[idx], idx)
                 )}
               </div>
+              {isEditMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHapticLight();
+                    onOpenPicker({
+                      asWarmup: true,
+                      replacingExIdx: null,
+                      fromEditMode: isEditMode,
+                    });
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl border border-dashed border-amber-300 bg-amber-50/50 hover:bg-amber-100/60 text-amber-800 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                >
+                  <span>🔥</span>
+                  <span>{t.addWarmupExerciseBtn}</span>
+                </button>
+              )}
             </div>
           )}
 
@@ -707,7 +834,12 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             <button
               type="button"
               onClick={() => {
-                onOpenPicker({ asWarmup: true, replacingExIdx: null });
+                triggerHapticLight();
+                onOpenPicker({
+                  asWarmup: true,
+                  replacingExIdx: null,
+                  fromEditMode: isEditMode,
+                });
               }}
               className="w-full py-3 px-4 rounded-[20px] border-2 border-dashed border-amber-300/80 bg-amber-50/40 hover:bg-amber-50/80 text-amber-800 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
             >
@@ -743,6 +875,41 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
               </div>
             </div>
           )}
+
+          {/* 3. Bottom Actions: Add Exercise & Add Warm-up moved to the end of the routine */}
+          <div className="pt-3 pb-8 space-y-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                triggerHapticLight();
+                onOpenPicker({
+                  asWarmup: false,
+                  replacingExIdx: null,
+                  fromEditMode: isEditMode,
+                });
+              }}
+              className="w-full py-3.5 px-5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition cursor-pointer"
+            >
+              <span className="text-lg leading-none font-bold">+</span>
+              <span>{t.addExerciseBtn}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                triggerHapticLight();
+                onOpenPicker({
+                  asWarmup: true,
+                  replacingExIdx: null,
+                  fromEditMode: isEditMode,
+                });
+              }}
+              className="w-full py-2.5 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 active:scale-[0.99] text-amber-800 border border-amber-200 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+            >
+              <span>🔥</span>
+              <span>{t.addWarmupExerciseBtn}</span>
+            </button>
+          </div>
         </div>
       )}
     </div>
