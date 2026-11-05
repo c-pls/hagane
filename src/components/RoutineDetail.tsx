@@ -114,7 +114,7 @@ interface RoutineDetailProps {
   lang: Language;
   exercisesMap: Record<string, Exercise>;
   allExercises: Exercise[];
-  initialEditMode?: boolean;
+  isEditMode?: boolean;
   scrollToEnd?: boolean;
   onUpdateRoutine: (updated: Routine) => void;
   onOpenExerciseInfo: (exerciseId: string, routineExIndex: number) => void;
@@ -129,27 +129,18 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   routine,
   lang,
   exercisesMap,
-  initialEditMode = false,
+  isEditMode = false,
   scrollToEnd = false,
   onUpdateRoutine,
   onOpenExerciseInfo,
   onOpenPicker,
 }) => {
   const t = UI_TEXT[lang];
-  const [isEditMode, setIsEditMode] = useState(initialEditMode);
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [titleDraft, setTitleDraft] = useState(routine.name);
   const [editingNoteIdx, setEditingNoteIdx] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
   const [highlightedCardIdx, setHighlightedCardIdx] = useState<number | null>(
     null
   );
-
-  useEffect(() => {
-    if (initialEditMode !== undefined) {
-      setIsEditMode(initialEditMode);
-    }
-  }, [initialEditMode]);
 
   // When adding a new exercise, automatically scroll down to it at the end
   useEffect(() => {
@@ -370,16 +361,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     const [moved] = nextExercises.splice(fromIdx, 1);
     nextExercises.splice(toIdx, 0, moved);
     onUpdateRoutine({ ...routine, exercises: nextExercises });
-  };
-
-  const saveTitle = () => {
-    const trimmed = titleDraft.trim();
-    if (trimmed) {
-      onUpdateRoutine({ ...routine, name: trimmed });
-    } else {
-      setTitleDraft(routine.name);
-    }
-    setIsEditingTitle(false);
   };
 
   // Touch drag support for mobile / Samsung Galaxy
@@ -793,67 +774,12 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Routine Sub-header Bar */}
-      <div className="bg-white rounded-[24px] p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          {isEditMode && isEditingTitle ? (
-            <input
-              type="text"
-              value={titleDraft}
-              autoFocus
-              onChange={(e) => setTitleDraft(e.target.value)}
-              onBlur={saveTitle}
-              onKeyDown={(e) => e.key === 'Enter' && saveTitle()}
-              className="rounded-xl bg-slate-100 px-3 py-1 font-bold text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          ) : isEditMode ? (
-            <div>
-              <button
-                type="button"
-                onClick={() => {
-                  setTitleDraft(translateRoutineText(routine.name, lang));
-                  setIsEditingTitle(true);
-                }}
-                className="text-left group cursor-pointer"
-              >
-                <h2 className="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition flex items-center gap-1.5">
-                  {translateRoutineText(routine.name, lang)}
-                  <span className="text-xs text-slate-400 font-normal">✎</span>
-                </h2>
-              </button>
-              {routine.exercises.length > 1 && (
-                <p className="text-xs text-blue-600 font-medium mt-0.5">
-                  {t.dragHint}
-                </p>
-              )}
-            </div>
-          ) : (
-            <h2 className="font-bold text-lg text-slate-900">
-              {translateRoutineText(routine.name, lang)}
-            </h2>
-          )}
+      {/* Drag Hint (Only in edit mode if more than 1 exercise) */}
+      {isEditMode && routine.exercises.length > 1 && (
+        <div className="flex items-center justify-between px-3.5 py-2 text-xs text-blue-700 bg-blue-50/80 rounded-2xl border border-blue-200/80 font-medium select-none">
+          <span>{t.dragHint}</span>
         </div>
-
-        {/* Right Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              triggerHapticLight();
-              setIsEditMode(!isEditMode);
-              setIsEditingTitle(false);
-              setEditingNoteIdx(null);
-            }}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition shadow-xs cursor-pointer ${
-              isEditMode
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
-          >
-            {isEditMode ? t.doneEditingBtn : t.editRoutineBtn}
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Empty State */}
       {routine.exercises.length === 0 && (

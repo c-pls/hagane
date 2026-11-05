@@ -110,20 +110,17 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                     {translateRoutineText(routine.name, lang)}
                   </h3>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteRoutine(routine.id);
-                    }}
-                    className="w-7 h-7 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 text-xs font-bold flex items-center justify-center"
-                  >
-                    ✕
-                  </button>
-                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
-                    {t.open}
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteRoutine(routine.id);
+                  }}
+                  className="w-7 h-7 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 text-xs font-bold flex items-center justify-center transition cursor-pointer"
+                  title={lang === 'vi' ? 'Xóa buổi tập' : 'Delete routine'}
+                >
+                  ✕
+                </button>
               </div>
 
               <div className="pt-3 mt-3 border-t border-slate-100 space-y-1.5 text-xs text-slate-600">

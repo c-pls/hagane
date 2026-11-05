@@ -13,6 +13,7 @@ import {
 import {
   translateEquipment,
   translateMuscle,
+  translateRoutineText,
   UI_TEXT,
 } from './i18n/translations';
 import {
@@ -62,6 +63,34 @@ export const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
   const lastBackPressRef = useRef<number>(0);
+
+  // Routine Edit Mode & Title editing (Header Option A)
+  const [isRoutineEditMode, setIsRoutineEditMode] = useState<boolean>(false);
+  const [isEditingRoutineTitle, setIsEditingRoutineTitle] =
+    useState<boolean>(false);
+  const [routineTitleDraft, setRoutineTitleDraft] = useState<string>('');
+
+  useEffect(() => {
+    if (route.name === 'routineDetail') {
+      if (route.initialEditMode !== undefined) {
+        setIsRoutineEditMode(route.initialEditMode);
+      }
+    } else {
+      setIsRoutineEditMode(false);
+      setIsEditingRoutineTitle(false);
+    }
+  }, [route]);
+
+  const handleSaveRoutineTitle = () => {
+    if (route.name !== 'routineDetail') return;
+    const routine = routines.find((r) => r.id === route.routineId);
+    if (!routine) return;
+    const trimmed = routineTitleDraft.trim();
+    if (trimmed && trimmed !== routine.name) {
+      handleUpdateRoutine({ ...routine, name: trimmed });
+    }
+    setIsEditingRoutineTitle(false);
+  };
 
   const t = UI_TEXT[lang];
 
@@ -133,11 +162,11 @@ export const App: React.FC = () => {
         const target = route.returnTo;
         setRoute(target);
         triggerHapticLight();
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
         if (target.name === 'wikiList') {
           setWikiNavKey((k) => k + 1);
-          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-          document.documentElement.scrollTop = 0;
-          document.body.scrollTop = 0;
         }
       } else if (route.name === 'exercisePicker') {
         setRoute({
@@ -184,11 +213,11 @@ export const App: React.FC = () => {
       const target = route.returnTo;
       setRoute(target);
       triggerHapticLight();
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
       if (target.name === 'wikiList') {
         setWikiNavKey((k) => k + 1);
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
       }
     } else if (route.name === 'exercisePicker') {
       setRoute({
@@ -410,7 +439,7 @@ export const App: React.FC = () => {
     );
   };
 
-  // Header Left (Clean — no subtitle under Shaken)
+  // Header Left (Clean — back buttons shown on PC, hidden on mobile for edge-swipe)
   const renderHeaderLeft = () => {
     if (route.name === 'exerciseInfo') {
       const ex = exercisesMap[route.exerciseId];
@@ -419,10 +448,11 @@ export const App: React.FC = () => {
       const backLabel =
         route.returnTo.name === 'exercisePicker' ? t.backToPicker : t.back;
       return (
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0 pr-2">
           <button
+            type="button"
             onClick={handleNavigateBack}
-            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer shrink-0"
+            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer shrink-0"
           >
             {backLabel}
           </button>
@@ -443,14 +473,15 @@ export const App: React.FC = () => {
 
     if (route.name === 'exercisePicker') {
       return (
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0 pr-2">
           <button
+            type="button"
             onClick={handleNavigateBack}
-            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer"
+            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer shrink-0"
           >
             {t.back}
           </button>
-          <h1 className="font-bold text-base text-slate-900 leading-tight">
+          <h1 className="font-bold text-base text-slate-900 leading-tight truncate">
             {route.asWarmup ? t.pickerTitleWarmup : t.pickerTitleAdd}
           </h1>
         </div>
@@ -458,17 +489,59 @@ export const App: React.FC = () => {
     }
 
     if (route.name === 'routineDetail') {
+      const routine = routines.find((r) => r.id === route.routineId);
+      const routineName = routine
+        ? translateRoutineText(routine.name, lang)
+        : 'Routine';
       return (
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0 pr-2">
           <button
+            type="button"
             onClick={() => setRoute({ name: 'routineList' })}
-            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer"
+            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer shrink-0"
           >
             {t.routinesBack}
           </button>
-          <h1 className="font-bold text-base text-slate-900 leading-tight">
-            Shaken
-          </h1>
+          <div className="min-w-0">
+            {isRoutineEditMode && isEditingRoutineTitle ? (
+              <input
+                type="text"
+                value={routineTitleDraft}
+                autoFocus
+                onChange={(e) => setRoutineTitleDraft(e.target.value)}
+                onBlur={handleSaveRoutineTitle}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveRoutineTitle()}
+                className="rounded-xl bg-slate-100 px-2.5 py-1 font-bold text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[180px] sm:max-w-[240px]"
+              />
+            ) : isRoutineEditMode ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (routine) {
+                    setRoutineTitleDraft(routine.name);
+                    setIsEditingRoutineTitle(true);
+                  }
+                }}
+                className="text-left group cursor-pointer flex items-center gap-1.5"
+              >
+                <h1 className="font-bold text-base text-slate-900 group-hover:text-blue-600 transition truncate max-w-[180px] sm:max-w-[240px]">
+                  {routineName}
+                </h1>
+                <span className="text-xs text-blue-600 font-bold shrink-0">
+                  ✎
+                </span>
+              </button>
+            ) : (
+              <h1 className="font-bold text-base text-slate-900 leading-tight truncate max-w-[200px] sm:max-w-[280px]">
+                {routineName}
+              </h1>
+            )}
+            {routine?.tag && !isEditingRoutineTitle && (
+              <p className="text-xs text-slate-400 font-medium truncate">
+                {translateRoutineText(routine.tag, lang)}
+              </p>
+            )}
+          </div>
         </div>
       );
     }
@@ -531,6 +604,25 @@ export const App: React.FC = () => {
                 <span className="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold">
                   {toastMessage}
                 </span>
+              )}
+
+              {/* Routine Edit Mode Toggle (Option A: Right in the header) */}
+              {route.name === 'routineDetail' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHapticLight();
+                    setIsRoutineEditMode(!isRoutineEditMode);
+                    setIsEditingRoutineTitle(false);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-xs cursor-pointer ${
+                    isRoutineEditMode
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  {isRoutineEditMode ? t.doneEditingBtn : t.editRoutineBtn}
+                </button>
               )}
 
               {/* 1-Click Flag + EN / VI Language Switcher (No dropdown) */}
@@ -603,7 +695,7 @@ export const App: React.FC = () => {
                 exercises: [],
               }
             }
-            initialEditMode={route.initialEditMode}
+            isEditMode={isRoutineEditMode}
             scrollToEnd={route.scrollToEnd}
             lang={lang}
             exercisesMap={exercisesMap}
@@ -620,13 +712,13 @@ export const App: React.FC = () => {
                 returnTo: route,
               });
             }}
-            onOpenPicker={({ asWarmup, replacingExIdx, fromEditMode }) => {
+            onOpenPicker={({ asWarmup, replacingExIdx }) => {
               setRoute({
                 name: 'exercisePicker',
                 routineId: route.routineId,
                 asWarmup,
                 replacingExIdx,
-                fromEditMode,
+                fromEditMode: isRoutineEditMode,
               });
             }}
           />
@@ -735,8 +827,13 @@ export const App: React.FC = () => {
             allExercises={allExercises}
             onSelectExercise={(newExId) => {
               setRoute({
-                ...route,
+                name: 'exerciseInfo',
                 exerciseId: newExId,
+                routineId: route.routineId,
+                routineExIndex: route.routineExIndex,
+                asWarmup: route.asWarmup,
+                replacingExIdx: route.replacingExIdx,
+                returnTo: route,
               });
             }}
             onAddExerciseToRoutine={(

@@ -78,21 +78,19 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       {/* LEFT / TOP COLUMN: 1. Seamless Loop Video -> 2. Instructions */}
       <div className="space-y-4">
-        {/* 1. CONTINUOUS LOOP VIDEO CARD (At the very top, clean & distraction-free) */}
-        <div className="bg-white rounded-[24px] p-3 shadow-xs overflow-hidden">
-          <div className="rounded-2xl overflow-hidden bg-white relative flex items-center justify-center min-h-[220px]">
-            <video
-              ref={videoRef}
-              src={exercise.videoUrl}
-              autoPlay
-              loop
-              muted
-              playsInline
-              disablePictureInPicture
-              onContextMenu={(e) => e.preventDefault()}
-              className="w-full max-h-[300px] object-contain pointer-events-none select-none"
-            />
-          </div>
+        {/* 1. CONTINUOUS LOOP VIDEO CARD (Crisp native 1080p, fits all exercises without clipping or blur) */}
+        <div className="bg-white rounded-[24px] shadow-xs overflow-hidden flex items-center justify-center p-2.5">
+          <video
+            ref={videoRef}
+            src={exercise.videoUrl}
+            autoPlay
+            loop
+            muted
+            playsInline
+            disablePictureInPicture
+            onContextMenu={(e) => e.preventDefault()}
+            className="w-full aspect-[16/9] max-h-[340px] object-contain pointer-events-none select-none rounded-xl"
+          />
         </div>
 
         {/* 2. STEP-BY-STEP INSTRUCTIONS DIRECTLY BELOW VIDEO */}
