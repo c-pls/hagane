@@ -1,51 +1,28 @@
 import { Capacitor } from '@capacitor/core';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { StatusBar, Style } from '@capacitor/status-bar';
 
 /**
  * Triggers a light tactile feedback tick (e.g. for + / - weight/reps, buttons).
+ * Disabled per user preference (silent/no vibration).
  */
 export const triggerHapticLight = async () => {
-  try {
-    if (Capacitor.isNativePlatform()) {
-      await Haptics.impact({ style: ImpactStyle.Light });
-    } else if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate(10);
-    }
-  } catch {
-    // Ignore errors on unsupported platforms
-  }
+  // Haptic vibration disabled
 };
 
 /**
  * Triggers a medium tactile feedback pulse (e.g. for drag & drop reordering, card actions).
+ * Disabled per user preference (silent/no vibration).
  */
 export const triggerHapticMedium = async () => {
-  try {
-    if (Capacitor.isNativePlatform()) {
-      await Haptics.impact({ style: ImpactStyle.Medium });
-    } else if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate(25);
-    }
-  } catch {
-    // Ignore errors on unsupported platforms
-  }
+  // Haptic vibration disabled
 };
 
 /**
  * Triggers a subtle selection click (e.g. tab switch, language switcher).
+ * Disabled per user preference (silent/no vibration).
  */
 export const triggerHapticSelection = async () => {
-  try {
-    if (Capacitor.isNativePlatform()) {
-      await Haptics.selectionStart();
-      await Haptics.selectionChanged();
-    } else if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate(8);
-    }
-  } catch {
-    // Ignore errors on unsupported platforms
-  }
+  // Haptic vibration disabled
 };
 
 /**

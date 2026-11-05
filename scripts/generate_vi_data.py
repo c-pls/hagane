@@ -655,7 +655,9 @@ def build_vi_steps(ex: dict) -> dict:
 
 
 def main():
-    exercises = json.loads(DATA_PATH.read_text(encoding="utf-8"))
+    if DATA_PATH.exists():
+        print(f"[FROZEN] {DATA_PATH} already has fine-tuned 1-to-1 bilingual content. Overwrite blocked to protect hand-curated translations.")
+        return
     for ex in exercises:
         ex_id = str(ex["id"])
         ex["nameVi"] = EXACT_VI_NAMES.get(ex_id, ex["name"])

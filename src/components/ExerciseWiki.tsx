@@ -13,6 +13,12 @@ interface ExerciseWikiProps {
   lang: Language;
   onSelectExercise: (exerciseId: string) => void;
   onAddCustomExercise: (newExercise: Exercise) => void;
+  search: string;
+  onSearchChange: (search: string) => void;
+  muscleFilter: string;
+  onMuscleFilterChange: (muscle: string) => void;
+  equipmentFilter: string;
+  onEquipmentFilterChange: (eq: string) => void;
 }
 
 const MUSCLE_CATEGORIES = [
@@ -64,23 +70,15 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
   lang,
   onSelectExercise,
   onAddCustomExercise,
+  search,
+  onSearchChange,
+  muscleFilter,
+  onMuscleFilterChange,
+  equipmentFilter,
+  onEquipmentFilterChange,
 }) => {
   const t = UI_TEXT[lang];
-  const [search, setSearch] = useState('');
-  const [muscleFilter, setMuscleFilter] = useState('All');
-  const [equipmentFilter, setEquipmentFilter] = useState('All');
   const [showAddCustom, setShowAddCustom] = useState(false);
-
-  // Always begin at the beginning (top) of the wiki page on open/mount
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    const raf = requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    });
-    return () => cancelAnimationFrame(raf);
-  }, []);
 
   // Custom Exercise Form State
   const [customName, setCustomName] = useState('');
@@ -106,19 +104,30 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
     if (!customName.trim()) return;
     const chosen = ANATOMY_CHOICES[customPrimaryIdx] || ANATOMY_CHOICES[0];
     const newId = `custom-${Date.now()}`;
+    const prepList = customPrepare
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const execList = customExecution
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const breathList = customBreathing
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
     const stepsObj = {
-      prepare: customPrepare
-        .split('\n')
-        .map((s) => s.trim())
-        .filter(Boolean) || ['Set up in starting position.'],
-      execution: customExecution
-        .split('\n')
-        .map((s) => s.trim())
-        .filter(Boolean) || ['Execute movement with full range of motion.'],
-      breathing: customBreathing
-        .split('\n')
-        .map((s) => s.trim())
-        .filter(Boolean) || ['Inhale on eccentric, exhale on concentric.'],
+      prepare:
+        prepList.length > 0 ? prepList : ['Set up in starting position.'],
+      execution:
+        execList.length > 0
+          ? execList
+          : ['Execute movement with full range of motion.'],
+      breathing:
+        breathList.length > 0
+          ? breathList
+          : ['Inhale on eccentric, exhale on concentric.'],
     };
     const newEx: Exercise = {
       id: newId,
@@ -126,7 +135,7 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
       name: customName.trim(),
       nameVi: customName.trim(),
       aliases: [],
-      category: chosen.label.split(' ')[0],
+      category: chosen.label.split(' / ')[0],
       equipment: customEquipment,
       videoUrl: customVideoUrl.trim() || exercises[0]?.videoUrl || '',
       primaryMuscles: [chosen.label],
@@ -149,29 +158,14 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Header & Search Card */}
+      {/* Search & Filter Card (Clean — no redundant header banner) */}
       <div className="bg-white rounded-[24px] p-4 shadow-xs space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <h2 className="font-bold text-base text-slate-900">
-              {t.wikiTitle} ({filtered.length})
-            </h2>
-            <p className="text-xs text-slate-400">{t.wikiSubtitle}</p>
-          </div>
-          <button
-            onClick={() => setShowAddCustom(!showAddCustom)}
-            className="px-3.5 py-1.5 rounded-full bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold transition cursor-pointer shrink-0"
-          >
-            {t.customExerciseBtn}
-          </button>
-        </div>
-
         {/* Search Input with 1-click Clear Button & No Cache */}
         <div className="relative">
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             onFocus={(e) => e.target.select()}
             autoComplete="off"
             autoCorrect="off"
@@ -186,7 +180,7 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
               type="button"
               onClick={() => {
                 triggerHapticLight();
-                setSearch('');
+                onSearchChange('');
               }}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold text-xs flex items-center justify-center cursor-pointer transition"
               title="Clear search"
@@ -212,9 +206,9 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
               type="button"
               onClick={() => {
                 triggerHapticLight();
-                setSearch('');
-                setMuscleFilter('All');
-                setEquipmentFilter('All');
+                onSearchChange('');
+                onMuscleFilterChange('All');
+                onEquipmentFilterChange('All');
               }}
               className="text-xs font-semibold text-slate-500 hover:text-red-600 transition cursor-pointer underline shrink-0 ml-2"
             >
@@ -229,7 +223,7 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
             {MUSCLE_CATEGORIES.map((m) => (
               <button
                 key={m}
-                onClick={() => setMuscleFilter(m)}
+                onClick={() => onMuscleFilterChange(m)}
                 className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition cursor-pointer ${
                   muscleFilter === m
                     ? 'bg-blue-600 text-white'
@@ -246,7 +240,7 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
             {EQUIPMENT_CATEGORIES.map((eq) => (
               <button
                 key={eq}
-                onClick={() => setEquipmentFilter(eq)}
+                onClick={() => onEquipmentFilterChange(eq)}
                 className={`px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 transition cursor-pointer ${
                   equipmentFilter === eq
                     ? 'bg-slate-800 text-white'
@@ -361,13 +355,10 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
               className="bg-white rounded-[22px] p-4 shadow-xs hover:shadow-md cursor-pointer transition flex items-center justify-between gap-3"
             >
               <div className="min-w-0 space-y-1">
-                <div className="flex items-center gap-2">
+                <div>
                   <h3 className="font-bold text-sm text-slate-900 truncate">
                     {displayName}
                   </h3>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-xs font-medium shrink-0">
-                    {translateEquipment(ex.equipment, lang)}
-                  </span>
                 </div>
                 <p className="text-xs text-slate-400">
                   {t.primaryLabel}:{' '}
@@ -385,6 +376,42 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
             </div>
           );
         })}
+
+        {filtered.length === 0 && (
+          <div className="col-span-full p-8 text-center space-y-3 bg-white rounded-[24px]">
+            <p className="text-sm font-semibold text-slate-700">
+              {lang === 'vi'
+                ? 'Không tìm thấy bài tập nào phù hợp'
+                : 'No exercises found matching your search'}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                onSearchChange('');
+                onMuscleFilterChange('All');
+                onEquipmentFilterChange('All');
+              }}
+              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+            >
+              {lang === 'vi' ? 'Đặt lại bộ lọc' : 'Clear search & filters'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Subtle Custom Exercise Action at Bottom */}
+      <div className="py-4 flex justify-center">
+        <button
+          type="button"
+          onClick={() => {
+            setShowAddCustom(true);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+        >
+          <span>+</span>
+          <span>{t.customExerciseBtn}</span>
+        </button>
       </div>
     </div>
   );

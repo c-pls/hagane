@@ -1,17 +1,23 @@
 @import "tailwindcss";
 
-/* 1. Disable text selection, long-press callouts, and tap highlights across the app */
-html,
-body,
-*,
-*::before,
-*::after {
+/* 1. Mobile only: Disable text selection, touch callouts, and tap highlights */
+.is-mobile,
+.is-mobile *:not(input):not(textarea):not([contenteditable="true"]) {
   -webkit-user-select: none !important;
   -moz-user-select: none !important;
   -ms-user-select: none !important;
   user-select: none !important;
   -webkit-touch-callout: none !important;
   -webkit-tap-highlight-color: transparent !important;
+}
+
+/* 2. PC / Desktop: Enable normal text selection & copying for debugging */
+.is-pc,
+.is-pc * {
+  -webkit-user-select: auto;
+  -moz-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
 }
 
 /* 2. Re-enable text selection & typing only inside actual inputs and textareas */

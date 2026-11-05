@@ -114,6 +114,12 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
+                    const routineName = translateRoutineText(routine.name, lang);
+                    const confirmMsg =
+                      lang === 'vi'
+                        ? `Bạn có chắc chắn muốn xóa buổi tập "${routineName}"?`
+                        : `Are you sure you want to delete routine "${routineName}"?`;
+                    if (!window.confirm(confirmMsg)) return;
                     onDeleteRoutine(routine.id);
                   }}
                   className="w-7 h-7 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 text-xs font-bold flex items-center justify-center transition cursor-pointer"

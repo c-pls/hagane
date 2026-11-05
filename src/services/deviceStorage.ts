@@ -64,6 +64,51 @@ export async function autoSaveToDevice(
   }
 }
 
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingSaveArgs: {
+  routines: Routine[];
+  comments: Record<string, string>;
+  customExercises: Exercise[];
+} | null = null;
+let isWriting = false;
+
+/**
+ * Debounced and serialized auto-save to prevent concurrent disk writes
+ * during rapid typing in weight/rep fields.
+ */
+export function debouncedAutoSaveToDevice(
+  routines: Routine[],
+  comments: Record<string, string> = {},
+  customExercises: Exercise[] = [],
+  delayMs = 500
+): void {
+  if (!Capacitor.isNativePlatform()) return;
+
+  pendingSaveArgs = { routines, comments, customExercises };
+  if (debounceTimer) clearTimeout(debounceTimer);
+
+  debounceTimer = setTimeout(async () => {
+    if (isWriting) {
+      debouncedAutoSaveToDevice(
+        pendingSaveArgs!.routines,
+        pendingSaveArgs!.comments,
+        pendingSaveArgs!.customExercises,
+        150
+      );
+      return;
+    }
+    if (!pendingSaveArgs) return;
+    const toSave = pendingSaveArgs;
+    pendingSaveArgs = null;
+    isWriting = true;
+    try {
+      await autoSaveToDevice(toSave.routines, toSave.comments, toSave.customExercises);
+    } finally {
+      isWriting = false;
+    }
+  }, delayMs);
+}
+
 /**
  * Check and restore routines from the device's public Documents folder.
  * Called on startup when local state is empty or when the user taps "Restore from Device".

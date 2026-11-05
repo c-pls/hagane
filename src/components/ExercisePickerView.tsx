@@ -21,6 +21,7 @@ interface ExercisePickerViewProps {
   initialEquipment?: string;
   onBack: () => void;
   onSelectExercise: (exerciseId: string) => void;
+  onDuplicateWarning?: (exerciseName: string) => void;
   onOpenWiki: (
     exerciseId: string,
     currentSearch: string,
@@ -32,20 +33,20 @@ interface ExercisePickerViewProps {
 const MOST_USED_IDS = [
   '0025', // Barbell Bench Press
   '1435', // Barbell Back Squat
-  '0116', // Barbell Straight Leg Deadlift / Deadlift
-  '0038', // Barbell Overhead Press (OHP)
-  '0445', // Lat Pulldown
+  '0116', // Barbell Romanian Deadlift (RDL)
+  '0553', // Overhead Press - OHP (Barbell)
+  '0198', // Lat Pulldown - Wide Grip (Cable)
   '0027', // Barbell Bent-Over Row
   '0294', // Dumbbell Biceps Curl
   '0314', // Incline Dumbbell Bench Press
   '0334', // Dumbbell Lateral Raise
   '0605', // Machine Standing Calf Raise
   '0417', // Dumbbell Standing Calf Raise
-  '0739', // 45° Leg Press
+  '0740', // 45° Wide Leg Press (Machine)
   '0585', // Leg Extension
-  '0589', // Seated Leg Curl
-  '0861', // Triceps Pushdown
-  '0368', // Cable Face Pull
+  '0599', // Seated Leg Curl (Machine)
+  '0200', // Rope Triceps Pushdown (Cable)
+  '0203', // Face Pull (Cable)
 ];
 
 const MUSCLE_QUICK_FILTERS = [
@@ -56,6 +57,7 @@ const MUSCLE_QUICK_FILTERS = [
   'Shoulders',
   'Biceps',
   'Triceps',
+  'Forearms',
   'Hamstrings',
   'Glutes',
   'Core',
@@ -72,6 +74,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
   initialEquipment = 'All',
   onBack,
   onSelectExercise,
+  onDuplicateWarning,
   onOpenWiki,
 }) => {
   const t = UI_TEXT[lang];
@@ -87,10 +90,23 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
     return allExercises.find((e) => e.id === exId) || null;
   }, [replacingExIdx, routine.exercises, allExercises]);
 
+  // Exercises already present in the current routine (cannot be duplicated)
+  const existingExerciseIds = useMemo(() => {
+    const set = new Set<string>();
+    routine.exercises.forEach((item, idx) => {
+      // When swapping/changing an exercise, the one being swapped is allowed
+      if (replacingExIdx !== null && idx === replacingExIdx) return;
+      set.add(item.exerciseId);
+    });
+    return set;
+  }, [routine.exercises, replacingExIdx]);
+
   const suggestedAlternatives = useMemo(() => {
     if (!replacedExercise) return [];
-    return getSimilarExercises(replacedExercise, allExercises, 4);
-  }, [replacedExercise, allExercises]);
+    return getSimilarExercises(replacedExercise, allExercises, 6).filter(
+      (alt) => !existingExerciseIds.has(alt.exercise.id)
+    );
+  }, [replacedExercise, allExercises, existingExerciseIds]);
 
   // If user types a search query, search across all exercises automatically
   const baseExercises = useMemo(() => {
@@ -304,7 +320,6 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                         {displayName}
                       </h4>
                       <p className="text-[11px] text-slate-400 mt-0.5 truncate">
-                        {translateEquipment(altEx.equipment, lang)} •{' '}
                         <span className="text-blue-600 font-semibold">
                           {reasonText}
                         </span>
@@ -327,28 +342,52 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
       <div className="bg-white rounded-[24px] shadow-xs overflow-hidden divide-y divide-slate-100">
         {filtered.map((ex) => {
           const displayName = lang === 'vi' && ex.nameVi ? ex.nameVi : ex.name;
+          const isAlreadyAdded = existingExerciseIds.has(ex.id);
 
           return (
             <div
               key={ex.id}
               onClick={() => {
+                if (isAlreadyAdded) {
+                  onDuplicateWarning?.(displayName);
+                  return;
+                }
                 triggerHapticLight();
                 onSelectExercise(ex.id);
               }}
-              className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 active:bg-blue-50/50 transition cursor-pointer select-none group"
+              className={`flex items-center justify-between px-4 py-3 transition select-none group ${
+                isAlreadyAdded
+                  ? 'bg-amber-50/30 opacity-70 cursor-not-allowed'
+                  : 'hover:bg-slate-50 active:bg-blue-50/50 cursor-pointer'
+              }`}
             >
               {/* Left Column: Title & Subtitle */}
               <div className="flex-1 min-w-0 pr-2">
-                <h3 className="font-semibold text-[15px] text-slate-900 group-hover:text-blue-600 transition leading-snug truncate">
-                  {displayName}
-                </h3>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3
+                    className={`font-semibold text-[15px] leading-snug truncate ${
+                      isAlreadyAdded
+                        ? 'text-slate-600'
+                        : 'text-slate-900 group-hover:text-blue-600 transition'
+                    }`}
+                  >
+                    {displayName}
+                  </h3>
+                  {isAlreadyAdded && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 shrink-0 select-none flex items-center gap-1">
+                      <span>⚠️</span>
+                      <span>
+                        {lang === 'vi' ? 'Đã có trong bài' : 'Already in routine'}
+                      </span>
+                    </span>
+                  )}
+                </div>
                 <p className="text-[12px] text-slate-400 font-medium mt-0.5 truncate">
                   <span className="text-slate-600 font-semibold">
                     {ex.primaryMuscles
                       .map((m) => translateMuscle(m, lang))
                       .join(', ')}
-                  </span>{' '}
-                  • {translateEquipment(ex.equipment, lang)}
+                  </span>
                 </p>
               </div>
 
@@ -360,7 +399,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                   triggerHapticLight();
                   onOpenWiki(ex.id, search, muscleFilter, equipmentFilter);
                 }}
-                className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition shrink-0 -mr-1"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition shrink-0 -mr-1 cursor-pointer"
                 title={t.viewWikiAndVideo}
               >
                 <span className="w-6 h-6 rounded-full border border-slate-300 group-hover:border-slate-400 text-slate-500 font-bold text-xs flex items-center justify-center">

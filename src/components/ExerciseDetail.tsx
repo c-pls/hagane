@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Exercise, Language, Routine } from '../types/gym';
 import {
-  translateEquipment,
+  translateMuscle,
   translateRoutineText,
   UI_TEXT,
 } from '../i18n/translations';
@@ -204,11 +204,8 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
                 >
                   <div>
                     <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-700 transition">
-                        {translateEquipment(altEx.equipment, lang)}
-                      </span>
                       <span className="text-[10px] font-semibold text-slate-400 group-hover:text-blue-500 transition">
-                        {altEx.primaryMuscles[0]}
+                        {translateMuscle(altEx.category, lang)} • {translateMuscle(altEx.primaryMuscles[0], lang)}
                       </span>
                     </div>
                     <h4 className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-600 transition line-clamp-2 leading-snug">

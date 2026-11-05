@@ -45,7 +45,7 @@ export interface Routine {
   exercises: RoutineExerciseItem[];
 }
 
-export type ActiveTab = 'routines' | 'wiki' | 'backup';
+export type ActiveTab = 'routines' | 'wiki';
 
 export type ScreenRoute =
   | { name: 'routineList' }
@@ -53,9 +53,10 @@ export type ScreenRoute =
       name: 'routineDetail';
       routineId: string;
       initialEditMode?: boolean;
-      scrollToEnd?: boolean;
+      scrollToIndex?: number;
+      savedScrollY?: number;
     }
-  | { name: 'wikiList' }
+  | { name: 'wikiList'; savedScrollY?: number }
   | {
       name: 'exercisePicker';
       routineId: string;
@@ -74,5 +75,4 @@ export type ScreenRoute =
       asWarmup?: boolean;
       replacingExIdx?: number | null;
       returnTo: ScreenRoute;
-    }
-  | { name: 'backup' };
+    };

@@ -17,6 +17,7 @@ import {
   UI_TEXT,
 } from './i18n/translations';
 import {
+  deduplicateRoutineExercises,
   getAllExercises,
   loadComments,
   loadCustomExercises,
@@ -26,24 +27,35 @@ import {
   saveCustomExercises,
   saveLanguage,
   saveRoutines,
-  ShakenBackupPayload,
+  LAST_SAVED_AT_KEY,
+  sortRoutineExercisesBySection,
 } from './services/storage';
 import { RoutineList } from './components/RoutineList';
 import { RoutineDetail } from './components/RoutineDetail';
 import { ExercisePickerView } from './components/ExercisePickerView';
 import { ExerciseWiki } from './components/ExerciseWiki';
 import { ExerciseDetail } from './components/ExerciseDetail';
-import { BackupSync } from './components/BackupSync';
 import {
   initNativeStatusBar,
   triggerHapticLight,
   triggerHapticSelection,
 } from './services/native';
-import { autoSaveToDevice, autoLoadFromDevice } from './services/deviceStorage';
+import {
+  autoSaveToDevice,
+  autoLoadFromDevice,
+  debouncedAutoSaveToDevice,
+} from './services/deviceStorage';
 
 export const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => loadLanguage());
-  const [routines, setRoutines] = useState<Routine[]>(() => loadRoutines());
+  const [routines, setRoutines] = useState<Routine[]>(() =>
+    loadRoutines().map((r) => ({
+      ...r,
+      exercises: sortRoutineExercisesBySection(
+        deduplicateRoutineExercises(r.exercises)
+      ),
+    }))
+  );
   const [comments, setComments] = useState<Record<string, string>>(() =>
     loadComments()
   );
@@ -52,7 +64,10 @@ export const App: React.FC = () => {
   );
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('routines');
-  const [wikiNavKey, setWikiNavKey] = useState<number>(0);
+  const [wikiSearch, setWikiSearch] = useState<string>('');
+  const [wikiMuscleFilter, setWikiMuscleFilter] = useState<string>('All');
+  const [wikiEquipmentFilter, setWikiEquipmentFilter] = useState<string>('All');
+  const wikiScrollPosRef = useRef<number>(0);
   const [route, setRoute] = useState<ScreenRoute>(() => {
     const initial = loadRoutines();
     return initial.length > 0
@@ -63,6 +78,33 @@ export const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
   const lastBackPressRef = useRef<number>(0);
+  const routineScrollPosRef = useRef<number>(0);
+
+  const restoreRoutineScroll = (savedY?: number) => {
+    const targetY = savedY ?? routineScrollPosRef.current ?? 0;
+    const applyScroll = () => {
+      window.scrollTo({ top: targetY, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = targetY;
+      document.body.scrollTop = targetY;
+    };
+    applyScroll();
+    requestAnimationFrame(applyScroll);
+    setTimeout(applyScroll, 30);
+    setTimeout(applyScroll, 80);
+  };
+
+  const restoreWikiScroll = (savedY?: number) => {
+    const targetY = savedY ?? wikiScrollPosRef.current ?? 0;
+    const applyScroll = () => {
+      window.scrollTo({ top: targetY, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = targetY;
+      document.body.scrollTop = targetY;
+    };
+    applyScroll();
+    requestAnimationFrame(applyScroll);
+    setTimeout(applyScroll, 30);
+    setTimeout(applyScroll, 80);
+  };
 
   // Routine Edit Mode & Title editing (Header Option A)
   const [isRoutineEditMode, setIsRoutineEditMode] = useState<boolean>(false);
@@ -111,11 +153,18 @@ export const App: React.FC = () => {
           backup.routines.length > 0
         ) {
           const current = loadRoutines();
-          // If current is empty or differs from device storage, restore it
-          if (
+          const localTimestamp = Number(
+            localStorage.getItem(LAST_SAVED_AT_KEY) || '0'
+          );
+          const backupTimestamp = backup.timestamp || 0;
+
+          // Safe restore: only restore if local routines are empty (fresh install)
+          // or device backup is strictly newer than the local store
+          const shouldRestore =
             current.length === 0 ||
-            JSON.stringify(current) !== JSON.stringify(backup.routines)
-          ) {
+            (backupTimestamp > 0 && backupTimestamp > localTimestamp);
+
+          if (shouldRestore) {
             setRoutines(backup.routines);
             saveRoutines(backup.routines);
             if (backup.comments) {
@@ -137,9 +186,43 @@ export const App: React.FC = () => {
       .catch(() => {});
   }, []);
 
-  // When navigating to the wiki or exercise detail, always begin at the beginning (top) of the page
+  // Disable text copying on Mobile only (PC can freely select and copy for debugging)
   useEffect(() => {
-    if (route.name === 'wikiList' || route.name === 'exerciseInfo') {
+    const isMobile =
+      Capacitor.isNativePlatform() ||
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+
+    if (isMobile) {
+      document.documentElement.classList.add('is-mobile');
+      document.body.classList.add('is-mobile');
+
+      const handleCopy = (e: ClipboardEvent) => {
+        e.preventDefault();
+      };
+
+      document.addEventListener('copy', handleCopy);
+
+      return () => {
+        document.documentElement.classList.remove('is-mobile');
+        document.body.classList.remove('is-mobile');
+        document.removeEventListener('copy', handleCopy);
+      };
+    } else {
+      document.documentElement.classList.add('is-pc');
+      document.body.classList.add('is-pc');
+
+      return () => {
+        document.documentElement.classList.remove('is-pc');
+        document.body.classList.remove('is-pc');
+      };
+    }
+  }, []);
+
+  // When opening an exercise detail, always begin at the beginning (top) of the page
+  useEffect(() => {
+    if (route.name === 'exerciseInfo') {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
@@ -152,57 +235,7 @@ export const App: React.FC = () => {
     }
   }, [route]);
 
-  // Native Android Hardware / Gesture Edge-Swipe Back Button Listener
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-
-    let backListener: { remove: () => void } | null = null;
-    CapApp.addListener('backButton', () => {
-      if (route.name === 'exerciseInfo') {
-        const target = route.returnTo;
-        setRoute(target);
-        triggerHapticLight();
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-        if (target.name === 'wikiList') {
-          setWikiNavKey((k) => k + 1);
-        }
-      } else if (route.name === 'exercisePicker') {
-        setRoute({
-          name: 'routineDetail',
-          routineId: route.routineId,
-          initialEditMode: route.fromEditMode ?? false,
-        });
-        triggerHapticLight();
-      } else if (route.name === 'routineDetail') {
-        setRoute({ name: 'routineList' });
-        setActiveTab('routines');
-        triggerHapticLight();
-      } else {
-        const now = Date.now();
-        if (now - lastBackPressRef.current < 2000) {
-          CapApp.exitApp();
-        } else {
-          lastBackPressRef.current = now;
-          showToast(
-            lang === 'vi'
-              ? 'Nhấn quay lại lần nữa để thoát'
-              : 'Press back again to exit'
-          );
-          triggerHapticLight();
-        }
-      }
-    }).then((handle) => {
-      backListener = handle;
-    });
-
-    return () => {
-      if (backListener) backListener.remove();
-    };
-  }, [route, lang]);
-
-  // In-App Edge Swipe-to-Go-Back Gesture
+  // In-App Edge Swipe-to-Go-Back & Back Navigation
   const canGoBack =
     route.name === 'exerciseInfo' ||
     route.name === 'routineDetail' ||
@@ -213,11 +246,14 @@ export const App: React.FC = () => {
       const target = route.returnTo;
       setRoute(target);
       triggerHapticLight();
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      if (target.name === 'wikiList') {
-        setWikiNavKey((k) => k + 1);
+      if (target.name === 'routineDetail') {
+        restoreRoutineScroll((target as any).savedScrollY);
+      } else if (target.name === 'wikiList') {
+        restoreWikiScroll((target as any).savedScrollY);
+      } else {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
       }
     } else if (route.name === 'exercisePicker') {
       setRoute({
@@ -232,6 +268,51 @@ export const App: React.FC = () => {
       triggerHapticLight();
     }
   };
+
+  const backHandlerRef = useRef<() => void>(() => {});
+  backHandlerRef.current = () => {
+    if (canGoBack) {
+      handleNavigateBack();
+    } else {
+      const now = Date.now();
+      if (now - lastBackPressRef.current < 2000) {
+        CapApp.exitApp();
+      } else {
+        lastBackPressRef.current = now;
+        showToast(
+          lang === 'vi'
+            ? 'Nhấn quay lại lần nữa để thoát'
+            : 'Press back again to exit'
+        );
+        triggerHapticLight();
+      }
+    }
+  };
+
+  // Native Android Hardware / Gesture Edge-Swipe Back Button Listener (Single registered listener)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let handle: { remove: () => void } | null = null;
+    let isMounted = true;
+
+    CapApp.addListener('backButton', () => {
+      backHandlerRef.current();
+    }).then((listenerHandle) => {
+      if (!isMounted) {
+        listenerHandle.remove();
+      } else {
+        handle = listenerHandle;
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (handle) {
+        handle.remove();
+      }
+    };
+  }, []);
 
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(
     null
@@ -324,20 +405,23 @@ export const App: React.FC = () => {
       setRoute({ name: 'routineList' });
     } else if (tab === 'wiki') {
       setRoute({ name: 'wikiList' });
-      setWikiNavKey((k) => k + 1);
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    } else {
-      setRoute({ name: 'backup' });
+      restoreWikiScroll();
     }
   };
 
   const handleUpdateRoutine = (updated: Routine) => {
-    const next = routines.map((r) => (r.id === updated.id ? updated : r));
+    const cleanedRoutine = {
+      ...updated,
+      exercises: sortRoutineExercisesBySection(
+        deduplicateRoutineExercises(updated.exercises)
+      ),
+    };
+    const next = routines.map((r) =>
+      r.id === cleanedRoutine.id ? cleanedRoutine : r
+    );
     setRoutines(next);
     saveRoutines(next);
-    autoSaveToDevice(next, comments, customExercises);
+    debouncedAutoSaveToDevice(next, comments, customExercises);
   };
 
   const handleCreateRoutine = (name: string, tag: string) => {
@@ -396,9 +480,25 @@ export const App: React.FC = () => {
     const ex = exercisesMap[exerciseId];
     const exName = ex && lang === 'vi' && ex.nameVi ? ex.nameVi : ex?.name;
 
+    // Strict duplication prevention: 1 exercise can only appear 1 time in the routine!
+    const isAlreadyInRoutine = targetRoutine.exercises.some((item, idx) => {
+      if (replacingExIdx !== null && idx === replacingExIdx) return false;
+      return item.exerciseId === exerciseId;
+    });
+
+    if (isAlreadyInRoutine) {
+      showToast(
+        lang === 'vi'
+          ? `⚠️ "${exName}" đã có trong buổi tập! Không thể thêm trùng lặp.`
+          : `⚠️ "${exName}" is already in this routine! Cannot add duplicate.`
+      );
+      return;
+    }
+
     if (replacingExIdx !== null && targetRoutine.exercises[replacingExIdx]) {
+      const isWarmup = Boolean(targetRoutine.exercises[replacingExIdx].isWarmup);
       const nextExercises = targetRoutine.exercises.map((item, idx) =>
-        idx === replacingExIdx ? { ...item, exerciseId } : item
+        idx === replacingExIdx ? { ...item, exerciseId, isWarmup } : item
       );
       handleUpdateRoutine({ ...targetRoutine, exercises: nextExercises });
       showToast(`${t.pickerTitleSwap}: ${exName}`);
@@ -411,32 +511,29 @@ export const App: React.FC = () => {
       ? [{ weight: 20, reps: 15, type: 'warmup' }]
       : [{ weight: 60, reps: 10, type: 'normal' }];
 
-    const nextExercises: RoutineExerciseItem[] = [
-      ...targetRoutine.exercises,
-      {
-        exerciseId,
-        isWarmup: asWarmup,
-        note: '',
-        sets: defaultSets,
-      },
-    ];
+    const nextExercises: RoutineExerciseItem[] = asWarmup
+      ? [
+          ...targetRoutine.exercises.filter((e) => e.isWarmup),
+          {
+            exerciseId,
+            isWarmup: true,
+            note: '',
+            sets: defaultSets,
+          },
+          ...targetRoutine.exercises.filter((e) => !e.isWarmup),
+        ]
+      : [
+          ...targetRoutine.exercises,
+          {
+            exerciseId,
+            isWarmup: false,
+            note: '',
+            sets: defaultSets,
+          },
+        ];
 
     handleUpdateRoutine({ ...targetRoutine, exercises: nextExercises });
     showToast(`+ ${exName} → ${targetRoutine.name}`);
-  };
-
-  const handleRestoreBackup = (payload: ShakenBackupPayload) => {
-    setRoutines(payload.routines);
-    saveRoutines(payload.routines);
-    setComments(payload.comments);
-    saveComments(payload.comments);
-    setCustomExercises(payload.customExercises);
-    saveCustomExercises(payload.customExercises);
-    autoSaveToDevice(
-      payload.routines,
-      payload.comments,
-      payload.customExercises
-    );
   };
 
   // Header Left (Clean — back buttons shown on PC, hidden on mobile for edge-swipe)
@@ -462,8 +559,8 @@ export const App: React.FC = () => {
             </h1>
             {ex && (
               <p className="text-xs text-slate-400 font-medium truncate">
-                {translateEquipment(ex.equipment, lang)} •{' '}
-                {translateMuscle(ex.category, lang)}
+                {ex.primaryMuscles.map((m) => translateMuscle(m, lang)).join(', ') ||
+                  translateMuscle(ex.category, lang)}
               </p>
             )}
           </div>
@@ -696,12 +793,18 @@ export const App: React.FC = () => {
               }
             }
             isEditMode={isRoutineEditMode}
-            scrollToEnd={route.scrollToEnd}
+            scrollToIndex={route.scrollToIndex}
             lang={lang}
             exercisesMap={exercisesMap}
             allExercises={allExercises}
             onUpdateRoutine={handleUpdateRoutine}
             onOpenExerciseInfo={(exerciseId, routineExIndex) => {
+              const currentScroll =
+                window.scrollY ||
+                document.documentElement.scrollTop ||
+                document.body.scrollTop ||
+                0;
+              routineScrollPosRef.current = currentScroll;
               const activeRoutine =
                 routines.find((r) => r.id === route.routineId) || routines[0];
               setRoute({
@@ -709,7 +812,10 @@ export const App: React.FC = () => {
                 exerciseId,
                 routineId: activeRoutine?.id,
                 routineExIndex,
-                returnTo: route,
+                returnTo: {
+                  ...route,
+                  savedScrollY: currentScroll,
+                },
               });
             }}
             onOpenPicker={({ asWarmup, replacingExIdx }) => {
@@ -744,6 +850,19 @@ export const App: React.FC = () => {
               })
             }
             onSelectExercise={(exerciseId) => {
+              const targetRoutine =
+                routines.find((r) => r.id === route.routineId) || routines[0];
+              let scrollIdx = 0;
+              if (route.replacingExIdx !== null) {
+                scrollIdx = route.replacingExIdx;
+              } else if (route.asWarmup) {
+                scrollIdx = (targetRoutine?.exercises || []).filter(
+                  (e) => e.isWarmup
+                ).length;
+              } else {
+                scrollIdx = (targetRoutine?.exercises || []).length;
+              }
+
               handleAddExerciseToRoutine(
                 route.routineId,
                 exerciseId,
@@ -754,8 +873,15 @@ export const App: React.FC = () => {
                 name: 'routineDetail',
                 routineId: route.routineId,
                 initialEditMode: true,
-                scrollToEnd: true,
+                scrollToIndex: scrollIdx,
               });
+            }}
+            onDuplicateWarning={(exName) => {
+              showToast(
+                lang === 'vi'
+                  ? `⚠️ "${exName}" đã có trong buổi tập! Không thể thêm trùng lặp.`
+                  : `⚠️ "${exName}" is already in this routine! Cannot add duplicate.`
+              );
             }}
             onOpenWiki={(
               exerciseId,
@@ -785,16 +911,27 @@ export const App: React.FC = () => {
 
         {route.name === 'wikiList' && (
           <ExerciseWiki
-            key={wikiNavKey}
             exercises={allExercises}
             lang={lang}
-            onSelectExercise={(exerciseId) =>
+            search={wikiSearch}
+            onSearchChange={setWikiSearch}
+            muscleFilter={wikiMuscleFilter}
+            onMuscleFilterChange={setWikiMuscleFilter}
+            equipmentFilter={wikiEquipmentFilter}
+            onEquipmentFilterChange={setWikiEquipmentFilter}
+            onSelectExercise={(exerciseId) => {
+              const currentScroll =
+                window.scrollY ||
+                document.documentElement.scrollTop ||
+                document.body.scrollTop ||
+                0;
+              wikiScrollPosRef.current = currentScroll;
               setRoute({
                 name: 'exerciseInfo',
                 exerciseId,
-                returnTo: { name: 'wikiList' },
-              })
-            }
+                returnTo: { name: 'wikiList', savedScrollY: currentScroll },
+              });
+            }}
             onAddCustomExercise={handleAddCustomExercise}
           />
         )}
@@ -854,17 +991,6 @@ export const App: React.FC = () => {
                 initialEditMode: true,
               });
             }}
-          />
-        )}
-
-        {route.name === 'backup' && (
-          <BackupSync
-            routines={routines}
-            lang={lang}
-            comments={comments}
-            customExercises={customExercises}
-            onRestoreBackup={handleRestoreBackup}
-            onShowToast={showToast}
           />
         )}
       </main>

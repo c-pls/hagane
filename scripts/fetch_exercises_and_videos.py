@@ -238,6 +238,10 @@ def download_video(task):
 
 
 def main():
+    out_json = DATA_DIR / "exercises.json"
+    if out_json.exists():
+        print(f"[FROZEN] {out_json} already exists with curated bilingual content. Overwrite blocked to protect hand-curated translations.")
+        return
     print("Fetching exercise dataset...")
     raw_url = "https://raw.githubusercontent.com/harshvishu/free-exercise-db-with-videos/main/data/exercises.json"
     all_exercises = fetch_json(raw_url)
