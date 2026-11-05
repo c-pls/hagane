@@ -51,10 +51,21 @@ export type ScreenRoute =
   | { name: 'routineDetail'; routineId: string }
   | { name: 'wikiList' }
   | {
+      name: 'exercisePicker';
+      routineId: string;
+      asWarmup: boolean;
+      replacingExIdx: number | null;
+      searchQuery?: string;
+      muscleFilter?: string;
+      equipmentFilter?: string;
+    }
+  | {
       name: 'exerciseInfo';
       exerciseId: string;
       routineId?: string;
       routineExIndex?: number;
+      asWarmup?: boolean;
+      replacingExIdx?: number | null;
       returnTo: ScreenRoute;
     }
   | { name: 'backup' };

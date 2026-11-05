@@ -89,6 +89,9 @@ jobs:
 
             ---
             ### ✨ Features in this release:
+            - **Compact Hevy-Style Exercise Picker**: Search bar right at the top bar, displaying 7–8 exercises above the phone keyboard, with `Most used` / `All exercises` tabs and circular `(?)` preview buttons.
+            - **Intelligent Relevance Ranking**: Instant high-priority ranking for exact title matches (e.g. *Machine Standing Calf Raise*).
+            - **Inspect Wiki & Return to Search**: Tap `(?)` on any exercise to watch continuous 1080p video demo and cues, and return back with your search query fully preserved.
             - **Warm-up Exercises & Sets**: Dedicated Warm-up section with light-weight sets + 'W' warm-up set tags for main compound movements.
             - **Native Smartphone Gestures**: Edge swipe-to-go-back, tactile haptic vibrations on tap, and edge-to-edge immersive status bar.
             - **199 Offline Exercises**: Full 1080p 30-FPS male demo videos bundled directly in the app.

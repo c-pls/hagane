@@ -12,7 +12,6 @@ import {
   translateRoutineText,
   UI_TEXT,
 } from '../i18n/translations';
-import { ExercisePickerModal } from './ExercisePickerModal';
 import { triggerHapticLight, triggerHapticMedium } from '../services/native';
 
 interface RoutineDetailProps {
@@ -22,21 +21,22 @@ interface RoutineDetailProps {
   allExercises: Exercise[];
   onUpdateRoutine: (updated: Routine) => void;
   onOpenExerciseInfo: (exerciseId: string, routineExIndex: number) => void;
+  onOpenPicker: (params: {
+    asWarmup: boolean;
+    replacingExIdx: number | null;
+  }) => void;
 }
 
 export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   routine,
   lang,
   exercisesMap,
-  allExercises,
   onUpdateRoutine,
   onOpenExerciseInfo,
+  onOpenPicker,
 }) => {
   const t = UI_TEXT[lang];
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [addAsWarmup, setAddAsWarmup] = useState(false);
-  const [replacingExIdx, setReplacingExIdx] = useState<number | null>(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(routine.name);
   const [editingNoteIdx, setEditingNoteIdx] = useState<number | null>(null);
@@ -131,42 +131,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     const [moved] = nextExercises.splice(fromIdx, 1);
     nextExercises.splice(toIdx, 0, moved);
     onUpdateRoutine({ ...routine, exercises: nextExercises });
-  };
-
-  const handleSelectFromPicker = (exerciseId: string) => {
-    if (replacingExIdx !== null) {
-      // Replace/Change exercise in-place while keeping its sets & note & warmup status
-      const nextExercises = routine.exercises.map((item, idx) =>
-        idx === replacingExIdx ? { ...item, exerciseId } : item
-      );
-      onUpdateRoutine({ ...routine, exercises: nextExercises });
-      setReplacingExIdx(null);
-      setIsPickerOpen(false);
-      return;
-    }
-
-    const defaultSets: WorkoutSet[] = addAsWarmup
-      ? [
-          { weight: 20, reps: 15, type: 'warmup' },
-          { weight: 30, reps: 12, type: 'warmup' },
-        ]
-      : [
-          { weight: 40, reps: 10, type: 'warmup' },
-          { weight: 60, reps: 10, type: 'normal' },
-          { weight: 60, reps: 10, type: 'normal' },
-        ];
-
-    const nextExercises: RoutineExerciseItem[] = [
-      ...routine.exercises,
-      {
-        exerciseId,
-        isWarmup: addAsWarmup,
-        note: '',
-        sets: defaultSets,
-      },
-    ];
-    onUpdateRoutine({ ...routine, exercises: nextExercises });
-    setIsPickerOpen(false);
   };
 
   const saveTitle = () => {
@@ -325,8 +289,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    setReplacingExIdx(exIdx);
-                    setIsPickerOpen(true);
+                    onOpenPicker({ asWarmup: isWarmupEx, replacingExIdx: exIdx });
                   }}
                   className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-xs font-semibold transition cursor-pointer"
                 >
@@ -355,11 +318,10 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
           </div>
         </div>
 
-        {/* Set Rows: Read-Only Mode vs Edit Mode */}
+        {/* Set Rows */}
         <div className="divide-y divide-slate-100">
           {item.sets.map((set, setIdx) => {
             const isWarmupSet = set.type === 'warmup';
-            // Count working sets prior to this set for working set numbering (1, 2, 3...)
             const workingSetNum =
               item.sets
                 .slice(0, setIdx)
@@ -371,7 +333,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 key={setIdx}
                 className="grid grid-cols-12 items-center py-2.5"
               >
-                {/* Set Badge: In edit mode, clicking toggles between Warmup (W) and Working (1, 2, 3...) */}
+                {/* Set Badge */}
                 <div className="col-span-2 flex items-center">
                   {isEditMode ? (
                     <button
@@ -548,7 +510,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
           </div>
         )}
 
-        {/* Card Footer: In Read-Only Mode, only show if there is a pinned note */}
+        {/* Card Footer */}
         {isEditMode ? (
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
             <button
@@ -641,16 +603,14 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
           )}
         </div>
 
-        {/* Right Controls: Read-Only Mode shows "Edit", Edit Mode shows "+ Warm-up", "+ Add Exercise" + "Done" */}
+        {/* Right Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           {isEditMode && (
             <>
               <button
                 type="button"
                 onClick={() => {
-                  setAddAsWarmup(true);
-                  setReplacingExIdx(null);
-                  setIsPickerOpen(true);
+                  onOpenPicker({ asWarmup: true, replacingExIdx: null });
                 }}
                 className="px-3 py-2 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold transition cursor-pointer border border-amber-200"
               >
@@ -659,9 +619,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setAddAsWarmup(false);
-                  setReplacingExIdx(null);
-                  setIsPickerOpen(true);
+                  onOpenPicker({ asWarmup: false, replacingExIdx: null });
                 }}
                 className="px-3.5 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer"
               >
@@ -697,10 +655,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             <button
               type="button"
               onClick={() => {
-                setIsEditMode(true);
-                setAddAsWarmup(true);
-                setReplacingExIdx(null);
-                setIsPickerOpen(true);
+                onOpenPicker({ asWarmup: true, replacingExIdx: null });
               }}
               className="px-4 py-2.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition cursor-pointer shadow-xs"
             >
@@ -709,10 +664,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             <button
               type="button"
               onClick={() => {
-                setIsEditMode(true);
-                setAddAsWarmup(false);
-                setReplacingExIdx(null);
-                setIsPickerOpen(true);
+                onOpenPicker({ asWarmup: false, replacingExIdx: null });
               }}
               className="px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition cursor-pointer"
             >
@@ -755,9 +707,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             <button
               type="button"
               onClick={() => {
-                setAddAsWarmup(true);
-                setReplacingExIdx(null);
-                setIsPickerOpen(true);
+                onOpenPicker({ asWarmup: true, replacingExIdx: null });
               }}
               className="w-full py-3 px-4 rounded-[20px] border-2 border-dashed border-amber-300/80 bg-amber-50/40 hover:bg-amber-50/80 text-amber-800 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
             >
@@ -795,18 +745,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
           )}
         </div>
       )}
-
-      {/* Add / Swap Exercise Picker Modal */}
-      <ExercisePickerModal
-        isOpen={isPickerOpen}
-        lang={lang}
-        exercises={allExercises}
-        onClose={() => {
-          setIsPickerOpen(false);
-          setReplacingExIdx(null);
-        }}
-        onSelectExercise={handleSelectFromPicker}
-      />
     </div>
   );
 };

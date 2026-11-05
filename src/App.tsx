@@ -1,7 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
-import { ActiveTab, Exercise, Language, Routine, ScreenRoute } from './types/gym';
+import {
+  ActiveTab,
+  Exercise,
+  Language,
+  Routine,
+  RoutineExerciseItem,
+  ScreenRoute,
+  WorkoutSet,
+} from './types/gym';
 import {
   translateEquipment,
   translateMuscle,
@@ -21,6 +29,7 @@ import {
 } from './services/storage';
 import { RoutineList } from './components/RoutineList';
 import { RoutineDetail } from './components/RoutineDetail';
+import { ExercisePickerView } from './components/ExercisePickerView';
 import { ExerciseWiki } from './components/ExerciseWiki';
 import { ExerciseDetail } from './components/ExerciseDetail';
 import { BackupSync } from './components/BackupSync';
@@ -89,6 +98,9 @@ export const App: React.FC = () => {
           document.documentElement.scrollTop = 0;
           document.body.scrollTop = 0;
         }
+      } else if (route.name === 'exercisePicker') {
+        setRoute({ name: 'routineDetail', routineId: route.routineId });
+        triggerHapticLight();
       } else if (route.name === 'routineDetail') {
         setRoute({ name: 'routineList' });
         setActiveTab('routines');
@@ -118,7 +130,9 @@ export const App: React.FC = () => {
 
   // In-App Edge Swipe-to-Go-Back Gesture
   const canGoBack =
-    route.name === 'exerciseInfo' || route.name === 'routineDetail';
+    route.name === 'exerciseInfo' ||
+    route.name === 'routineDetail' ||
+    route.name === 'exercisePicker';
 
   const handleNavigateBack = () => {
     if (route.name === 'exerciseInfo') {
@@ -131,6 +145,9 @@ export const App: React.FC = () => {
         document.documentElement.scrollTop = 0;
         document.body.scrollTop = 0;
       }
+    } else if (route.name === 'exercisePicker') {
+      setRoute({ name: 'routineDetail', routineId: route.routineId });
+      triggerHapticLight();
     } else if (route.name === 'routineDetail') {
       setRoute({ name: 'routineList' });
       setActiveTab('routines');
@@ -287,28 +304,47 @@ export const App: React.FC = () => {
 
   const handleAddExerciseToRoutine = (
     routineId: string,
-    exerciseId: string
+    exerciseId: string,
+    asWarmup: boolean = false,
+    replacingExIdx: number | null = null
   ) => {
     const targetRoutine = routines.find((r) => r.id === routineId);
     if (!targetRoutine) return;
-    const updated: Routine = {
-      ...targetRoutine,
-      exercises: [
-        ...targetRoutine.exercises,
-        {
-          exerciseId,
-          note: '',
-          sets: [
-            { weight: 40, reps: 10, type: 'warmup' },
-            { weight: 60, reps: 10, type: 'normal' },
-            { weight: 60, reps: 10, type: 'normal' },
-          ],
-        },
-      ],
-    };
-    handleUpdateRoutine(updated);
+
     const ex = exercisesMap[exerciseId];
     const exName = ex && lang === 'vi' && ex.nameVi ? ex.nameVi : ex?.name;
+
+    if (replacingExIdx !== null && targetRoutine.exercises[replacingExIdx]) {
+      const nextExercises = targetRoutine.exercises.map((item, idx) =>
+        idx === replacingExIdx ? { ...item, exerciseId } : item
+      );
+      handleUpdateRoutine({ ...targetRoutine, exercises: nextExercises });
+      showToast(`${t.pickerTitleSwap}: ${exName}`);
+      return;
+    }
+
+    const defaultSets: WorkoutSet[] = asWarmup
+      ? [
+          { weight: 20, reps: 15, type: 'warmup' },
+          { weight: 30, reps: 12, type: 'warmup' },
+        ]
+      : [
+          { weight: 40, reps: 10, type: 'warmup' },
+          { weight: 60, reps: 10, type: 'normal' },
+          { weight: 60, reps: 10, type: 'normal' },
+        ];
+
+    const nextExercises: RoutineExerciseItem[] = [
+      ...targetRoutine.exercises,
+      {
+        exerciseId,
+        isWarmup: asWarmup,
+        note: '',
+        sets: defaultSets,
+      },
+    ];
+
+    handleUpdateRoutine({ ...targetRoutine, exercises: nextExercises });
     showToast(`+ ${exName} → ${targetRoutine.name}`);
   };
 
@@ -327,13 +363,15 @@ export const App: React.FC = () => {
       const ex = exercisesMap[route.exerciseId];
       const displayName =
         ex && lang === 'vi' && ex.nameVi ? ex.nameVi : ex?.name;
+      const backLabel =
+        route.returnTo.name === 'exercisePicker' ? t.backToPicker : t.back;
       return (
         <div className="flex items-center gap-2.5 min-w-0">
           <button
             onClick={handleNavigateBack}
             className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer shrink-0"
           >
-            {t.back}
+            {backLabel}
           </button>
           <div className="min-w-0">
             <h1 className="font-bold text-base text-slate-900 leading-tight truncate">
@@ -346,6 +384,22 @@ export const App: React.FC = () => {
               </p>
             )}
           </div>
+        </div>
+      );
+    }
+
+    if (route.name === 'exercisePicker') {
+      return (
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={handleNavigateBack}
+            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer"
+          >
+            {t.back}
+          </button>
+          <h1 className="font-bold text-base text-slate-900 leading-tight">
+            {route.asWarmup ? t.pickerTitleWarmup : t.pickerTitleAdd}
+          </h1>
         </div>
       );
     }
@@ -413,60 +467,62 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* Top Sticky App Bar */}
-      <header className="bg-white/95 backdrop-blur-xs border-b border-slate-200/70 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          {renderHeaderLeft()}
+      {/* Top Sticky App Bar (Hidden in Exercise Picker for native full-height search) */}
+      {route.name !== 'exercisePicker' && (
+        <header className="bg-white/95 backdrop-blur-xs border-b border-slate-200/70 sticky top-0 z-30">
+          <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+            {renderHeaderLeft()}
 
-          <div className="flex items-center gap-2 shrink-0">
-            {toastMessage && (
-              <span className="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold">
-                {toastMessage}
-              </span>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {toastMessage && (
+                <span className="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold">
+                  {toastMessage}
+                </span>
+              )}
 
-            {/* 1-Click Flag + EN / VI Language Switcher (No dropdown) */}
-            <div
-              className="flex items-center bg-slate-100 p-0.5 rounded-full border border-slate-200/80 select-none shadow-2xs"
-              role="group"
-              aria-label="Language selection"
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  triggerHapticSelection();
-                  handleToggleLanguage('en');
-                }}
-                aria-pressed={lang === 'en'}
-                className={`px-2.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                  lang === 'en'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-400 hover:text-slate-700'
-                }`}
+              {/* 1-Click Flag + EN / VI Language Switcher (No dropdown) */}
+              <div
+                className="flex items-center bg-slate-100 p-0.5 rounded-full border border-slate-200/80 select-none shadow-2xs"
+                role="group"
+                aria-label="Language selection"
               >
-                <span className="text-xs leading-none">🇺🇸</span>
-                <span>EN</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  triggerHapticSelection();
-                  handleToggleLanguage('vi');
-                }}
-                aria-pressed={lang === 'vi'}
-                className={`px-2.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                  lang === 'vi'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-400 hover:text-slate-700'
-                }`}
-              >
-                <span className="text-xs leading-none">🇻🇳</span>
-                <span>VI</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHapticSelection();
+                    handleToggleLanguage('en');
+                  }}
+                  aria-pressed={lang === 'en'}
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                    lang === 'en'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-400 hover:text-slate-700'
+                  }`}
+                >
+                  <span className="text-xs leading-none">🇺🇸</span>
+                  <span>EN</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHapticSelection();
+                    handleToggleLanguage('vi');
+                  }}
+                  aria-pressed={lang === 'vi'}
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                    lang === 'vi'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-400 hover:text-slate-700'
+                  }`}
+                >
+                  <span className="text-xs leading-none">🇻🇳</span>
+                  <span>VI</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Main Content Container */}
       <main className="max-w-5xl w-full mx-auto px-4 py-5 flex-1">
@@ -507,6 +563,64 @@ export const App: React.FC = () => {
                 routineId: activeRoutine?.id,
                 routineExIndex,
                 returnTo: route,
+              });
+            }}
+            onOpenPicker={({ asWarmup, replacingExIdx }) => {
+              setRoute({
+                name: 'exercisePicker',
+                routineId: route.routineId,
+                asWarmup,
+                replacingExIdx,
+              });
+            }}
+          />
+        )}
+
+        {route.name === 'exercisePicker' && (
+          <ExercisePickerView
+            routine={
+              routines.find((r) => r.id === route.routineId) || routines[0]
+            }
+            asWarmup={route.asWarmup}
+            replacingExIdx={route.replacingExIdx}
+            lang={lang}
+            allExercises={allExercises}
+            initialSearch={route.searchQuery || ''}
+            initialMuscle={route.muscleFilter || 'All'}
+            initialEquipment={route.equipmentFilter || 'All'}
+            onBack={() =>
+              setRoute({ name: 'routineDetail', routineId: route.routineId })
+            }
+            onSelectExercise={(exerciseId) => {
+              handleAddExerciseToRoutine(
+                route.routineId,
+                exerciseId,
+                route.asWarmup,
+                route.replacingExIdx
+              );
+              setRoute({ name: 'routineDetail', routineId: route.routineId });
+            }}
+            onOpenWiki={(
+              exerciseId,
+              currentSearch,
+              currentMuscle,
+              currentEquipment
+            ) => {
+              setRoute({
+                name: 'exerciseInfo',
+                exerciseId,
+                routineId: route.routineId,
+                asWarmup: route.asWarmup,
+                replacingExIdx: route.replacingExIdx,
+                returnTo: {
+                  name: 'exercisePicker',
+                  routineId: route.routineId,
+                  asWarmup: route.asWarmup,
+                  replacingExIdx: route.replacingExIdx,
+                  searchQuery: currentSearch,
+                  muscleFilter: currentMuscle,
+                  equipmentFilter: currentEquipment,
+                },
               });
             }}
           />
@@ -550,7 +664,23 @@ export const App: React.FC = () => {
               )
             }
             routines={routines}
-            onAddExerciseToRoutine={handleAddExerciseToRoutine}
+            activeRoutineId={route.routineId}
+            asWarmup={route.asWarmup}
+            replacingExIdx={route.replacingExIdx}
+            onAddExerciseToRoutine={(
+              routineId,
+              exerciseId,
+              asWarmup,
+              replacingExIdx
+            ) => {
+              handleAddExerciseToRoutine(
+                routineId,
+                exerciseId,
+                asWarmup,
+                replacingExIdx
+              );
+              setRoute({ name: 'routineDetail', routineId });
+            }}
           />
         )}
 
@@ -566,64 +696,66 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Bottom Sticky Navigation Bar (Clean 2-Tab: Workouts & Wiki) */}
-      <nav className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-xs border-t border-slate-200/80 z-30">
-        <div className="max-w-md mx-auto px-6 py-2 grid grid-cols-2 gap-4">
-          <button
-            onClick={() => {
-              triggerHapticSelection();
-              handleSwitchTab('routines');
-            }}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-2xl text-xs transition cursor-pointer ${
-              activeTab === 'routines'
-                ? 'text-blue-600 bg-blue-50 font-bold'
-                : 'text-slate-500 hover:bg-slate-100 font-semibold'
-            }`}
-          >
-            <svg
-              className="w-5 h-5 mb-0.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
+      {/* Bottom Sticky Navigation Bar (Hidden when searching in Exercise Picker) */}
+      {route.name !== 'exercisePicker' && (
+        <nav className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-xs border-t border-slate-200/80 z-30">
+          <div className="max-w-md mx-auto px-6 py-2 grid grid-cols-2 gap-4">
+            <button
+              onClick={() => {
+                triggerHapticSelection();
+                handleSwitchTab('routines');
+              }}
+              className={`flex flex-col items-center justify-center py-1.5 rounded-2xl text-xs transition cursor-pointer ${
+                activeTab === 'routines'
+                  ? 'text-blue-600 bg-blue-50 font-bold'
+                  : 'text-slate-500 hover:bg-slate-100 font-semibold'
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
-            <span>{t.tabWorkouts}</span>
-          </button>
+              <svg
+                className="w-5 h-5 mb-0.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+              <span>{t.tabWorkouts}</span>
+            </button>
 
-          <button
-            onClick={() => {
-              triggerHapticSelection();
-              handleSwitchTab('wiki');
-            }}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-2xl text-xs transition cursor-pointer ${
-              activeTab === 'wiki'
-                ? 'text-blue-600 bg-blue-50 font-bold'
-                : 'text-slate-500 hover:bg-slate-100 font-semibold'
-            }`}
-          >
-            <svg
-              className="w-5 h-5 mb-0.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
+            <button
+              onClick={() => {
+                triggerHapticSelection();
+                handleSwitchTab('wiki');
+              }}
+              className={`flex flex-col items-center justify-center py-1.5 rounded-2xl text-xs transition cursor-pointer ${
+                activeTab === 'wiki'
+                  ? 'text-blue-600 bg-blue-50 font-bold'
+                  : 'text-slate-500 hover:bg-slate-100 font-semibold'
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
-            <span>{t.tabWiki}</span>
-          </button>
-        </div>
-      </nav>
+              <svg
+                className="w-5 h-5 mb-0.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                />
+              </svg>
+              <span>{t.tabWiki}</span>
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 };

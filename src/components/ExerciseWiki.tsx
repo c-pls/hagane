@@ -6,6 +6,7 @@ import {
   UI_TEXT,
 } from '../i18n/translations';
 import { triggerHapticLight } from '../services/native';
+import { searchAndRankExercises } from '../utils/search';
 
 interface ExerciseWikiProps {
   exercises: Exercise[];
@@ -91,38 +92,14 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
   const [customBreathing, setCustomBreathing] = useState('');
 
   const filtered = useMemo(() => {
-    const normalize = (s: string) =>
-      s.toLowerCase().replace(/[-_/(),.]+/g, ' ').replace(/\s+/g, ' ').trim();
-    const tokens = normalize(search).split(' ').filter(Boolean);
-
-    return exercises.filter((ex) => {
-      const searchableBlob = normalize(
-        [
-          ex.name,
-          ex.nameVi || '',
-          ex.equipment,
-          ex.category,
-          ...ex.primaryMuscles,
-          ...ex.aliases,
-        ].join(' ')
-      );
-      const matchSearch =
-        tokens.length === 0 ||
-        tokens.every((tok) => searchableBlob.includes(tok));
-
-      const matchMuscle =
-        muscleFilter === 'All' ||
-        ex.category === muscleFilter ||
-        ex.primaryMuscles.some((m) =>
-          m.toLowerCase().includes(muscleFilter.toLowerCase())
-        );
-
-      const matchEquipment =
-        equipmentFilter === 'All' || ex.equipment === equipmentFilter;
-
-      return matchSearch && matchMuscle && matchEquipment;
-    });
-  }, [exercises, search, muscleFilter, equipmentFilter]);
+    return searchAndRankExercises(
+      exercises,
+      search,
+      muscleFilter,
+      equipmentFilter,
+      lang
+    );
+  }, [exercises, search, muscleFilter, equipmentFilter, lang]);
 
   const handleCreateCustom = (e: React.FormEvent) => {
     e.preventDefault();
