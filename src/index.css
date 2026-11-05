@@ -1,6 +1,31 @@
 @import "tailwindcss";
 
-/* Remove number input spinners for clean set/weight/rep editing */
+/* 1. Disable text selection, long-press callouts, and tap highlights across the app */
+html,
+body,
+*,
+*::before,
+*::after {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* 2. Re-enable text selection & typing only inside actual inputs and textareas */
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+}
+
+/* 3. Remove number input spinners for clean set/weight/rep editing */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;

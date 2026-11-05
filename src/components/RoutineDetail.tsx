@@ -115,6 +115,7 @@ interface RoutineDetailProps {
   exercisesMap: Record<string, Exercise>;
   allExercises: Exercise[];
   initialEditMode?: boolean;
+  scrollToEnd?: boolean;
   onUpdateRoutine: (updated: Routine) => void;
   onOpenExerciseInfo: (exerciseId: string, routineExIndex: number) => void;
   onOpenPicker: (params: {
@@ -129,6 +130,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   lang,
   exercisesMap,
   initialEditMode = false,
+  scrollToEnd = false,
   onUpdateRoutine,
   onOpenExerciseInfo,
   onOpenPicker,
@@ -139,12 +141,46 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   const [titleDraft, setTitleDraft] = useState(routine.name);
   const [editingNoteIdx, setEditingNoteIdx] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
+  const [highlightedCardIdx, setHighlightedCardIdx] = useState<number | null>(
+    null
+  );
 
   useEffect(() => {
     if (initialEditMode !== undefined) {
       setIsEditMode(initialEditMode);
     }
   }, [initialEditMode]);
+
+  // When adding a new exercise, automatically scroll down to it at the end
+  useEffect(() => {
+    if (scrollToEnd && routine.exercises.length > 0) {
+      const newCardIdx = routine.exercises.length - 1;
+      setHighlightedCardIdx(newCardIdx);
+
+      const timer = setTimeout(() => {
+        const targetCard = document.querySelector(
+          `[data-routine-card-idx="${newCardIdx}"]`
+        );
+        if (targetCard) {
+          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          window.scrollTo({
+            top: document.documentElement.scrollHeight,
+            behavior: 'smooth',
+          });
+        }
+      }, 120);
+
+      const highlightTimer = setTimeout(() => {
+        setHighlightedCardIdx(null);
+      }, 2500);
+
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(highlightTimer);
+      };
+    }
+  }, [scrollToEnd, routine.exercises.length]);
 
   // Drag-and-drop state (supports both desktop drag & mobile touch)
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
@@ -341,7 +377,11 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
           setDraggedIdx(null);
           setDragOverIdx(null);
         }}
-        className={`bg-white rounded-[24px] p-4 shadow-xs space-y-3 transition ${
+        className={`bg-white rounded-[24px] p-4 shadow-xs space-y-3 transition duration-500 ${
+          highlightedCardIdx === exIdx
+            ? 'ring-2 ring-blue-500 bg-blue-50/20'
+            : ''
+        } ${
           isWarmupEx ? 'border-l-4 border-l-amber-500' : ''
         } ${isBeingDragged ? 'opacity-50 scale-[0.98]' : ''} ${
           isDragTarget ? 'ring-2 ring-blue-500 bg-blue-50/20' : ''
@@ -787,29 +827,33 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
       {/* Routine Sections */}
       {routine.exercises.length > 0 && (
         <div className="space-y-6">
-          {/* 1. Warm-up Exercises Section */}
-          {warmupIndices.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                  <h3 className="font-bold text-sm text-slate-900 tracking-wide uppercase">
-                    {t.warmupSectionTitle}
-                  </h3>
+          {/* 1. Warm-up Exercises Section (Dedicated Warm-up Zone) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <h3 className="font-bold text-sm text-slate-900 tracking-wide uppercase">
+                  {t.warmupSectionTitle}
+                </h3>
+                {warmupIndices.length > 0 && (
                   <span className="text-xs text-amber-800 font-semibold bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-200">
                     {warmupIndices.length}
                   </span>
-                </div>
-                <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-                  {t.warmupSectionSubtitle}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                {warmupIndices.map((idx) =>
-                  renderExerciseCard(routine.exercises[idx], idx)
                 )}
               </div>
-              {isEditMode && (
+              <span className="text-xs text-slate-400 font-medium hidden sm:inline">
+                {t.warmupSectionSubtitle}
+              </span>
+            </div>
+
+            {warmupIndices.length > 0 ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                  {warmupIndices.map((idx) =>
+                    renderExerciseCard(routine.exercises[idx], idx)
+                  )}
+                </div>
+                {/* Button to add more warm-up exercises inside the warm-up zone */}
                 <button
                   type="button"
                   onClick={() => {
@@ -825,31 +869,29 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                   <span>🔥</span>
                   <span>{t.addWarmupExerciseBtn}</span>
                 </button>
-              )}
-            </div>
-          )}
-
-          {/* Quick Add Warmup button when in Edit Mode and no warmup exercises yet */}
-          {isEditMode && warmupIndices.length === 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                triggerHapticLight();
-                onOpenPicker({
-                  asWarmup: true,
-                  replacingExIdx: null,
-                  fromEditMode: isEditMode,
-                });
-              }}
-              className="w-full py-3 px-4 rounded-[20px] border-2 border-dashed border-amber-300/80 bg-amber-50/40 hover:bg-amber-50/80 text-amber-800 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
-            >
-              <span>🔥</span>
-              <span>{t.addWarmupExerciseBtn}</span>
-              <span className="text-[11px] font-normal text-amber-700/80 hidden sm:inline">
-                ({t.warmupSectionSubtitle})
-              </span>
-            </button>
-          )}
+              </div>
+            ) : (
+              /* Clean dashed button to add warm-up exercises directly into this zone */
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHapticLight();
+                  onOpenPicker({
+                    asWarmup: true,
+                    replacingExIdx: null,
+                    fromEditMode: isEditMode,
+                  });
+                }}
+                className="w-full py-3 px-4 rounded-[20px] border-2 border-dashed border-amber-300/80 bg-amber-50/40 hover:bg-amber-50/80 text-amber-800 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <span>🔥</span>
+                <span>{t.addWarmupExerciseBtn}</span>
+                <span className="text-[11px] font-normal text-amber-700/80 hidden sm:inline">
+                  ({t.warmupSectionSubtitle})
+                </span>
+              </button>
+            )}
+          </div>
 
           {/* 2. Main Workout Section */}
           {mainIndices.length > 0 && (
@@ -876,8 +918,8 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             </div>
           )}
 
-          {/* 3. Bottom Actions: Add Exercise & Add Warm-up moved to the end of the routine */}
-          <div className="pt-3 pb-8 space-y-2.5">
+          {/* 3. Bottom Action: Add Exercise to Main Workout (Single + icon, no warmup mixed in) */}
+          <div className="pt-3 pb-8">
             <button
               type="button"
               onClick={() => {
@@ -890,24 +932,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
               }}
               className="w-full py-3.5 px-5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition cursor-pointer"
             >
-              <span className="text-lg leading-none font-bold">+</span>
               <span>{t.addExerciseBtn}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                triggerHapticLight();
-                onOpenPicker({
-                  asWarmup: true,
-                  replacingExIdx: null,
-                  fromEditMode: isEditMode,
-                });
-              }}
-              className="w-full py-2.5 px-4 rounded-xl bg-amber-50 hover:bg-amber-100 active:scale-[0.99] text-amber-800 border border-amber-200 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
-            >
-              <span>🔥</span>
-              <span>{t.addWarmupExerciseBtn}</span>
             </button>
           </div>
         </div>

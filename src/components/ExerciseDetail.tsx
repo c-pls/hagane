@@ -36,6 +36,19 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
     setNoteText(comment);
   }, [exercise.id, comment]);
 
+  // Always begin at the beginning (top) of the page when opening any exercise
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    const raf = requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [exercise.id]);
+
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.load();

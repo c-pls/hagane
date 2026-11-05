@@ -38,6 +38,7 @@ import {
   triggerHapticLight,
   triggerHapticSelection,
 } from './services/native';
+import { autoSaveToDevice, autoLoadFromDevice } from './services/deviceStorage';
 
 export const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => loadLanguage());
@@ -69,14 +70,54 @@ export const App: React.FC = () => {
     initNativeStatusBar();
   }, []);
 
-  // When navigating to the wiki, always begin at the beginning (top) of the page
+  // Auto-restore routines from device Documents storage if freshly installed or reinstalled
   useEffect(() => {
-    if (route.name === 'wikiList') {
+    if (!Capacitor.isNativePlatform()) return;
+
+    autoLoadFromDevice()
+      .then((backup) => {
+        if (
+          backup &&
+          Array.isArray(backup.routines) &&
+          backup.routines.length > 0
+        ) {
+          const current = loadRoutines();
+          // If current is empty or differs from device storage, restore it
+          if (
+            current.length === 0 ||
+            JSON.stringify(current) !== JSON.stringify(backup.routines)
+          ) {
+            setRoutines(backup.routines);
+            saveRoutines(backup.routines);
+            if (backup.comments) {
+              setComments(backup.comments);
+              saveComments(backup.comments);
+            }
+            if (backup.customExercises) {
+              setCustomExercises(backup.customExercises);
+              saveCustomExercises(backup.customExercises);
+            }
+            showToast(
+              lang === 'vi'
+                ? 'Đã tự động khôi phục giáo án từ bộ nhớ máy'
+                : 'Auto-restored routines from device storage'
+            );
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // When navigating to the wiki or exercise detail, always begin at the beginning (top) of the page
+  useEffect(() => {
+    if (route.name === 'wikiList' || route.name === 'exerciseInfo') {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
       const raf = requestAnimationFrame(() => {
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
       });
       return () => cancelAnimationFrame(raf);
     }
@@ -267,6 +308,7 @@ export const App: React.FC = () => {
     const next = routines.map((r) => (r.id === updated.id ? updated : r));
     setRoutines(next);
     saveRoutines(next);
+    autoSaveToDevice(next, comments, customExercises);
   };
 
   const handleCreateRoutine = (name: string, tag: string) => {
@@ -279,6 +321,7 @@ export const App: React.FC = () => {
     const next = [...routines, newRoutine];
     setRoutines(next);
     saveRoutines(next);
+    autoSaveToDevice(next, comments, customExercises);
     setRoute({ name: 'routineDetail', routineId: newRoutine.id });
   };
 
@@ -286,6 +329,7 @@ export const App: React.FC = () => {
     const next = routines.filter((r) => r.id !== routineId);
     setRoutines(next);
     saveRoutines(next);
+    autoSaveToDevice(next, comments, customExercises);
     showToast(t.toastDeletedRoutine);
   };
 
@@ -308,6 +352,7 @@ export const App: React.FC = () => {
     const next = [newExercise, ...customExercises];
     setCustomExercises(next);
     saveCustomExercises(next);
+    autoSaveToDevice(routines, comments, next);
   };
 
   const handleAddExerciseToRoutine = (
@@ -358,6 +403,11 @@ export const App: React.FC = () => {
     saveComments(payload.comments);
     setCustomExercises(payload.customExercises);
     saveCustomExercises(payload.customExercises);
+    autoSaveToDevice(
+      payload.routines,
+      payload.comments,
+      payload.customExercises
+    );
   };
 
   // Header Left (Clean — no subtitle under Shaken)
@@ -554,6 +604,7 @@ export const App: React.FC = () => {
               }
             }
             initialEditMode={route.initialEditMode}
+            scrollToEnd={route.scrollToEnd}
             lang={lang}
             exercisesMap={exercisesMap}
             allExercises={allExercises}
@@ -611,6 +662,7 @@ export const App: React.FC = () => {
                 name: 'routineDetail',
                 routineId: route.routineId,
                 initialEditMode: true,
+                scrollToEnd: true,
               });
             }}
             onOpenWiki={(

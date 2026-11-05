@@ -48,7 +48,12 @@ export type ActiveTab = 'routines' | 'wiki' | 'backup';
 
 export type ScreenRoute =
   | { name: 'routineList' }
-  | { name: 'routineDetail'; routineId: string; initialEditMode?: boolean }
+  | {
+      name: 'routineDetail';
+      routineId: string;
+      initialEditMode?: boolean;
+      scrollToEnd?: boolean;
+    }
   | { name: 'wikiList' }
   | {
       name: 'exercisePicker';
