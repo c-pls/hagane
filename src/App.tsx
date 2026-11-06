@@ -11,7 +11,6 @@ import {
   WorkoutSet,
 } from './types/gym';
 import {
-  translateEquipment,
   translateMuscle,
   translateRoutineText,
   UI_TEXT,
@@ -37,11 +36,8 @@ import { ExerciseWiki } from './components/ExerciseWiki';
 import { ExerciseDetail } from './components/ExerciseDetail';
 import {
   initNativeStatusBar,
-  triggerHapticLight,
-  triggerHapticSelection,
 } from './services/native';
 import {
-  autoSaveToDevice,
   autoLoadFromDevice,
   debouncedAutoSaveToDevice,
 } from './services/deviceStorage';
@@ -147,11 +143,7 @@ export const App: React.FC = () => {
 
     autoLoadFromDevice()
       .then((backup) => {
-        if (
-          backup &&
-          Array.isArray(backup.routines) &&
-          backup.routines.length > 0
-        ) {
+        if (backup && Array.isArray(backup.routines)) {
           const current = loadRoutines();
           const localTimestamp = Number(
             localStorage.getItem(LAST_SAVED_AT_KEY) || '0'
@@ -175,8 +167,9 @@ export const App: React.FC = () => {
               setCustomExercises(backup.customExercises);
               saveCustomExercises(backup.customExercises);
             }
+            const currentLang = loadLanguage();
             showToast(
-              lang === 'vi'
+              currentLang === 'vi'
                 ? 'Đã tự động khôi phục giáo án từ bộ nhớ máy'
                 : 'Auto-restored routines from device storage'
             );
@@ -245,7 +238,6 @@ export const App: React.FC = () => {
     if (route.name === 'exerciseInfo') {
       const target = route.returnTo;
       setRoute(target);
-      triggerHapticLight();
       if (target.name === 'routineDetail') {
         restoreRoutineScroll((target as any).savedScrollY);
       } else if (target.name === 'wikiList') {
@@ -261,11 +253,9 @@ export const App: React.FC = () => {
         routineId: route.routineId,
         initialEditMode: route.fromEditMode ?? false,
       });
-      triggerHapticLight();
     } else if (route.name === 'routineDetail') {
       setRoute({ name: 'routineList' });
       setActiveTab('routines');
-      triggerHapticLight();
     }
   };
 
@@ -284,7 +274,6 @@ export const App: React.FC = () => {
             ? 'Nhấn quay lại lần nữa để thoát'
             : 'Press back again to exit'
         );
-        triggerHapticLight();
       }
     }
   };
@@ -434,7 +423,7 @@ export const App: React.FC = () => {
     const next = [...routines, newRoutine];
     setRoutines(next);
     saveRoutines(next);
-    autoSaveToDevice(next, comments, customExercises);
+    debouncedAutoSaveToDevice(next, comments, customExercises, 100);
     setRoute({ name: 'routineDetail', routineId: newRoutine.id });
   };
 
@@ -442,7 +431,7 @@ export const App: React.FC = () => {
     const next = routines.filter((r) => r.id !== routineId);
     setRoutines(next);
     saveRoutines(next);
-    autoSaveToDevice(next, comments, customExercises);
+    debouncedAutoSaveToDevice(next, comments, customExercises, 100);
     showToast(t.toastDeletedRoutine);
   };
 
@@ -465,7 +454,7 @@ export const App: React.FC = () => {
     const next = [newExercise, ...customExercises];
     setCustomExercises(next);
     saveCustomExercises(next);
-    autoSaveToDevice(routines, comments, next);
+    debouncedAutoSaveToDevice(routines, comments, next, 100);
   };
 
   const handleAddExerciseToRoutine = (
@@ -473,9 +462,9 @@ export const App: React.FC = () => {
     exerciseId: string,
     asWarmup: boolean = false,
     replacingExIdx: number | null = null
-  ) => {
+  ): boolean => {
     const targetRoutine = routines.find((r) => r.id === routineId);
-    if (!targetRoutine) return;
+    if (!targetRoutine) return false;
 
     const ex = exercisesMap[exerciseId];
     const exName = ex && lang === 'vi' && ex.nameVi ? ex.nameVi : ex?.name;
@@ -492,7 +481,7 @@ export const App: React.FC = () => {
           ? `⚠️ "${exName}" đã có trong buổi tập! Không thể thêm trùng lặp.`
           : `⚠️ "${exName}" is already in this routine! Cannot add duplicate.`
       );
-      return;
+      return false;
     }
 
     if (replacingExIdx !== null && targetRoutine.exercises[replacingExIdx]) {
@@ -502,7 +491,7 @@ export const App: React.FC = () => {
       );
       handleUpdateRoutine({ ...targetRoutine, exercises: nextExercises });
       showToast(`${t.pickerTitleSwap}: ${exName}`);
-      return;
+      return true;
     }
 
     // Default to 1 single set on newly added exercises as requested.
@@ -534,6 +523,7 @@ export const App: React.FC = () => {
 
     handleUpdateRoutine({ ...targetRoutine, exercises: nextExercises });
     showToast(`+ ${exName} → ${targetRoutine.name}`);
+    return true;
   };
 
   // Header Left (Clean — back buttons shown on PC, hidden on mobile for edge-swipe)
@@ -708,7 +698,6 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    triggerHapticLight();
                     setIsRoutineEditMode(!isRoutineEditMode);
                     setIsEditingRoutineTitle(false);
                   }}
@@ -731,7 +720,6 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    triggerHapticSelection();
                     handleToggleLanguage('en');
                   }}
                   aria-pressed={lang === 'en'}
@@ -747,7 +735,6 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    triggerHapticSelection();
                     handleToggleLanguage('vi');
                   }}
                   aria-pressed={lang === 'vi'}
@@ -863,18 +850,20 @@ export const App: React.FC = () => {
                 scrollIdx = (targetRoutine?.exercises || []).length;
               }
 
-              handleAddExerciseToRoutine(
+              const success = handleAddExerciseToRoutine(
                 route.routineId,
                 exerciseId,
                 route.asWarmup,
                 route.replacingExIdx
               );
-              setRoute({
-                name: 'routineDetail',
-                routineId: route.routineId,
-                initialEditMode: true,
-                scrollToIndex: scrollIdx,
-              });
+              if (success) {
+                setRoute({
+                  name: 'routineDetail',
+                  routineId: route.routineId,
+                  initialEditMode: true,
+                  scrollToIndex: scrollIdx,
+                });
+              }
             }}
             onDuplicateWarning={(exName) => {
               showToast(
@@ -957,7 +946,6 @@ export const App: React.FC = () => {
                 commentText
               )
             }
-            routines={routines}
             activeRoutineId={route.routineId}
             asWarmup={route.asWarmup}
             replacingExIdx={route.replacingExIdx}
@@ -979,17 +967,35 @@ export const App: React.FC = () => {
               asWarmup,
               replacingExIdx
             ) => {
-              handleAddExerciseToRoutine(
+              const success = handleAddExerciseToRoutine(
                 routineId,
                 exerciseId,
                 asWarmup,
                 replacingExIdx
               );
-              setRoute({
-                name: 'routineDetail',
-                routineId,
-                initialEditMode: true,
-              });
+              if (success) {
+                const targetRoutine = routines.find((r) => r.id === routineId);
+                let scrollIdx = 0;
+                if (replacingExIdx !== null && replacingExIdx !== undefined) {
+                  scrollIdx = replacingExIdx;
+                } else if (asWarmup) {
+                  scrollIdx = Math.max(
+                    0,
+                    (targetRoutine?.exercises || []).filter((e) => e.isWarmup).length - 1
+                  );
+                } else {
+                  scrollIdx = Math.max(
+                    0,
+                    (targetRoutine?.exercises || []).length - 1
+                  );
+                }
+                setRoute({
+                  name: 'routineDetail',
+                  routineId,
+                  initialEditMode: true,
+                  scrollToIndex: scrollIdx,
+                });
+              }
             }}
           />
         )}
@@ -1001,7 +1007,6 @@ export const App: React.FC = () => {
           <div className="max-w-md mx-auto px-6 py-2 grid grid-cols-2 gap-4">
             <button
               onClick={() => {
-                triggerHapticSelection();
                 handleSwitchTab('routines');
               }}
               className={`flex flex-col items-center justify-center py-1.5 rounded-2xl text-xs transition cursor-pointer ${
@@ -1028,7 +1033,6 @@ export const App: React.FC = () => {
 
             <button
               onClick={() => {
-                triggerHapticSelection();
                 handleSwitchTab('wiki');
               }}
               className={`flex flex-col items-center justify-center py-1.5 rounded-2xl text-xs transition cursor-pointer ${

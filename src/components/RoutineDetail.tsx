@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Exercise,
   Language,
@@ -7,12 +7,9 @@ import {
   WorkoutSet,
 } from '../types/gym';
 import {
-  translateEquipment,
   translateMuscle,
-  translateRoutineText,
   UI_TEXT,
 } from '../i18n/translations';
-import { triggerHapticLight, triggerHapticMedium } from '../services/native';
 
 interface SetNumberInputProps {
   value: number;
@@ -55,13 +52,13 @@ const SetNumberInput: React.FC<SetNumberInputProps> = ({
     }
 
     setDraft(raw);
+    // Keep draft local while typing to prevent full app re-renders and storage writes on every keystroke.
+    // Parent receives updated value onBlur or Enter key.
+  };
 
-    // If it's a non-empty, non-dot number, update parent immediately
-    if (raw !== '' && raw !== '.') {
-      const parsed = parseFloat(raw);
-      if (!Number.isNaN(parsed)) {
-        onChange(Math.max(min, parsed));
-      }
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      (e.target as HTMLInputElement).blur();
     }
   };
 
@@ -102,6 +99,7 @@ const SetNumberInput: React.FC<SetNumberInputProps> = ({
       spellCheck={false}
       value={isFocused ? draft : value.toString()}
       onChange={handleChange}
+      onKeyDown={handleKeyDown}
       onFocus={handleFocus}
       onBlur={handleBlur}
       className={className}
@@ -141,14 +139,17 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   const [highlightedCardIdx, setHighlightedCardIdx] = useState<number | null>(
     null
   );
+  const lastScrolledIndexRef = useRef<number | null>(null);
 
-  // When adding or swapping an exercise, automatically scroll to it and highlight it
+  // When adding or swapping an exercise, automatically scroll to it and highlight it once
   useEffect(() => {
     if (
       scrollToIndex !== undefined &&
       scrollToIndex >= 0 &&
-      routine.exercises[scrollToIndex]
+      routine.exercises[scrollToIndex] &&
+      lastScrolledIndexRef.current !== scrollToIndex
     ) {
+      lastScrolledIndexRef.current = scrollToIndex;
       setHighlightedCardIdx(scrollToIndex);
 
       const timer = setTimeout(() => {
@@ -256,7 +257,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
           }
           const count = seenGroupCount[sId] || 0;
           seenGroupCount[sId] = count + 1;
-          const subLetter = String.fromCharCode(65 + count); // 'A', 'B', 'C'
+          const subLetter = count < 26 ? String.fromCharCode(65 + count) : `${count + 1}`;
 
           orderMap[idx] = {
             orderLabel: `${seenGroupNum[sId]}${subLetter}`,
@@ -280,7 +281,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   }, [routine.exercises, warmupIndices, mainIndices]);
 
   const handleLinkSupersetWithNext = (exIndex: number) => {
-    triggerHapticLight();
     const current = routine.exercises[exIndex];
     const nextIdx = exIndex + 1;
     if (nextIdx >= routine.exercises.length) return;
@@ -299,7 +299,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   };
 
   const handleUnlinkSuperset = (exIndex: number) => {
-    triggerHapticLight();
     const target = routine.exercises[exIndex];
     if (!target.supersetId) return;
 
@@ -331,7 +330,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     field: 'weight' | 'reps',
     value: number
   ) => {
-    triggerHapticLight();
     const nextExercises = routine.exercises.map((item, idx) => {
       if (idx !== exIndex) return item;
       const nextSets = item.sets.map((s, sIdx) =>
@@ -344,7 +342,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
 
   const handleToggleSetType = (exIndex: number, setIndex: number) => {
     if (!isEditMode) return;
-    triggerHapticLight();
     const nextExercises = routine.exercises.map((item, idx) => {
       if (idx !== exIndex) return item;
       const nextSets: WorkoutSet[] = item.sets.map((s, sIdx) => {
@@ -359,7 +356,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   };
 
   const handleSaveExerciseNote = (exIndex: number, text: string) => {
-    triggerHapticLight();
     const nextExercises = routine.exercises.map((item, idx) =>
       idx === exIndex ? { ...item, note: text.trim() } : item
     );
@@ -368,7 +364,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   };
 
   const handleAddSet = (exIndex: number) => {
-    triggerHapticLight();
     const nextExercises = routine.exercises.map((item, idx) => {
       if (idx !== exIndex) return item;
       let nextType: 'normal' | 'warmup' | 'drop' = 'normal';
@@ -376,11 +371,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
         nextType = 'warmup';
       } else if (item.sets.length > 0) {
         const last = item.sets[item.sets.length - 1];
-        if (last.type === 'warmup' && item.sets.length === 1) {
-          nextType = 'normal';
-        } else {
-          nextType = last.type || 'normal';
-        }
+        nextType = last.type === 'drop' ? 'drop' : 'normal';
       }
 
       const lastSet =
@@ -401,7 +392,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   };
 
   const handleRemoveLastSet = (exIndex: number) => {
-    triggerHapticLight();
     const nextExercises = routine.exercises.map((item, idx) => {
       if (idx !== exIndex || item.sets.length <= 1) return item;
       return { ...item, sets: item.sets.slice(0, -1) };
@@ -418,7 +408,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
         : `Remove "${exName}" from this routine?`;
     if (!window.confirm(confirmMsg)) return;
 
-    triggerHapticLight();
     const nextExercises = routine.exercises.filter((_, idx) => idx !== exIndex);
     onUpdateRoutine({ ...routine, exercises: nextExercises });
   };
@@ -430,7 +419,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     // Strict isolation: warm-up and main exercises can never be dragged or swapped across sections
     if (fromIsWarmup !== toIsWarmup) return;
 
-    triggerHapticMedium();
     const nextExercises = [...routine.exercises];
     const [moved] = nextExercises.splice(fromIdx, 1);
     nextExercises.splice(toIdx, 0, moved);
@@ -500,6 +488,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
           if (!isEditMode) return;
           setDraggedIdx(exIdx);
           e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', String(exIdx));
         }}
         onDragOver={(e) => {
           if (!isEditMode || draggedIdx === null) return;
@@ -546,7 +535,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             {isEditMode && (
               <div
                 onTouchStart={() => {
-                  triggerHapticLight();
                   setDraggedIdx(exIdx);
                 }}
                 onTouchMove={handleTouchMove}
@@ -658,7 +646,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    triggerHapticLight();
                     onOpenPicker({
                       asWarmup: isWarmupEx,
                       replacingExIdx: exIdx,
@@ -674,6 +661,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 <button
                   type="button"
                   onClick={() => handleRemoveExercise(exIdx)}
+                  aria-label="Remove exercise"
                   className="w-7 h-7 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 text-xs font-bold flex items-center justify-center cursor-pointer"
                 >
                   ✕
@@ -685,6 +673,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             <button
               type="button"
               onClick={() => onOpenExerciseInfo(ex.id, exIdx)}
+              aria-label="View exercise details"
               className="w-8 h-8 rounded-full bg-slate-100 hover:bg-blue-600 text-slate-700 hover:text-white font-serif italic font-bold text-sm flex items-center justify-center transition cursor-pointer"
             >
               i
@@ -894,7 +883,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             <button
               type="button"
               onClick={() => {
-                triggerHapticLight();
                 onOpenPicker({
                   asWarmup: true,
                   replacingExIdx: null,
@@ -908,7 +896,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             <button
               type="button"
               onClick={() => {
-                triggerHapticLight();
                 onOpenPicker({
                   asWarmup: false,
                   replacingExIdx: null,
@@ -981,7 +968,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    triggerHapticLight();
                     onOpenPicker({
                       asWarmup: true,
                       replacingExIdx: null,
@@ -999,7 +985,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  triggerHapticLight();
                   onOpenPicker({
                     asWarmup: true,
                     replacingExIdx: null,
@@ -1072,7 +1057,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             <button
               type="button"
               onClick={() => {
-                triggerHapticLight();
                 onOpenPicker({
                   asWarmup: false,
                   replacingExIdx: null,

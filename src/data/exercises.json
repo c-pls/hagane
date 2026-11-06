@@ -10,8 +10,7 @@
       "back squat",
       "squat with barbell",
       "Classic Barbell Squat",
-      "barbell low bar squat",
-      "Back Squat"
+      "barbell low bar squat"
     ],
     "category": "Quads",
     "equipment": "Barbell",
@@ -87,9 +86,7 @@
       "barbell bench",
       "flat barbell bench press",
       "BB bench press",
-      "chest press with barbell",
-      "barbell bench press",
-      "Bench Press"
+      "chest press with barbell"
     ],
     "category": "Chest",
     "equipment": "Barbell",
@@ -159,9 +156,7 @@
       "barbell clean & press",
       "clean to press",
       "floor to overhead press",
-      "barbell ground-to-overhead",
-      "barbell clean and press",
-      "Clean and Press"
+      "barbell ground-to-overhead"
     ],
     "category": "Quads",
     "equipment": "Barbell",
@@ -305,7 +300,6 @@
     "name": "Bicep Curl (Barbell)",
     "aliases": [
       "Barbell Curl",
-      "barbell curl",
       "barbell biceps curl",
       "standing barbell curl",
       "BB curl",
@@ -379,9 +373,7 @@
       "decline bench press",
       "barbell decline press",
       "decline chest press",
-      "decline barbell press",
-      "barbell decline bench press",
-      "Decline Bench Press"
+      "decline barbell press"
     ],
     "category": "Chest",
     "equipment": "Barbell",
@@ -453,9 +445,7 @@
       "barbell biceps drag curl",
       "bar drag curl",
       "drag bicep curl",
-      "close-body barbell curl",
-      "barbell drag curl",
-      "Drag Curl"
+      "close-body barbell curl"
     ],
     "category": "Biceps",
     "equipment": "Barbell",
@@ -520,11 +510,9 @@
     "aliases": [
       "Barbell Front Raise",
       "front raise",
-      "barbell front raise",
       "barbell shoulder raise",
       "straight-arm front raise",
-      "front delt raise",
-      "Front Raise"
+      "front delt raise"
     ],
     "category": "Shoulders",
     "equipment": "Barbell",
@@ -593,10 +581,8 @@
     "aliases": [
       "Barbell Front Squat",
       "front squat",
-      "barbell front squat",
       "front chest squat",
-      "Barbell Front Chest Squat",
-      "Front Squat"
+      "Barbell Front Chest Squat"
     ],
     "category": "Quads",
     "equipment": "Barbell",
@@ -672,9 +658,7 @@
       "incline bench press",
       "barbell incline press",
       "incline chest press",
-      "upper chest barbell press",
-      "barbell incline bench press",
-      "Incline Bench Press"
+      "upper chest barbell press"
     ],
     "category": "Chest",
     "equipment": "Barbell",
@@ -742,7 +726,6 @@
     "name": "Lunge (Barbell)",
     "aliases": [
       "Barbell Lunge",
-      "barbell lunge",
       "barbell forward lunge",
       "barbell walking lunge in place",
       "barbell alternating lunge",
@@ -823,8 +806,7 @@
       "prone incline curl",
       "incline prone barbell curl",
       "chest supported bicep curl",
-      "barbell prone incline curl",
-      "Spider Curl"
+      "barbell prone incline curl"
     ],
     "category": "Biceps",
     "equipment": "Barbell",
@@ -891,11 +873,9 @@
     "aliases": [
       "Barbell Rear Delt Raise",
       "rear delt raise",
-      "barbell rear delt raise",
       "barbell bent-over reverse raise",
       "bent-over barbell rear fly",
-      "bent-over shoulder raise",
-      "Rear Delt Raise"
+      "bent-over shoulder raise"
     ],
     "category": "Shoulders",
     "equipment": "Barbell",
@@ -966,9 +946,7 @@
       "over-grip wrist curl",
       "reverse wrist curl",
       "barbell pronated wrist curl",
-      "Barbell Reverse Wrist Curl (over-grip)",
-      "barbell reverse wrist curl",
-      "Reverse Wrist Curl"
+      "Barbell Reverse Wrist Curl (over-grip)"
     ],
     "category": "Forearms",
     "equipment": "Barbell",
@@ -981,7 +959,7 @@
       "forearm"
     ],
     "secondarySlugs": [],
-    "shortDescription": "A wrist flexion exercise performed with a pronated grip to target the forearm extensors.",
+    "shortDescription": "A wrist extension exercise performed with a pronated grip to target the forearm extensors.",
     "steps": {
       "prepare": [
         "Sit on a bench and grasp a barbell with an overhand (pronated) grip.",
@@ -1097,7 +1075,6 @@
     "name": "Shrug (Barbell)",
     "aliases": [
       "Barbell Shrug",
-      "barbell shrug",
       "BB shrug",
       "barbell shoulder shrug",
       "standing barbell shrug",
@@ -1172,9 +1149,7 @@
       "reverse wrist curl behind back",
       "standing back wrist curl",
       "barbell wrist curl behind body",
-      "forearm wrist curl behind back",
-      "barbell standing back wrist curl",
-      "Standing Back Wrist Curl"
+      "forearm wrist curl behind back"
     ],
     "category": "Forearms",
     "equipment": "Barbell",
@@ -1397,9 +1372,7 @@
       "Barbell Wide-Grip Upright Row",
       "wide-grip upright row",
       "wide grip barbell upright row",
-      "Barbell Upright Row (wide-grip)",
-      "barbell wide-grip upright row",
-      "Wide-Grip Upright Row"
+      "Barbell Upright Row (wide-grip)"
     ],
     "category": "Shoulders",
     "equipment": "Barbell",
@@ -1471,7 +1444,6 @@
       "chest-supported barbell row",
       "seal row",
       "barbell seal row",
-      "Cambered Bar Lying Row",
       "chest supported row",
       "chest-supported row",
       "incline bench row",
@@ -1543,7 +1515,6 @@
     "name": "Landmine 180 (Barbell)",
     "aliases": [
       "Landmine 180",
-      "landmine 180",
       "landmine rotation",
       "barbell 180",
       "landmine twists",
@@ -1911,9 +1882,7 @@
       "dumbbell shoulder rotation press",
       "rotating dumbbell shoulder press",
       "seated Arnold press",
-      "twisting dumbbell press",
-      "dumbbell arnold press",
-      "Arnold Press"
+      "twisting dumbbell press"
     ],
     "category": "Shoulders",
     "equipment": "Dumbbell",
@@ -2001,9 +1970,7 @@
     "primarySlugs": [
       "forearm"
     ],
-    "secondarySlugs": [
-      "forearm"
-    ],
+    "secondarySlugs": [],
     "shortDescription": "A forearm isolation exercise curling a dumbbell behind the back to emphasize forearm flexors.",
     "steps": {
       "prepare": [
@@ -2055,7 +2022,6 @@
       "dumbbell row",
       "DB bentover row",
       "two arm dumbbell row",
-      "Dumbbell Bent-over Row",
       "dumbbell bent over row",
       "Bent-Over Row"
     ],
@@ -2126,7 +2092,6 @@
     "name": "Bicep Curl (Dumbbell)",
     "aliases": [
       "Dumbbell Biceps Curl",
-      "dumbbell biceps curl",
       "DB curl",
       "dumbbell curl",
       "standing dumbbell curl",
@@ -2201,7 +2166,6 @@
       "DB close grip bench press",
       "narrow grip dumbbell press",
       "Dumbbell Close Grip Press",
-      "dumbbell close-grip press",
       "Close-Grip Press"
     ],
     "category": "Triceps",
@@ -2269,12 +2233,10 @@
     "aliases": [
       "Dumbbell Concentration Curl",
       "concentration curl",
-      "dumbbell concentration curl",
       "seated concentration curl",
       "single-arm concentration curl",
       "one-arm biceps curl",
-      "elbow-on-thigh curl",
-      "Concentration Curl"
+      "elbow-on-thigh curl"
     ],
     "category": "Biceps",
     "equipment": "Dumbbell",
@@ -2345,9 +2307,7 @@
       "alternating cross body hammer curl",
       "cross-body DB hammer curl",
       "across-the-body hammer curl",
-      "hammer curl to opposite shoulder",
-      "dumbbell cross body hammer curl",
-      "Cross Body Hammer Curl"
+      "hammer curl to opposite shoulder"
     ],
     "category": "Biceps",
     "equipment": "Dumbbell",
@@ -2419,7 +2379,6 @@
       "two-dumbbell deadlift",
       "dumbbell hip hinge",
       "dumbbells from the floor",
-      "dumbbell deadlift",
       "Deadlift"
     ],
     "category": "Glutes",
@@ -2488,7 +2447,6 @@
     "name": "Chest Fly (Dumbbell)",
     "aliases": [
       "Dumbbell Fly",
-      "dumbbell fly",
       "DB fly",
       "dumbbell chest fly",
       "chest fly with dumbbells",
@@ -2564,7 +2522,6 @@
       "DB fly on ball",
       "chest fly on exercise ball",
       "dumbbell chest fly on ball",
-      "dumbbell fly on exercise ball",
       "Fly on Exercise Ball"
     ],
     "category": "Chest",
@@ -2634,11 +2591,9 @@
     "aliases": [
       "Dumbbell Front Raise",
       "front raise",
-      "dumbbell front raise",
       "DB front raise",
       "two-arm front raise",
-      "front shoulder raise",
-      "Front Raise"
+      "front shoulder raise"
     ],
     "category": "Shoulders",
     "equipment": "Dumbbell",
@@ -2710,9 +2665,7 @@
       "DB goblet squat",
       "dumbbell squat",
       "front-loaded dumbbell squat",
-      "holding-a-dumbbell squat",
-      "dumbbell goblet squat",
-      "Goblet Squat"
+      "holding-a-dumbbell squat"
     ],
     "category": "Quads",
     "equipment": "Dumbbell",
@@ -2864,7 +2817,6 @@
       "incline bench dumbbell press",
       "dumbbell incline chest press",
       "incline chest press with dumbbells",
-      "dumbbell incline bench press",
       "Incline Bench Press"
     ],
     "category": "Chest",
@@ -3005,7 +2957,6 @@
       "incline biceps curl",
       "seated incline curl",
       "lean-back dumbbell curl",
-      "dumbbell incline curl",
       "Incline Bicep Curl"
     ],
     "category": "Biceps",
@@ -3075,9 +3026,7 @@
       "dumbbell incline chest fly",
       "incline chest fly",
       "incline fly",
-      "incline dumbbell chest fly",
-      "dumbbell incline fly",
-      "Incline Fly"
+      "incline dumbbell chest fly"
     ],
     "category": "Chest",
     "equipment": "Dumbbell",
@@ -3148,7 +3097,6 @@
       "incline chest fly",
       "incline dumbbell chest fly",
       "dumbbell chest fly on ball",
-      "dumbbell incline fly on exercise ball",
       "Incline Fly on Exercise Ball"
     ],
     "category": "Chest",
@@ -3214,12 +3162,10 @@
     "aliases": [
       "Dumbbell Incline Hammer Curl",
       "incline hammer curl",
-      "dumbbell incline hammer curl",
       "incline DB hammer curl",
       "incline neutral-grip curl",
       "seated incline hammer curl",
-      "lean-back hammer curl",
-      "Incline Hammer Curl"
+      "lean-back hammer curl"
     ],
     "category": "Biceps",
     "equipment": "Dumbbell",
@@ -3286,12 +3232,10 @@
     "aliases": [
       "Dumbbell Incline Hammer Press",
       "incline hammer press",
-      "dumbbell incline hammer press",
       "neutral-grip incline dumbbell press",
       "incline DB hammer press",
       "incline dumbbell chest press",
-      "incline press with palms facing in",
-      "Incline Hammer Press"
+      "incline press with palms facing in"
     ],
     "category": "Chest",
     "equipment": "Dumbbell",
@@ -3365,7 +3309,6 @@
       "rear lateral raise",
       "chest-supported rear delt fly",
       "bent-arm rear delt raise",
-      "dumbbell incline rear lateral raise",
       "Incline Rear Lateral Raise"
     ],
     "category": "Shoulders",
@@ -3441,11 +3384,8 @@
       "chest-supported row",
       "lying face-down dumbbell row",
       "dumbbell incline row",
-      "Dumbbell Incline Row",
       "chest supported row",
-      "chest-supported row",
-      "incline bench row",
-      "Chest-Supported Row"
+      "incline bench row"
     ],
     "category": "Back",
     "equipment": "Dumbbell",
@@ -3518,7 +3458,6 @@
       "incline shrugs",
       "dumbbell shrugs on incline bench",
       "leaning dumbbell shoulder shrug",
-      "dumbbell incline shrug",
       "Incline Shrug"
     ],
     "category": "Back",
@@ -3591,7 +3530,6 @@
       "incline dumbbell overhead extension",
       "incline skull crusher with dumbbells",
       "lean-back dumbbell triceps extension",
-      "dumbbell incline triceps extension",
       "Incline Triceps Extension"
     ],
     "category": "Triceps",
@@ -3658,7 +3596,6 @@
     "name": "Iron Cross (Dumbbell)",
     "aliases": [
       "Dumbbell Iron Cross",
-      "dumbbell iron cross",
       "dumbbell lateral raise",
       "DB lateral raise",
       "side raise with dumbbells",
@@ -3736,8 +3673,7 @@
       "dumbbell tricep kickback",
       "dumbbell kickback",
       "DB kickback",
-      "rear triceps kickback",
-      "Triceps Kickback"
+      "rear triceps kickback"
     ],
     "category": "Triceps",
     "equipment": "Dumbbell",
@@ -3807,9 +3743,7 @@
       "dumbbell side raise",
       "side delt raise",
       "DB lateral raise",
-      "standing lateral raise",
-      "dumbbell lateral raise",
-      "Lateral Raise"
+      "standing lateral raise"
     ],
     "category": "Shoulders",
     "equipment": "Dumbbell",
@@ -3873,7 +3807,6 @@
     "name": "Lunge (Dumbbell)",
     "aliases": [
       "Dumbbell Lunge",
-      "dumbbell lunge",
       "DB lunge",
       "walking-in-place lunge with dumbbells",
       "alternating dumbbell lunge",
@@ -3955,7 +3888,6 @@
       "lying alternating triceps extension",
       "single-arm alternating skull crusher",
       "lying dumbbell triceps extension",
-      "dumbbell lying alternate extension",
       "Lying Alternate Extension"
     ],
     "category": "Triceps",
@@ -4022,7 +3954,6 @@
     "name": "Lying Hammer Press (Dumbbell)",
     "aliases": [
       "Dumbbell Lying Hammer Press",
-      "dumbbell lying hammer press",
       "neutral grip dumbbell bench press",
       "neutral-grip dumbbell press",
       "hammer grip dumbbell press",
@@ -4100,7 +4031,6 @@
       "Dumbbell Hamstring Curl",
       "Lying Femoral Curl",
       "Dumbbell Lying Femoral",
-      "dumbbell lying one arm press",
       "Lying Leg Curl"
     ],
     "category": "Hamstrings",
@@ -4173,7 +4103,6 @@
       "chest-supported rear delt row",
       "lying dumbbell rear row",
       "face-down dumbbell row",
-      "dumbbell lying rear delt row",
       "Lying Rear Delt Row"
     ],
     "category": "Back",
@@ -4246,8 +4175,7 @@
       "skullcrusher",
       "DB skull crusher",
       "dumbbell lying triceps extension",
-      "lying dumbbell tricep extension",
-      "Skullcrusher"
+      "lying dumbbell tricep extension"
     ],
     "category": "Triceps",
     "equipment": "Dumbbell",
@@ -4318,7 +4246,6 @@
       "single arm side raise",
       "dumbbell side raise",
       "single-arm delt raise",
-      "dumbbell one arm lateral raise",
       "One Arm Lateral Raise"
     ],
     "category": "Shoulders",
@@ -4392,7 +4319,6 @@
       "DB one arm preacher curl",
       "single-arm preacher curl with rotation",
       "one-arm biceps curl on preacher bench",
-      "dumbbell one arm zottman preacher curl",
       "One Arm Zottman Preacher Curl"
     ],
     "category": "Biceps",
@@ -4534,7 +4460,6 @@
       "bench wrist curl",
       "seated dumbbell wrist curl",
       "forearm curl with dumbbells",
-      "dumbbell over bench wrist curl",
       "Over Bench Wrist Curl"
     ],
     "category": "Forearms",
@@ -4607,7 +4532,6 @@
       "pronating dumbbell row",
       "bent-over dumbbell row with rotation",
       "twisting bent-over row",
-      "dumbbell palm rotational bent over row",
       "Palm Rotational Bent Over Row"
     ],
     "category": "Back",
@@ -4681,7 +4605,6 @@
       "single-arm dumbbell preacher curl",
       "one-arm preacher curl",
       "biceps curl with elbow on ball",
-      "dumbbell preacher curl over exercise ball",
       "Preacher Curl Over Exercise Ball"
     ],
     "category": "Biceps",
@@ -4754,7 +4677,6 @@
       "seated overhead triceps extension",
       "dumbbell triceps extension",
       "overhead triceps press",
-      "dumbbell pronate-grip triceps extension",
       "Pronate-grip Triceps Extension"
     ],
     "category": "Triceps",
@@ -4826,8 +4748,7 @@
       "incline prone dumbbell curl",
       "chest supported dumbbell curl",
       "prone incline curl",
-      "dumbbell prone incline curl",
-      "Spider Curl"
+      "dumbbell prone incline curl"
     ],
     "category": "Biceps",
     "equipment": "Dumbbell",
@@ -4891,7 +4812,6 @@
     "name": "Rear Delt Row (Dumbbell)",
     "aliases": [
       "Dumbbell Rear Delt Row",
-      "dumbbell rear delt row",
       "rear delt dumbbell row",
       "bent-over rear delt row",
       "rear shoulder dumbbell row",
@@ -4967,7 +4887,6 @@
       "seated calf raise with dumbbell",
       "seated heel raise",
       "seated calf lift",
-      "dumbbell seated calf raise",
       "Seated Calf Raise"
     ],
     "category": "Calves",
@@ -5039,7 +4958,6 @@
       "dumbbell front raise seated",
       "seated shoulder front raise",
       "seated arm raise",
-      "dumbbell seated front raise",
       "Seated Front Raise"
     ],
     "category": "Shoulders",
@@ -5109,7 +5027,6 @@
     "aliases": [
       "Seated Dumbbell Triceps Kickback",
       "seated tricep kickback",
-      "seated dumbbell triceps kickback",
       "seated kickback",
       "dumbbell seated kickback",
       "Seated Triceps Kickback"
@@ -5183,9 +5100,7 @@
       "seated dumbbell lateral raise",
       "DB seated lateral raise",
       "seated side raise",
-      "seated shoulder side raise",
-      "dumbbell seated lateral raise",
-      "Seated Lateral Raise"
+      "seated shoulder side raise"
     ],
     "category": "Shoulders",
     "equipment": "Dumbbell",
@@ -5263,15 +5178,11 @@
     "primaryMuscles": [
       "Forearms"
     ],
-    "secondaryMuscles": [
-      "Forearms"
-    ],
+    "secondaryMuscles": [],
     "primarySlugs": [
-      "biceps"
-    ],
-    "secondarySlugs": [
       "forearm"
     ],
+    "secondarySlugs": [],
     "shortDescription": "A seated forearm isolation exercise where you curl dumbbells by bending at the wrists with a neutral grip.",
     "steps": {
       "prepare": [
@@ -5326,7 +5237,6 @@
       "DB preacher curl",
       "one-arm biceps curl on preacher bench",
       "supported preacher curl",
-      "dumbbell seated preacher curl",
       "Preacher Curl"
     ],
     "category": "Biceps",
@@ -5399,7 +5309,6 @@
       "two-hand dumbbell triceps extension",
       "seated overhead dumbbell extension",
       "seated triceps press",
-      "dumbbell seated triceps extension",
       "Seated Triceps Extension"
     ],
     "category": "Triceps",
@@ -5471,7 +5380,6 @@
       "trap shrug",
       "dumbbell trap raise",
       "shoulder lift with dumbbells",
-      "dumbbell shrug",
       "Shrug"
     ],
     "category": "Back",
@@ -5540,9 +5448,7 @@
       "dumbbell oblique side bend",
       "one-arm dumbbell side bend",
       "standing dumbbell side bend",
-      "weighted side bend",
-      "dumbbell side bend",
-      "Side Bend"
+      "weighted side bend"
     ],
     "category": "Core",
     "equipment": "Dumbbell",
@@ -5614,7 +5520,6 @@
       "dumbbell calf raise",
       "standing single-leg calf raise",
       "one-leg heel raise",
-      "dumbbell single leg calf raise",
       "Single-Leg Calf Raise"
     ],
     "category": "Calves",
@@ -5688,9 +5593,7 @@
       "single leg squat with dumbbells",
       "one-leg dumbbell squat",
       "single-leg squat",
-      "one-leg squat",
-      "dumbbell single leg squat",
-      "Single-Leg Squat"
+      "one-leg squat"
     ],
     "category": "Glutes",
     "equipment": "Dumbbell",
@@ -5765,7 +5668,6 @@
       "dumbbells-at-sides squat",
       "dumbbell body squat",
       "squat with dumbbells",
-      "dumbbell squat",
       "Squat"
     ],
     "category": "Glutes",
@@ -5840,9 +5742,7 @@
       "DB calf raise",
       "dumbbell calf raises",
       "standing calf raise",
-      "calf raises holding dumbbells",
-      "dumbbell standing calf raise",
-      "Standing Calf Raise"
+      "calf raises holding dumbbells"
     ],
     "category": "Calves",
     "equipment": "Dumbbell",
@@ -5985,7 +5885,6 @@
     "name": "Sumo Squat (Dumbbell)",
     "aliases": [
       "Dumbbell Sumo Squat",
-      "dumbbell sumo squat",
       "sumo squat dumbbell",
       "bar grip sumo squat",
       "Dumbbell Bar Grip Sumo Squat",
@@ -6061,9 +5960,7 @@
       "dumbbell high pull",
       "DB upright row",
       "standing dumbbell upright row",
-      "dumbbell row to chin",
-      "dumbbell upright row",
-      "Upright Row"
+      "dumbbell row to chin"
     ],
     "category": "Shoulders",
     "equipment": "Dumbbell",
@@ -6280,7 +6177,6 @@
       "romanian deadlift",
       "one dumbbell RDL",
       "Single Arm Stiff-Leg Deadlift",
-      "One Dumbbell RDL",
       "Single-Leg Romanian Deadlift"
     ],
     "category": "Hamstrings",
@@ -6347,7 +6243,6 @@
     "name": "Spell Caster (Dumbbell)",
     "aliases": [
       "Spell Caster",
-      "spell caster",
       "dumbbell spell caster",
       "alternating dumbbell toe touch",
       "cross-body dumbbell reach",
@@ -6710,7 +6605,6 @@
       "machine high row",
       "upper back machine row",
       "lever high row",
-      "Lever High Row",
       "High Row"
     ],
     "category": "Back",
@@ -6924,12 +6818,9 @@
       "Machine Kneeling Leg Curl",
       "kneeling leg curl",
       "lever kneeling leg curl",
-      "machine kneeling leg curl",
       "kneeling hamstring curl",
       "hamstring curl machine",
-      "kneeling leg curl machine",
-      "Lever Kneeling Leg Curl",
-      "Kneeling Leg Curl"
+      "kneeling leg curl machine"
     ],
     "category": "Hamstrings",
     "equipment": "Machine",
@@ -6995,13 +6886,11 @@
     "name": "Lateral Raise (Machine)",
     "aliases": [
       "Machine Lateral Raise",
-      "machine lateral raise",
       "lever side raise",
       "shoulder raise machine",
       "deltoid raise machine",
       "lateral delt machine",
       "lever lateral raise",
-      "Lever Lateral Raise",
       "Lateral Raise"
     ],
     "category": "Shoulders",
@@ -7071,13 +6960,10 @@
     "aliases": [
       "Machine Leg Extension",
       "leg extension",
-      "machine leg extension",
       "lever leg extension",
       "quad extension",
       "seated leg extension",
-      "leg straighten machine",
-      "Lever Leg Extension",
-      "Leg Extension"
+      "leg straighten machine"
     ],
     "category": "Quads",
     "equipment": "Machine",
@@ -7215,13 +7101,10 @@
     "aliases": [
       "Machine Lying Leg Curl",
       "lying leg curl",
-      "machine lying leg curl",
       "prone leg curl",
       "hamstring curl machine",
       "leg curl machine",
-      "lever lying leg curl",
-      "Lever Lying Leg Curl",
-      "Lying Leg Curl"
+      "lever lying leg curl"
     ],
     "category": "Hamstrings",
     "equipment": "Machine",
@@ -7288,12 +7171,10 @@
     "aliases": [
       "Machine Preacher Curl",
       "preacher curl machine",
-      "machine preacher curl",
       "lever biceps curl",
       "preacher arm curl",
       "biceps curl machine",
       "lever preacher curl",
-      "Lever Preacher Curl",
       "Preacher Curl"
     ],
     "category": "Biceps",
@@ -7365,8 +7246,7 @@
       "reverse hyper machine",
       "machine reverse hyper",
       "glute hyperextension",
-      "lever reverse hyperextension",
-      "Reverse Hyperextension"
+      "lever reverse hyperextension"
     ],
     "category": "Glutes",
     "equipment": "Machine",
@@ -7440,7 +7320,6 @@
       "machine upper back row",
       "pronated grip machine row",
       "lever reverse t-bar row",
-      "Lever Reverse T-Bar Row",
       "chest supported row",
       "chest-supported row",
       "incline bench row",
@@ -7513,14 +7392,11 @@
     "aliases": [
       "Machine Seated Calf Raise",
       "seated calf raise machine",
-      "machine seated calf raise",
       "lever calf raise",
       "seated calf raise",
       "calf raise seated machine",
       "seated heel raise",
-      "lever seated calf raise",
-      "Lever Seated Calf Raise",
-      "Seated Calf Raise"
+      "lever seated calf raise"
     ],
     "category": "Calves",
     "equipment": "Machine",
@@ -7535,7 +7411,7 @@
       "calves"
     ],
     "secondarySlugs": [
-      "ankles"
+      "tibialis"
     ],
     "shortDescription": "A seated machine calf exercise where you raise and lower your heels to train the soleus through ankle plantarflexion.",
     "steps": {
@@ -7664,7 +7540,6 @@
       "triceps machine dips",
       "Lever Seated Dips",
       "lever seated dip",
-      "Lever Seated Dip",
       "Seated Triceps Dip"
     ],
     "category": "Triceps",
@@ -7736,9 +7611,7 @@
       "abductor machine",
       "machine hip abduction",
       "outer thigh machine",
-      "lever seated hip abduction",
-      "Lever Seated Hip Abduction",
-      "Seated Hip Abduction"
+      "lever seated hip abduction"
     ],
     "category": "Glutes",
     "equipment": "Machine",
@@ -7809,9 +7682,7 @@
       "inner thigh machine",
       "seated inner thigh squeeze",
       "machine hip adduction",
-      "lever seated hip adduction",
-      "Lever Seated Hip Adduction",
-      "Seated Hip Adduction"
+      "lever seated hip adduction"
     ],
     "category": "Quads",
     "equipment": "Machine",
@@ -7880,14 +7751,11 @@
     "aliases": [
       "Machine Seated Leg Curl",
       "seated leg curl",
-      "machine seated leg curl",
       "lever leg curl",
       "seated hamstring curl",
       "hamstring curl machine",
       "leg curl machine",
-      "lever seated leg curl",
-      "Lever Seated Leg Curl",
-      "Seated Leg Curl"
+      "lever seated leg curl"
     ],
     "category": "Hamstrings",
     "equipment": "Machine",
@@ -8098,12 +7966,10 @@
     "aliases": [
       "Machine Standing Calf Raise",
       "standing calf raise machine",
-      "machine standing calf raise",
       "lever calf raise",
       "calf raise machine",
       "standing heel raise",
       "lever standing calf raise",
-      "Lever Standing Calf Raise",
       "Standing Calf Raise"
     ],
     "category": "Calves",
@@ -8119,7 +7985,7 @@
       "calves"
     ],
     "secondarySlugs": [
-      "ankles"
+      "tibialis"
     ],
     "shortDescription": "A machine calf exercise where you raise and lower your heels under shoulder pads to train the calves through ankle movement.",
     "steps": {
@@ -8174,8 +8040,7 @@
       "machine standing hip extension",
       "butt blaster machine",
       "standing glute kickback",
-      "lever standing hip extension",
-      "Standing Glute Kickback"
+      "lever standing hip extension"
     ],
     "category": "Glutes",
     "equipment": "Machine",
@@ -8388,13 +8253,11 @@
     "name": "Triceps Extension (Machine)",
     "aliases": [
       "Machine Triceps Extension",
-      "machine triceps extension",
       "lever tricep extension",
       "triceps extension machine",
       "seated machine triceps extension",
       "machine arm extension",
       "lever triceps extension",
-      "Lever Triceps Extension",
       "Triceps Extension"
     ],
     "category": "Triceps",
@@ -8466,8 +8329,7 @@
       "pec deck fly",
       "machine chest fly",
       "butterfly machine",
-      "lever pec deck fly",
-      "Pec Deck Fly"
+      "lever pec deck fly"
     ],
     "category": "Chest",
     "equipment": "Machine",
@@ -8539,7 +8401,6 @@
       "reverse grip pulldown",
       "underhand pulldown machine",
       "palms-up lat pulldown",
-      "reverse grip machine lat pulldown",
       "Lat Pulldown - Reverse Grip"
     ],
     "category": "Back",
@@ -8613,8 +8474,7 @@
       "45 degree calf raise",
       "sled calf press",
       "machine calf raise",
-      "sled 45 degree calf press",
-      "Leg Press Calf Raise"
+      "sled 45 degree calf press"
     ],
     "category": "Calves",
     "equipment": "Machine",
@@ -8761,9 +8621,7 @@
       "hack squat machine",
       "angled sled squat",
       "supported sled squat",
-      "sled hack squat",
-      "Sled Hack Squat",
-      "Hack Squat"
+      "sled hack squat"
     ],
     "category": "Glutes",
     "equipment": "Machine",
@@ -8833,7 +8691,6 @@
     "name": "Chair Squat (Smith Machine)",
     "aliases": [
       "Smith Chair Squat",
-      "smith chair squat",
       "smith machine squat",
       "smith squat",
       "machine back squat",
@@ -8972,7 +8829,6 @@
     "name": "Deadlift (Smith Machine)",
     "aliases": [
       "Smith Machine Deadlift",
-      "smith machine deadlift",
       "smith deadlift",
       "deadlift on smith machine",
       "Deadlift"
@@ -8986,10 +8842,9 @@
       "Lower Back"
     ],
     "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings",
       "Traps",
-      "Forearms"
+      "Forearms",
+      "Quads"
     ],
     "primarySlugs": [
       "hamstring",
@@ -9048,7 +8903,6 @@
     "name": "Leg Press (Smith Machine)",
     "aliases": [
       "Smith Machine Leg Press",
-      "smith machine leg press",
       "smith lying leg press",
       "smith platform press",
       "Smith Leg Press",
@@ -9121,7 +8975,6 @@
     "name": "Seated Shoulder Press (Smith Machine)",
     "aliases": [
       "Smith Seated Shoulder Press",
-      "smith seated shoulder press",
       "seated smith machine shoulder press",
       "smith machine overhead press",
       "seated overhead press",
@@ -9200,8 +9053,7 @@
       "battling rope waves",
       "alternating battle rope waves",
       "rope waves",
-      "battle rope exercise",
-      "battling ropes"
+      "battle rope exercise"
     ],
     "category": "Shoulders",
     "equipment": "Bodyweight",
@@ -9421,8 +9273,7 @@
       "kneeling cable crunch",
       "cable abs",
       "kneeling rope crunch",
-      "cable kneeling crunch",
-      "Kneeling Rope Crunch"
+      "cable kneeling crunch"
     ],
     "category": "Core",
     "equipment": "Cable",
@@ -9488,7 +9339,6 @@
     "name": "Lateral Raise (Cable)",
     "aliases": [
       "Cable Lateral Raise",
-      "cable lateral raise",
       "cable side raise",
       "single-arm cable lateral raise",
       "cable delt raise",
@@ -9638,7 +9488,6 @@
       "single hand cable curl",
       "standing one-arm cable curl",
       "one arm curl cable",
-      "cable one arm curl",
       "One-Arm Bicep Curl"
     ],
     "category": "Biceps",
@@ -9849,7 +9698,6 @@
       "cable side raise",
       "single arm delt raise",
       "cable shoulder raise",
-      "cable one arm lateral raise",
       "One-Arm Lateral Raise"
     ],
     "category": "Shoulders",
@@ -10076,8 +9924,7 @@
       "rope face-away rear delt row",
       "face pull",
       "cable face pull",
-      "cable rear delt row",
-      "Face Pull"
+      "cable rear delt row"
     ],
     "category": "Shoulders",
     "equipment": "Cable",
@@ -10223,8 +10070,7 @@
       "triceps rope extension",
       "cable triceps extension",
       "Cable Pushdown (rope attachment)",
-      "cable pushdown (with rope attachment)",
-      "Rope Triceps Pushdown"
+      "cable pushdown (with rope attachment)"
     ],
     "category": "Triceps",
     "equipment": "Cable",
@@ -10295,7 +10141,6 @@
       "machine seated high row",
       "cable high row with V handle",
       "seated row to upper chest",
-      "cable seated high row (v-bar)",
       "Seated High Row"
     ],
     "category": "Back",
@@ -10370,7 +10215,6 @@
       "high cable standing crunch",
       "rope standing crunch",
       "standing ab crunch with cable",
-      "cable standing crunch",
       "Standing Crunch"
     ],
     "category": "Core",
@@ -10509,7 +10353,6 @@
     "name": "Standing Inner Bicep Curl (Cable)",
     "aliases": [
       "Cable Standing Inner Curl",
-      "cable standing inner curl",
       "standing cable curl",
       "single-arm cable curl",
       "cable biceps curl",
@@ -10581,7 +10424,6 @@
     "name": "Standing Lift (Cable)",
     "aliases": [
       "Cable Standing Lift",
-      "cable standing lift",
       "standing cable lift",
       "high-to-low cable lift",
       "cable diagonal lift",
@@ -10663,7 +10505,6 @@
       "single-arm triceps pushdown",
       "one-arm cable arm extension",
       "cable triceps extension",
-      "cable standing one arm triceps extension",
       "Standing One-Arm Triceps Extension"
     ],
     "category": "Triceps",
@@ -10878,8 +10719,7 @@
       "cable twist",
       "standing cable rotation",
       "oblique cable twist",
-      "cable twist up down",
-      "Woodchopper"
+      "cable twist up down"
     ],
     "category": "Core",
     "equipment": "Cable",
@@ -11021,8 +10861,7 @@
       "rope skipping",
       "jumping rope",
       "skip rope",
-      "basic rope jumps",
-      "jump rope"
+      "basic rope jumps"
     ],
     "category": "Core",
     "equipment": "Bodyweight",
@@ -11031,16 +10870,14 @@
       "Cardiovascular System"
     ],
     "secondaryMuscles": [
-      "Calves",
       "Quads",
       "Hamstrings",
       "Glutes"
     ],
     "primarySlugs": [
-      "abs"
+      "calves"
     ],
     "secondarySlugs": [
-      "calves",
       "quadriceps",
       "hamstring",
       "gluteal"
@@ -11459,8 +11296,7 @@
       "ez barbell triceps extension",
       "EZ Barbell Lying Triceps Extension",
       "barbell lying triceps extension",
-      "EZ Bar Lying Triceps Extension",
-      "Skullcrusher"
+      "EZ Bar Lying Triceps Extension"
     ],
     "category": "Triceps",
     "equipment": "EZ-Bar",
@@ -11531,7 +11367,6 @@
       "EZ bar military press",
       "overhead shoulder press with EZ bar",
       "press bar overhead",
-      "ez barbell anti gravity press",
       "EZ Anti Gravity Press"
     ],
     "category": "Shoulders",
@@ -11886,7 +11721,6 @@
       "narrow parallel pull-up",
       "close-grip chin-up",
       "assisted bodyweight chin-up",
-      "chin-ups (narrow parallel grip)",
       "Chin-Up"
     ],
     "category": "Back",
@@ -11959,7 +11793,6 @@
       "chinup close grip",
       "narrow chin-up",
       "supine pull-up",
-      "Close Grip Chin-up",
       "weighted close grip chin-up on dip cage",
       "Close-Grip Chin-Up"
     ],
@@ -12030,8 +11863,7 @@
       "diamond push-up (if hands are closer)",
       "narrow push-up",
       "close hand push-up",
-      "Close Grip Push-ups",
-      "close-grip push-up"
+      "Close Grip Push-ups"
     ],
     "category": "Triceps",
     "equipment": "Bodyweight",
@@ -12248,8 +12080,7 @@
       "elevated push-up",
       "bench push-up",
       "hands elevated push-up",
-      "Incline Push-Ups",
-      "incline push-up"
+      "Incline Push-Ups"
     ],
     "category": "Chest",
     "equipment": "Bodyweight",
@@ -12391,8 +12222,7 @@
       "TRX row",
       "bodyweight row with straps",
       "strap inverted row",
-      "lean-back row",
-      "inverted row with straps"
+      "lean-back row"
     ],
     "category": "Back",
     "equipment": "Bodyweight",
@@ -12746,7 +12576,6 @@
       "Chin-Up",
       "Supinated Grip Pull-Up",
       "Underhand Pull-Up",
-      "Reverse Grip Pull-up",
       "dumbbell reverse grip row"
     ],
     "category": "Back",
@@ -12814,7 +12643,6 @@
     "name": "Scapula Dips (Bodyweight)",
     "aliases": [
       "Scapula Dips",
-      "scapula dips",
       "scapular dips",
       "scap dips",
       "shoulder blade dips",
@@ -13030,8 +12858,7 @@
       "rear foot elevated split squat",
       "RFESS",
       "dumbbell split squat",
-      "single leg split squat",
-      "Bulgarian Split Squat"
+      "single leg split squat"
     ],
     "category": "Quads",
     "equipment": "Dumbbell",
@@ -13101,11 +12928,9 @@
     "nameVi": "Bulgarian Split Squat (Tạ đòn)",
     "aliases": [
       "Barbell Bulgarian Split Squat",
-      "barbell bulgarian split squat",
       "bulgarian split squat",
       "barbell rear foot elevated split squat",
-      "barbell split squat",
-      "Bulgarian Split Squat"
+      "barbell split squat"
     ],
     "category": "Quads",
     "equipment": "Barbell",
@@ -13254,9 +13079,7 @@
     "aliases": [
       "Barbell Sumo Deadlift",
       "sumo deadlift",
-      "barbell sumo deadlift",
-      "wide stance deadlift",
-      "Sumo Deadlift"
+      "wide stance deadlift"
     ],
     "category": "Glutes",
     "equipment": "Barbell",
@@ -13331,10 +13154,8 @@
     "aliases": [
       "Barbell Hip Thrust",
       "hip thrust",
-      "barbell hip thrust",
       "glute bridge on bench",
-      "barbell glute thrust",
-      "Hip Thrust"
+      "barbell glute thrust"
     ],
     "category": "Glutes",
     "equipment": "Barbell",
@@ -14038,14 +13859,13 @@
   {
     "id": "0851",
     "slug": "weighted-sissy-squat",
-    "name": "Sissy Squat (Weighted / Bodyweight) (Bodyweight)",
+    "name": "Sissy Squat (Bodyweight)",
     "nameVi": "Quỳ ngả người gánh đùi trước",
     "aliases": [
       "Sissy Squat (Weighted / Bodyweight)",
       "sissy squat",
       "weighted sissy squat",
-      "quad isolation squat",
-      "Sissy Squat"
+      "quad isolation squat"
     ],
     "category": "Quads",
     "equipment": "Bodyweight",
@@ -14111,7 +13931,6 @@
     "nameVi": "Gập người nhón bắp chân",
     "aliases": [
       "Donkey Calf Raise",
-      "donkey calf raise",
       "bent over calf raise"
     ],
     "category": "Calves",
@@ -14167,7 +13986,7 @@
   },
   {
     "id": "0339",
-    "slug": "dumbbell-lying-leg-curl",
+    "slug": "dumbbell-lying-hamstring-curl",
     "name": "Lying Leg Curl - Hamstrings (Dumbbell)",
     "nameVi": "Nằm sấp cuốn tạ đơn tập đùi sau",
     "aliases": [
@@ -14317,8 +14136,7 @@
       "side bridge",
       "oblique plank",
       "side core plank",
-      "side bridge hold",
-      "Side Plank"
+      "side bridge hold"
     ],
     "category": "Core",
     "equipment": "Bodyweight",
@@ -14377,7 +14195,7 @@
   },
   {
     "id": "1731",
-    "slug": "dumbbell-close-grip-press",
+    "slug": "dumbbell-hex-press",
     "name": "Hex Press - Crush Press (Dumbbell)",
     "nameVi": "Nằm ghế ép hai tạ đơn đẩy ngực và tay sau",
     "aliases": [

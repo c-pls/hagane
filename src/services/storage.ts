@@ -125,9 +125,10 @@ export function loadRoutines(): Routine[] {
   let parsed: any;
   try {
     const raw = localStorage.getItem(ROUTINES_KEY);
-    if (!raw) return DEFAULT_ROUTINES;
+    // Return defaults only on true first launch (key does not exist)
+    if (raw === null) return DEFAULT_ROUTINES;
     parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_ROUTINES;
+    if (!Array.isArray(parsed)) return DEFAULT_ROUTINES;
   } catch (err) {
     console.error('[Shaken] Error parsing stored routines from localStorage:', err);
     try {
@@ -214,41 +215,4 @@ export function getAllExercises(customExercises: Exercise[]): Exercise[] {
   return [...customExercises, ...(bundledExercises as Exercise[])];
 }
 
-export interface ShakenBackupPayload {
-  version: number;
-  exportedAt: string;
-  routines: Routine[];
-  comments: Record<string, string>;
-  customExercises: Exercise[];
-}
 
-export function exportBackupJSON(
-  routines: Routine[],
-  comments: Record<string, string>,
-  customExercises: Exercise[]
-): string {
-  const payload: ShakenBackupPayload = {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    routines,
-    comments,
-    customExercises,
-  };
-  return JSON.stringify(payload, null, 2);
-}
-
-export function parseBackupJSON(rawJson: string): ShakenBackupPayload {
-  const parsed = JSON.parse(rawJson);
-  if (!parsed || !Array.isArray(parsed.routines)) {
-    throw new Error('Invalid backup format: missing routines array.');
-  }
-  return {
-    version: parsed.version || 1,
-    exportedAt: parsed.exportedAt || new Date().toISOString(),
-    routines: parsed.routines,
-    comments: parsed.comments || {},
-    customExercises: Array.isArray(parsed.customExercises)
-      ? parsed.customExercises
-      : [],
-  };
-}

@@ -42,6 +42,9 @@ def download_r2(slug_name: str, dest_filename: str) -> str:
 
 
 def main():
+    if DATA_PATH.exists():
+        print(f"[FROZEN] {DATA_PATH} already has fine-tuned 1-to-1 bilingual content. Overwrite blocked to protect hand-curated translations.")
+        return
     with open(DATA_PATH, "r", encoding="utf-8") as f:
         exercises = json.load(f)
 

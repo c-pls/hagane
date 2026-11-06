@@ -40,7 +40,7 @@ jobs:
 
       - name: Install Node Dependencies
         run: |
-          npm ci || npm install
+          npm ci
 
       - name: Build Web Application
         run: |
@@ -77,15 +77,15 @@ jobs:
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: "Shaken v1.0.${{ github.run_number }}"
+          tag_name: v1.2.${{ github.run_number }}
+          name: "Shaken v1.2.${{ github.run_number }}"
           make_latest: true
           generate_release_notes: true
           body: |
             ## 🏋️ Shaken - Offline Gym Companion APK
 
             Download and install the APK directly on your Samsung Galaxy or Android phone:
-            👉 **[Download shaken.apk](https://github.com/${{ github.repository }}/releases/download/v1.0.${{ github.run_number }}/shaken.apk)**
+            👉 **[Download shaken.apk](https://github.com/${{ github.repository }}/releases/download/v1.2.${{ github.run_number }}/shaken.apk)**
 
             ---
             ### ✨ Features in this release:
@@ -93,7 +93,7 @@ jobs:
             - **Intelligent Relevance Ranking**: Instant high-priority ranking for exact title matches (e.g. *Machine Standing Calf Raise*).
             - **Inspect Wiki & Return to Search**: Tap `(?)` on any exercise to watch continuous 1080p video demo and cues, and return back with your search query fully preserved.
             - **Warm-up Exercises & Sets**: Dedicated Warm-up section with light-weight sets + 'W' warm-up set tags for main compound movements.
-            - **Native Smartphone Gestures**: Edge swipe-to-go-back, tactile haptic vibrations on tap, and edge-to-edge immersive status bar.
+            - **Native Smartphone Gestures**: Edge swipe-to-go-back, hardware back button exit protection, and edge-to-edge immersive status bar.
             - **199 Offline Exercises**: Full 1080p 30-FPS male demo videos bundled directly in the app.
             - **1-Click Language Switcher**: Tap `🇺🇸 EN` or `🇻🇳 VI` in the header for instant switching.
             - **Pure Vietnamese Translations**: 1-to-1 instructions with natural Vietnamese gym terminology.

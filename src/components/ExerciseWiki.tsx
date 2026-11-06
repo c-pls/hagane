@@ -1,11 +1,10 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Exercise, Language } from '../types/gym';
 import {
   translateEquipment,
   translateMuscle,
   UI_TEXT,
 } from '../i18n/translations';
-import { triggerHapticLight } from '../services/native';
 import { searchAndRankExercises } from '../utils/search';
 
 interface ExerciseWikiProps {
@@ -179,11 +178,11 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
             <button
               type="button"
               onClick={() => {
-                triggerHapticLight();
                 onSearchChange('');
               }}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold text-xs flex items-center justify-center cursor-pointer transition"
               title="Clear search"
+              aria-label="Clear search"
             >
               ✕
             </button>
@@ -205,7 +204,6 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
             <button
               type="button"
               onClick={() => {
-                triggerHapticLight();
                 onSearchChange('');
                 onMuscleFilterChange('All');
                 onEquipmentFilterChange('All');

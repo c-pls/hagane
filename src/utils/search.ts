@@ -17,7 +17,6 @@ export function searchAndRankExercises(
   equipmentFilter: string = 'All',
   lang: Language = 'en'
 ): Exercise[] {
-  const cleanRawQuery = query.trim().toLowerCase();
   const normalizedQuery = normalizeSearchString(query);
   const tokens = normalizedQuery.split(' ').filter(Boolean);
 

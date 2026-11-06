@@ -33,7 +33,6 @@
 ### 📱 Native Smartphone Experience (Samsung Galaxy / Android)
 - **👈 Edge Swipe-to-Go-Back:** Swipe right from the left screen edge to pop back from Exercise Details to your Routine, or from Routine to your Workouts list.
 - **🔙 Native Android Back Navigation:** Full integration with Samsung One UI system navigation gestures and hardware back buttons. Double-tap back on the home screen to safely exit without accidental mid-workout closures.
-- **📳 Tactile Haptic Feedback:** Physical vibrations for weight/rep adjustments, set additions, and drag-and-drop snaps via `@capacitor/haptics`.
 - **🎨 Edge-to-Edge Status Bar:** Clean status bar styling via `@capacitor/status-bar`.
 
 ---
@@ -42,11 +41,11 @@
 
 Download the ready-to-install Android APK directly from the repository's **Releases** page:
 
-👉 **[Download Latest Android APK (`shaken-debug.apk`)](https://github.com/c-pls/shaken/releases/latest)**
+👉 **[Download Latest Android APK (`shaken.apk`)](https://github.com/c-pls/shaken/releases/latest)**
 
 ### How to Install:
 1. Open the release link above in Chrome or Samsung Internet on your phone.
-2. Tap **`shaken-debug.apk`** to download.
+2. Tap **`shaken.apk`** to download.
 3. Tap the downloaded file and select **Install** (if prompted, enable *Allow from this source* in your phone settings).
 4. Launch **Shaken** — everything works 100% offline!
 
@@ -60,7 +59,7 @@ Download the ready-to-install Android APK directly from the repository's **Relea
 - **Mobile Engine:** [Capacitor 8 / Android](https://capacitorjs.com/)
 - **Native Plugins:**
   - `@capacitor/app` (System back navigation & lifecycle)
-  - `@capacitor/haptics` (Tactile vibration motor feedback)
+  - `@capacitor/filesystem` (Persistent local storage & backup)
   - `@capacitor/status-bar` (Edge-to-edge system bar appearance)
 - **CI / CD:** GitHub Actions (Automated Android APK build & GitHub Releases publishing)
 

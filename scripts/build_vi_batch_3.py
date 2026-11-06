@@ -1,5 +1,9 @@
 import json
 import re
+import sys
+
+print("[FROZEN] Translation batch scripts are preserved for historical reference. Direct execution blocked.")
+sys.exit(0)
 
 DATA = [
   # 0: drv-close-feet-leg-press

@@ -1,5 +1,9 @@
 import json
 import re
+import sys
+
+print("[FROZEN] Translation batch scripts are preserved for historical reference. Direct execution blocked.")
+sys.exit(0)
 
 # Complete 1-to-1 Vietnamese translations for all 45 exercises in batch 1
 

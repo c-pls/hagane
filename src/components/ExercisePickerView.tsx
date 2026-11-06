@@ -1,13 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Exercise, Language, Routine } from '../types/gym';
 import {
-  translateEquipment,
   translateMuscle,
   translateRoutineText,
   UI_TEXT,
 } from '../i18n/translations';
 import { searchAndRankExercises } from '../utils/search';
-import { triggerHapticLight } from '../services/native';
 import { getSimilarExercises } from '../utils/exerciseAlternatives';
 
 interface ExercisePickerViewProps {
@@ -196,11 +194,11 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
             <button
               type="button"
               onClick={() => {
-                triggerHapticLight();
                 setSearch('');
               }}
               className="w-5 h-5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold text-xs flex items-center justify-center cursor-pointer transition shrink-0"
               title="Clear search"
+              aria-label="Clear search"
             >
               ✕
             </button>
@@ -214,7 +212,6 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
         <button
           type="button"
           onClick={() => {
-            triggerHapticLight();
             setActiveTab('most_used');
             setMuscleFilter('All');
           }}
@@ -231,7 +228,6 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
         <button
           type="button"
           onClick={() => {
-            triggerHapticLight();
             setActiveTab('all');
             setMuscleFilter('All');
           }}
@@ -252,7 +248,6 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
               type="button"
               key={m}
               onClick={() => {
-                triggerHapticLight();
                 setMuscleFilter(isSelected ? 'All' : m);
               }}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition shrink-0 cursor-pointer ${
@@ -310,7 +305,6 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                   <div
                     key={`swap-alt-${altEx.id}`}
                     onClick={() => {
-                      triggerHapticLight();
                       onSelectExercise(altEx.id);
                     }}
                     className="p-3 rounded-2xl bg-white hover:bg-blue-50/80 active:scale-[0.98] border border-blue-100 hover:border-blue-300 shadow-xs transition cursor-pointer flex items-center justify-between gap-2.5 group"
@@ -352,7 +346,6 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                   onDuplicateWarning?.(displayName);
                   return;
                 }
-                triggerHapticLight();
                 onSelectExercise(ex.id);
               }}
               className={`flex items-center justify-between px-4 py-3 transition select-none group ${
@@ -396,11 +389,11 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  triggerHapticLight();
                   onOpenWiki(ex.id, search, muscleFilter, equipmentFilter);
                 }}
                 className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition shrink-0 -mr-1 cursor-pointer"
                 title={t.viewWikiAndVideo}
+                aria-label={t.viewWikiAndVideo}
               >
                 <span className="w-6 h-6 rounded-full border border-slate-300 group-hover:border-slate-400 text-slate-500 font-bold text-xs flex items-center justify-center">
                   ?
@@ -427,8 +420,8 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
               className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
             >
               {lang === 'vi'
-                ? 'Xem tất cả 199 bài tập'
-                : 'View all 199 exercises'}
+                ? `Xem tất cả ${allExercises.length} bài tập`
+                : `View all ${allExercises.length} exercises`}
             </button>
           </div>
         )}

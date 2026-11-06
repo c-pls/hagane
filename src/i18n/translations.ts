@@ -87,22 +87,8 @@ export const UI_TEXT = {
     customExecPlaceholder: '2. Execution steps (one per line)',
     customBreathPlaceholder: '3. Breathing cues (one per line)',
     saveExerciseBtn: 'Save Exercise',
-    exportTitle: 'Export from PC / Phone',
-    exportSubtitle:
-      'Build your routines and notes on PC, then export or copy this code to load onto your phone.',
-    copyTransferBtn: 'Copy Transfer Code',
-    downloadJsonBtn: 'Download .JSON File',
-    importTitle: 'Import Backup Data',
-    importSubtitle:
-      'Paste a transfer code or upload a backup .json file to restore your routines and personal comments.',
-    pasteJsonPlaceholder: 'Paste transfer JSON code here...',
-    restoreFromCodeBtn: 'Restore from Pasted Code',
-    uploadJsonBtn: 'Upload .JSON File',
     toastSavedNote: 'Personal note saved!',
     toastDeletedRoutine: 'Deleted routine',
-    toastCopiedJson: 'Copied transfer JSON to clipboard!',
-    toastDownloadedJson: 'Downloaded backup .json file!',
-    toastRestoredBackup: 'Restored routines & comments from backup!',
   },
   vi: {
     back: '← Quay lại',
@@ -190,22 +176,8 @@ export const UI_TEXT = {
     customExecPlaceholder: '2. Các bước thực hiện (mỗi bước 1 dòng)',
     customBreathPlaceholder: '3. Lưu ý hít thở (mỗi bước 1 dòng)',
     saveExerciseBtn: 'Lưu bài tập',
-    exportTitle: 'Xuất dữ liệu từ PC / Điện thoại',
-    exportSubtitle:
-      'Soạn lịch tập và ghi chú trên PC, sau đó sao chép mã hoặc tải file JSON để nhập vào điện thoại.',
-    copyTransferBtn: 'Sao chép mã JSON',
-    downloadJsonBtn: 'Tải file .JSON',
-    importTitle: 'Nhập dữ liệu sao lưu',
-    importSubtitle:
-      'Dán mã JSON hoặc tải file .json lên để khôi phục lịch tập và ghi chú.',
-    pasteJsonPlaceholder: 'Dán mã JSON sao lưu vào đây...',
-    restoreFromCodeBtn: 'Khôi phục từ mã đã dán',
-    uploadJsonBtn: 'Tải lên file .JSON',
     toastSavedNote: 'Đã lưu ghi chú!',
     toastDeletedRoutine: 'Đã xóa buổi tập',
-    toastCopiedJson: 'Đã sao chép mã JSON!',
-    toastDownloadedJson: 'Đã tải xuống file sao lưu .json!',
-    toastRestoredBackup: 'Đã khôi phục lịch tập & ghi chú!',
   },
 } as const;
 

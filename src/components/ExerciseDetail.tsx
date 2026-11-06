@@ -1,13 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Exercise, Language, Routine } from '../types/gym';
+import { Exercise, Language } from '../types/gym';
 import {
   translateMuscle,
-  translateRoutineText,
   UI_TEXT,
 } from '../i18n/translations';
 import { AnatomicalMuscleMap } from './AnatomicalMuscleMap';
 import { getSimilarExercises } from '../utils/exerciseAlternatives';
-import { triggerHapticLight } from '../services/native';
 
 interface ExerciseDetailProps {
   exercise: Exercise;
@@ -15,7 +13,6 @@ interface ExerciseDetailProps {
   showComment: boolean;
   comment: string;
   onSaveComment: (comment: string) => void;
-  routines?: Routine[];
   onAddExerciseToRoutine?: (
     routineId: string,
     exerciseId: string,
@@ -35,11 +32,16 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   showComment,
   comment,
   onSaveComment,
+  activeRoutineId,
+  asWarmup,
+  replacingExIdx,
+  onAddExerciseToRoutine,
   allExercises = [],
   onSelectExercise,
 }) => {
   const t = UI_TEXT[lang];
   const [noteText, setNoteText] = useState(comment);
+  const lastSavedNoteRef = useRef<string>(comment);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const similarAlternatives = useMemo(() => {
@@ -49,7 +51,15 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 
   useEffect(() => {
     setNoteText(comment);
+    lastSavedNoteRef.current = comment;
   }, [exercise.id, comment]);
+
+  const handleSaveNote = (text: string) => {
+    const trimmed = text.trim();
+    if (trimmed === lastSavedNoteRef.current) return;
+    lastSavedNoteRef.current = trimmed;
+    onSaveComment(trimmed);
+  };
 
   // Always begin at the beginning (top) of the page when opening any exercise
   useEffect(() => {
@@ -146,7 +156,8 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
                 {t.commentTitle}
               </h3>
               <button
-                onClick={() => onSaveComment(noteText)}
+                type="button"
+                onClick={() => handleSaveNote(noteText)}
                 className="px-3.5 py-1 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition cursor-pointer"
               >
                 {t.saveNoteBtn}
@@ -157,11 +168,35 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
                 rows={3}
                 value={noteText}
                 onChange={(e) => setNoteText(e.target.value)}
-                onBlur={() => onSaveComment(noteText)}
+                onBlur={() => handleSaveNote(noteText)}
                 placeholder={t.commentPlaceholder}
                 className="w-full text-sm text-slate-800 bg-transparent focus:outline-none resize-none placeholder:text-slate-400"
               />
             </div>
+          </div>
+        )}
+
+        {/* 4. OPTIONAL DIRECT ADD-TO-ROUTINE ACTION (When previewing inside a routine flow) */}
+        {activeRoutineId && onAddExerciseToRoutine && (
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                onAddExerciseToRoutine(
+                  activeRoutineId,
+                  exercise.id,
+                  asWarmup,
+                  replacingExIdx
+                );
+              }}
+              className={`w-full py-3.5 px-5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition cursor-pointer text-white ${
+                asWarmup
+                  ? 'bg-amber-500 hover:bg-amber-600'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              <span>{asWarmup ? t.addDirectlyToWarmup : t.addDirectlyToMain}</span>
+            </button>
           </div>
         )}
       </div>
@@ -197,7 +232,6 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
                 <div
                   key={altEx.id}
                   onClick={() => {
-                    triggerHapticLight();
                     onSelectExercise(altEx.id);
                   }}
                   className="p-3 rounded-2xl bg-white hover:bg-blue-50/60 active:scale-[0.98] border border-slate-200/80 hover:border-blue-300 shadow-xs transition cursor-pointer flex flex-col justify-between group"

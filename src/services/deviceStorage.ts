@@ -127,7 +127,13 @@ export async function autoLoadFromDevice(): Promise<ShakenDeviceBackup | null> {
 
     if (result && typeof result.data === 'string') {
       const parsed = JSON.parse(result.data) as ShakenDeviceBackup;
-      if (parsed && Array.isArray(parsed.routines) && parsed.routines.length > 0) {
+      if (
+        parsed &&
+        Array.isArray(parsed.routines) &&
+        parsed.routines.every(
+          (r) => r && typeof r.id === 'string' && Array.isArray(r.exercises)
+        )
+      ) {
         return parsed;
       }
     }
