@@ -36,6 +36,7 @@ export interface RoutineExerciseItem {
   note?: string;
   isWarmup?: boolean;
   supersetId?: string;
+  restSeconds?: number;
 }
 
 export interface Routine {

@@ -62,14 +62,15 @@ jobs:
       - name: Prepare APK Artifact
         run: |
           mkdir -p release-output
+          cp android/app/build/outputs/apk/release/app-release.apk release-output/hagane.apk
           cp android/app/build/outputs/apk/release/app-release.apk release-output/shaken.apk
-          ls -lh release-output/shaken.apk
+          ls -lh release-output/
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shaken-apk
-          path: release-output/shaken.apk
+          name: hagane-apk
+          path: release-output/hagane.apk
           if-no-files-found: error
           retention-days: 30
 
@@ -77,46 +78,46 @@ jobs:
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.2.${{ github.run_number }}
-          name: "Shaken v1.2.${{ github.run_number }}"
+          tag_name: v1.3.${{ github.run_number }}
+          name: "Hagane v1.3.${{ github.run_number }}"
           make_latest: true
           generate_release_notes: true
           body: |
-            ## 🏋️ Shaken - Offline Gym Companion APK
+            ## ⚔️ Hagane (鋼) - Forge Your Steel APK
+            > *"Forge your steel — Rèn thép mỗi ngày"*
 
             Download and install the APK directly on your Samsung Galaxy or Android phone:
-            👉 **[Download shaken.apk](https://github.com/${{ github.repository }}/releases/download/v1.2.${{ github.run_number }}/shaken.apk)**
+            👉 **[Download hagane.apk](https://github.com/${{ github.repository }}/releases/download/v1.3.${{ github.run_number }}/hagane.apk)**
 
             ---
-            ### ✨ Features in this release:
+            ### ✨ What's new in Hagane v1.3:
+            - **New Identity & Twin Katana Logo**: Rebranded to **Hagane (鋼)** with sleek Katana Barbell branding across Android and Garmin.
+            - **⌚ Garmin Forerunner 255 Watch Integration**: Custom English-only strength workout companion app (`type="watch-app"`) with live Heart Rate, set tracking, and native `.FIT` recording.
+            - **⏱ Per-Exercise Rest Timers**: Custom rest countdowns (`2:30` compound, `1:30` isolation, `1:00` warm-up) with 360° watch progress ring and overtime tracking.
+            - **⚡ Superset 0s Transitions**: Automatic chaining between paired exercises without interruption.
             - **Compact Hevy-Style Exercise Picker**: Search bar right at the top bar, displaying 7–8 exercises above the phone keyboard, with `Most used` / `All exercises` tabs and circular `(?)` preview buttons.
-            - **Intelligent Relevance Ranking**: Instant high-priority ranking for exact title matches (e.g. *Machine Standing Calf Raise*).
-            - **Inspect Wiki & Return to Search**: Tap `(?)` on any exercise to watch continuous 1080p video demo and cues, and return back with your search query fully preserved.
-            - **Warm-up Exercises & Sets**: Dedicated Warm-up section with light-weight sets + 'W' warm-up set tags for main compound movements.
-            - **Native Smartphone Gestures**: Edge swipe-to-go-back, hardware back button exit protection, and edge-to-edge immersive status bar.
             - **199 Offline Exercises**: Full 1080p 30-FPS male demo videos bundled directly in the app.
             - **1-Click Language Switcher**: Tap `🇺🇸 EN` or `🇻🇳 VI` in the header for instant switching.
-            - **Pure Vietnamese Translations**: 1-to-1 instructions with natural Vietnamese gym terminology.
-            - **Custom Workout Routines**: Drag-and-drop (`⋮⋮`) to reorder exercises, track sets, weight (kg), and reps.
-            - **Read-Only & Edit Mode**: Clean workout viewing by default, quick editing toggle.
             - **Offline & Backup**: 100% offline functionality with persistent device storage.
 
             ---
             ### 📱 How to install on your Samsung Galaxy (Android):
             1. Tap the download link above in Samsung Internet or Chrome on your phone.
-            2. Tap the downloaded file `shaken.apk`.
+            2. Tap the downloaded file `hagane.apk`.
             3. Tap **Install** / **Update**.
-            4. Open **Shaken** and enjoy your workouts!
-          files: release-output/shaken.apk
+            4. Open **Hagane** and enjoy your workouts!
+          files: |
+            release-output/hagane.apk
+            release-output/shaken.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Job Summary
         run: |
-          echo "### 🏋️ Shaken Android APK Built Successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚔️ Hagane Android APK Built Successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The official Android APK for **Shaken** has been built, signed, uploaded as an artifact, and published to GitHub Releases." >> $GITHUB_STEP_SUMMARY
+          echo "The official Android APK for **Hagane (鋼)** has been built, signed, uploaded as an artifact, and published to GitHub Releases." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "#### How to install on your Samsung Galaxy (Android):" >> $GITHUB_STEP_SUMMARY
           echo "1. Go to the **Releases** tab on your GitHub repository (or download from the release link above)." >> $GITHUB_STEP_SUMMARY
-          echo "2. Tap \`shaken.apk\` to download and install directly on your phone." >> $GITHUB_STEP_SUMMARY
+          echo "2. Tap \`hagane.apk\` to download and install directly on your phone." >> $GITHUB_STEP_SUMMARY

@@ -200,6 +200,50 @@ export function saveCustomExercises(custom: Exercise[]): void {
   }
 }
 
+export const REST_TIME_PRESETS = [45, 60, 90, 120, 150, 180, 240] as const;
+
+export function getDefaultRestSeconds(
+  exercise: Exercise | undefined,
+  isWarmup?: boolean
+): number {
+  if (isWarmup) return 60;
+  if (!exercise) return 90;
+
+  const n = `${exercise.name} ${exercise.nameVi || ''}`.toLowerCase();
+  const eq = (exercise.equipment || '').toLowerCase();
+  const isCompound =
+    eq === 'barbell' ||
+    n.includes('squat') ||
+    n.includes('deadlift') ||
+    n.includes('rdl') ||
+    n.includes('leg press') ||
+    n.includes('bench press') ||
+    n.includes('overhead press') ||
+    n.includes('shoulder press') ||
+    n.includes('pull-up') ||
+    n.includes('pull up') ||
+    n.includes('chin-up') ||
+    n.includes('row') ||
+    n.includes('dip') ||
+    n.includes('gánh tạ') ||
+    n.includes('kéo tạ') ||
+    n.includes('đẩy ngực') ||
+    n.includes('đẩy vai') ||
+    n.includes('kéo xô') ||
+    n.includes('hít xà') ||
+    n.includes('xà kép') ||
+    n.includes('đạp đùi');
+
+  return isCompound ? 150 : 90;
+}
+
+export function formatRestTime(seconds: number): string {
+  const safe = Math.max(0, Math.round(seconds));
+  const mins = Math.floor(safe / 60);
+  const secs = safe % 60;
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
 export function getAllExercises(customExercises: Exercise[]): Exercise[] {
   return [...customExercises, ...(bundledExercises as Exercise[])];
 }

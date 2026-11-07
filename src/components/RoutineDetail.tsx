@@ -10,6 +10,11 @@ import {
   translateMuscle,
   UI_TEXT,
 } from '../i18n/translations';
+import {
+  formatRestTime,
+  getDefaultRestSeconds,
+  REST_TIME_PRESETS,
+} from '../services/storage';
 
 interface SetNumberInputProps {
   value: number;
@@ -185,6 +190,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const [openMenuExIdx, setOpenMenuExIdx] = useState<number | null>(null);
+  const [editingRestIdx, setEditingRestIdx] = useState<number | null>(null);
   const [confirmRemoveExIdx, setConfirmRemoveExIdx] = useState<number | null>(
     null
   );
@@ -192,6 +198,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   useEffect(() => {
     if (!isEditMode) {
       setOpenMenuExIdx(null);
+      setEditingRestIdx(null);
       setConfirmRemoveExIdx(null);
     }
   }, [isEditMode]);
@@ -388,6 +395,14 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     );
     onUpdateRoutine({ ...routine, exercises: nextExercises });
     setEditingNoteIdx(null);
+  };
+
+  const handleRestTimeChange = (exIndex: number, restSeconds: number) => {
+    const nextExercises = routine.exercises.map((item, idx) =>
+      idx === exIndex ? { ...item, restSeconds } : item
+    );
+    onUpdateRoutine({ ...routine, exercises: nextExercises });
+    setEditingRestIdx(null);
   };
 
   const handleAddSet = (exIndex: number) => {
@@ -745,11 +760,54 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                   </span>
                 )}
               </div>
-              <span className="text-xs text-slate-400 font-medium block mt-0.5">
-                {ex.primaryMuscles
-                  .map((m) => translateMuscle(m, lang))
-                  .join(', ')}
-              </span>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <span className="text-xs text-slate-400 font-medium">
+                  {ex.primaryMuscles
+                    .map((m) => translateMuscle(m, lang))
+                    .join(', ')}
+                </span>
+                {(() => {
+                  const restSecs =
+                    item.restSeconds ?? getDefaultRestSeconds(ex, isWarmupEx);
+                  const isSupersetNotLast = Boolean(
+                    supersetInfo && !supersetInfo.isLast
+                  );
+                  if (isSupersetNotLast) {
+                    return (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200/70 select-none">
+                        <span>⚡ → next</span>
+                      </span>
+                    );
+                  }
+                  return isEditMode ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditingRestIdx(
+                          editingRestIdx === exIdx ? null : exIdx
+                        )
+                      }
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold transition cursor-pointer ${
+                        editingRestIdx === exIdx
+                          ? 'bg-blue-600 text-white shadow-2xs'
+                          : 'bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200/80'
+                      }`}
+                      title={t.restTimeLabel}
+                    >
+                      <span>⏱</span>
+                      <span>{formatRestTime(restSecs)}</span>
+                    </button>
+                  ) : (
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500 select-none"
+                      title={t.restTimeLabel}
+                    >
+                      <span>⏱</span>
+                      <span>{formatRestTime(restSecs)}</span>
+                    </span>
+                  );
+                })()}
+              </div>
             </div>
           </div>
 
@@ -792,6 +850,22 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                       <span>🔄</span>
                       <span>{t.changeExerciseBtn}</span>
                     </button>
+
+                    {(!supersetInfo || supersetInfo.isLast) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenMenuExIdx(null);
+                          setEditingRestIdx(
+                            editingRestIdx === exIdx ? null : exIdx
+                          );
+                        }}
+                        className="w-full px-3.5 py-2.5 text-left hover:bg-blue-50 text-blue-600 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <span>⏱</span>
+                        <span>{t.restTimeLabel}</span>
+                      </button>
+                    )}
 
                     {canLinkWithBelow && (
                       <button
@@ -867,6 +941,39 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             )}
           </div>
         </div>
+
+        {/* Inline Rest Time Picker (shown in Edit mode when ⏱ badge or menu option is tapped) */}
+        {isEditMode &&
+          editingRestIdx === exIdx &&
+          (!supersetInfo || supersetInfo.isLast) && (
+            <div className="mb-3 p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                <span>⏱</span>
+                <span>{t.restTimeLabel}:</span>
+              </span>
+              <div className="flex items-center gap-1 flex-wrap">
+                {REST_TIME_PRESETS.map((presetSec) => {
+                  const currentSec =
+                    item.restSeconds ?? getDefaultRestSeconds(ex, isWarmupEx);
+                  const isActive = currentSec === presetSec;
+                  return (
+                    <button
+                      key={presetSec}
+                      type="button"
+                      onClick={() => handleRestTimeChange(exIdx, presetSec)}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+                        isActive
+                          ? 'bg-blue-600 text-white shadow-2xs'
+                          : 'bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-600 border border-slate-200'
+                      }`}
+                    >
+                      {formatRestTime(presetSec)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
         {/* Set Rows */}
         <div className="divide-y divide-slate-100">

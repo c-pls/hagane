@@ -1,7 +1,7 @@
 {
-  "name": "Shaken",
-  "short_name": "Shaken",
-  "description": "Custom gym workout routines, progressive overload sets, and offline 1080p exercise wiki.",
+  "name": "Hagane",
+  "short_name": "Hagane",
+  "description": "Hagane (鋼) — Forge your steel. Offline gym workout tracker and 1080p exercise wiki.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f2f4f7",

@@ -1,8 +1,9 @@
-# 🏋️ Shaken
+# ⚔️ Hagane (鋼)
 
-> **Offline Gym Workout Tracker & 1080p Exercise Wiki for Android and Web**
+> **"Forge your steel — Rèn thép mỗi ngày"**
+> *Offline Gym Workout Tracker, 1080p Exercise Wiki, & Garmin Forerunner Watch Companion for Android and Web*
 
-**Shaken** is a fast, 100% offline-first gym companion engineered for distraction-free workouts. It bundles 199 high-definition 1080p exercise demo videos directly into the app, complete with 1-to-1 bilingual English and natural Vietnamese instructions, custom workout routine tracking with drag-and-drop reordering, tactile haptic feedback, and smartphone gesture navigation.
+**Hagane (鋼)** is a fast, 100% offline-first gym companion engineered for distraction-free workouts. It bundles 199 high-definition 1080p exercise demo videos directly into the app, complete with 1-to-1 bilingual English and natural Vietnamese instructions, custom workout routine tracking with drag-and-drop reordering, per-exercise rest timers, Garmin Forerunner 255 Music watch integration, and smartphone gesture navigation.
 
 ---
 
@@ -25,10 +26,16 @@
   - **'W' Warm-up Set Badges:** Mark introductory sets as warm-up (`W`), automatically numbering subsequent heavy working sets (`1, 2, 3...`).
   - **1-Tap Toggles:** Tap any set number in Edit Mode to toggle between `W` and working sets, or tap `To Main` / `To Warm-up` to shift exercises between sections.
 - **Interactive Edit Mode (`✎ Edit`):**
-  - **Drag-and-Drop Reordering (`⋮⋮`):** Touch and drag exercises up or down to customize exercise order.
-  - **Flexible Sets & Reps:** Instant `+` / `−` adjustments for weights (`kg`) and reps with physical haptic ticks.
+  - **Drag-and-Drop Reordering (`⋮⋮`):** Touch and drag exercises or superset blocks up or down to customize exercise order.
+  - **Per-Exercise Rest Timers (`⏱`):** Smart defaults (`2:30` for compounds, `1:30` for isolation, `1:00` for warm-ups) with 1-tap presets (`0:45` to `4:00`) and `0s` superset transitions (`⚡ → next`).
+  - **Flexible Sets & Reps:** Instant `+` / `−` adjustments for weights (`kg`) and reps.
   - **Exercise Swapping:** Swap any exercise in-place with one tap while preserving your set history.
   - **Routine-Scoped Notes (`📌`):** Pinned gym reminders (seat settings, cable pin heights, rack numbers).
+
+### ⌚ Garmin Forerunner 255 Music Watch Companion (`garmin-watch/`)
+- **Native Monkey C Watch App (`type="watch-app"`):** Appears directly in your watch's **Activities & Apps** list alongside *Run* and *Jump Rope*.
+- **Automatic Background Sync:** Passively caches your latest routines (in clean English/ASCII) on Android and serves them whenever your watch opens **Hagane** or reconnects over Bluetooth.
+- **Guided Wrist Workouts:** Step-by-step sets, supersets (`3A` → `3B`), 360° circular rest countdown with wrist vibration at `00:00` + overtime counter (`+00:01`), early set start, live `±15s` rest adjustments, and `.FIT` strength activity recording. See [`garmin-watch/README.md`](garmin-watch/README.md) for details.
 
 ### 📱 Native Smartphone Experience (Samsung Galaxy / Android)
 - **👈 Edge Swipe-to-Go-Back:** Swipe right from the left screen edge to pop back from Exercise Details to your Routine, or from Routine to your Workouts list.
@@ -41,13 +48,13 @@
 
 Download the ready-to-install Android APK directly from the repository's **Releases** page:
 
-👉 **[Download Latest Android APK (`shaken.apk`)](https://github.com/c-pls/shaken/releases/latest)**
+👉 **[Download Latest Android APK (`hagane.apk`)](https://github.com/c-pls/hagane/releases/latest)**
 
 ### How to Install:
 1. Open the release link above in Chrome or Samsung Internet on your phone.
-2. Tap **`shaken.apk`** to download.
+2. Tap **`hagane.apk`** to download.
 3. Tap the downloaded file and select **Install** (if prompted, enable *Allow from this source* in your phone settings).
-4. Launch **Shaken** — everything works 100% offline!
+4. Launch **Hagane** — everything works 100% offline!
 
 ---
 
@@ -74,8 +81,8 @@ Download the ready-to-install Android APK directly from the repository's **Relea
 ### Setup & Run
 ```bash
 # Clone the repository
-git clone git@github.com:c-pls/shaken.git
-cd shaken
+git clone git@github.com:c-pls/hagane.git
+cd hagane
 
 # Install dependencies
 npm install

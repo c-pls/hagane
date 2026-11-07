@@ -1311,7 +1311,6 @@
     ],
     "secondaryMuscles": [
       "Biceps",
-      "Upper Back",
       "Traps",
       "Delts"
     ],
@@ -1964,13 +1963,14 @@
       "Forearms"
     ],
     "secondaryMuscles": [
-      "Flexor Carpi Radialis",
-      "Flexor Carpi Ulnaris"
+      "Biceps"
     ],
     "primarySlugs": [
       "forearm"
     ],
-    "secondarySlugs": [],
+    "secondarySlugs": [
+      "biceps"
+    ],
     "shortDescription": "A forearm isolation exercise curling a dumbbell behind the back to emphasize forearm flexors.",
     "steps": {
       "prepare": [
@@ -2032,7 +2032,6 @@
       "Lats"
     ],
     "secondaryMuscles": [
-      "Upper Back",
       "Traps",
       "Delts",
       "Biceps"
@@ -2752,7 +2751,6 @@
       "Lats"
     ],
     "secondaryMuscles": [
-      "Upper Back",
       "Traps",
       "Rear Delts",
       "Biceps"
@@ -4399,7 +4397,6 @@
       "Triceps"
     ],
     "secondaryMuscles": [
-      "Anconeus",
       "Forearms"
     ],
     "primarySlugs": [
@@ -8193,7 +8190,6 @@
       "Lats"
     ],
     "secondaryMuscles": [
-      "Upper Back",
       "Delts",
       "Traps",
       "Biceps"
@@ -8838,23 +8834,21 @@
     "videoUrl": "/videos/smith-machine-deadlift-0752.mp4",
     "primaryMuscles": [
       "Hamstrings",
-      "Glutes",
       "Lower Back"
     ],
     "secondaryMuscles": [
+      "Glutes",
       "Traps",
-      "Forearms",
-      "Quads"
+      "Forearms"
     ],
     "primarySlugs": [
       "hamstring",
-      "gluteal",
       "lower-back"
     ],
     "secondarySlugs": [
+      "gluteal",
       "trapezius",
-      "forearm",
-      "quadriceps"
+      "forearm"
     ],
     "shortDescription": "A guided barbell deadlift performed with a Smith machine to build lower back, glutes, and hamstrings strength.",
     "steps": {
@@ -9134,7 +9128,6 @@
     ],
     "secondaryMuscles": [
       "Biceps",
-      "Upper Back",
       "Forearms"
     ],
     "primarySlugs": [
@@ -9637,8 +9630,7 @@
       "Lats"
     ],
     "secondaryMuscles": [
-      "Biceps",
-      "Upper Back"
+      "Biceps"
     ],
     "primarySlugs": [
       "upper-back"
@@ -9783,7 +9775,6 @@
     ],
     "secondaryMuscles": [
       "Obliques",
-      "Upper Back",
       "Biceps",
       "Rear Delts"
     ],
@@ -10079,7 +10070,6 @@
       "Triceps"
     ],
     "secondaryMuscles": [
-      "Anconeus",
       "Forearms"
     ],
     "primarySlugs": [
@@ -10151,7 +10141,6 @@
     ],
     "secondaryMuscles": [
       "Biceps",
-      "Upper Back",
       "Delts"
     ],
     "primarySlugs": [
@@ -10657,7 +10646,6 @@
       "Triceps"
     ],
     "secondaryMuscles": [
-      "Anconeus",
       "Forearms"
     ],
     "primarySlugs": [
@@ -10947,7 +10935,6 @@
     ],
     "secondaryMuscles": [
       "Biceps",
-      "Upper Back",
       "Traps"
     ],
     "primarySlugs": [
@@ -11018,7 +11005,6 @@
       "Lats"
     ],
     "secondaryMuscles": [
-      "Upper Back",
       "Traps",
       "Biceps",
       "Delts"
@@ -11164,7 +11150,6 @@
     "secondaryMuscles": [
       "Biceps",
       "Traps",
-      "Upper Back",
       "Delts"
     ],
     "primarySlugs": [
@@ -11305,7 +11290,6 @@
       "Triceps"
     ],
     "secondaryMuscles": [
-      "Anconeus",
       "Forearms"
     ],
     "primarySlugs": [
@@ -11590,7 +11574,6 @@
     ],
     "secondaryMuscles": [
       "Biceps",
-      "Upper Back",
       "Traps"
     ],
     "primarySlugs": [
@@ -11803,8 +11786,7 @@
       "Lats"
     ],
     "secondaryMuscles": [
-      "Biceps",
-      "Upper Back"
+      "Biceps"
     ],
     "primarySlugs": [
       "upper-back"
@@ -11943,7 +11925,6 @@
     ],
     "secondaryMuscles": [
       "Biceps",
-      "Upper Back",
       "Forearms",
       "Obliques",
       "Traps"
@@ -12159,7 +12140,6 @@
     ],
     "secondaryMuscles": [
       "Biceps",
-      "Upper Back",
       "Traps",
       "Delts"
     ],
@@ -12304,7 +12284,6 @@
     ],
     "secondaryMuscles": [
       "Traps",
-      "Upper Back",
       "Biceps"
     ],
     "primarySlugs": [
@@ -12374,7 +12353,6 @@
     ],
     "secondaryMuscles": [
       "Biceps",
-      "Upper Back",
       "Traps",
       "Delts"
     ],
@@ -12586,7 +12564,6 @@
     ],
     "secondaryMuscles": [
       "Biceps",
-      "Upper Back",
       "Forearms"
     ],
     "primarySlugs": [
@@ -12726,7 +12703,6 @@
     ],
     "secondaryMuscles": [
       "Biceps",
-      "Upper Back",
       "Traps",
       "Forearms"
     ],
@@ -13304,10 +13280,10 @@
     "equipment": "Barbell",
     "videoUrl": "/videos/barbell-overhand-bent-over-row.mp4",
     "primaryMuscles": [
-      "Upper Back",
-      "Lats"
+      "Upper Back"
     ],
     "secondaryMuscles": [
+      "Traps",
       "Rear Delts",
       "Biceps",
       "Lower Back"
@@ -13316,6 +13292,7 @@
       "upper-back"
     ],
     "secondarySlugs": [
+      "trapezius",
       "deltoids",
       "biceps",
       "lower-back"
@@ -13378,10 +13355,10 @@
     "equipment": "Dumbbell",
     "videoUrl": "/videos/dumbbell-one-arm-row.mp4",
     "primaryMuscles": [
-      "Lats",
-      "Upper Back"
+      "Lats"
     ],
     "secondaryMuscles": [
+      "Traps",
       "Rear Delts",
       "Biceps",
       "Forearms"
@@ -13390,6 +13367,7 @@
       "upper-back"
     ],
     "secondarySlugs": [
+      "trapezius",
       "deltoids",
       "biceps",
       "forearm"
@@ -13451,8 +13429,7 @@
     "equipment": "Machine",
     "videoUrl": "/videos/lever-military-press-0587.mp4",
     "primaryMuscles": [
-      "Delts",
-      "Front Delts"
+      "Shoulders"
     ],
     "secondaryMuscles": [
       "Triceps",
@@ -13800,8 +13777,7 @@
     "equipment": "Bodyweight",
     "videoUrl": "/videos/standing-wheel-rollout-0796.mp4",
     "primaryMuscles": [
-      "Abs",
-      "Core"
+      "Abs"
     ],
     "secondaryMuscles": [
       "Lats",

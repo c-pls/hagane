@@ -48,3 +48,11 @@ android/app/src/main/assets/capacitor.plugins.json
 .env
 .env.local
 .env.*.local
+
+# Garmin Connect IQ build outputs & private developer signing keys
+garmin-watch/dist/
+garmin-watch/*.der
+garmin-watch/*.pem
+garmin-watch/*.prg
+garmin-watch/*.iq
+garmin-watch/*.prg.debug.xml

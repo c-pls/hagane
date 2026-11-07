@@ -18,6 +18,7 @@ import {
 import {
   deduplicateRoutineExercises,
   getAllExercises,
+  getDefaultRestSeconds,
   loadComments,
   loadCustomExercises,
   loadLanguage,
@@ -41,6 +42,9 @@ import {
   autoLoadFromDevice,
   debouncedAutoSaveToDevice,
 } from './services/deviceStorage';
+import {
+  debouncedUpdateGarminWatchCache,
+} from './services/garminSync';
 
 export const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => loadLanguage());
@@ -487,6 +491,12 @@ export const App: React.FC = () => {
     debouncedAutoSaveToDevice(routines, comments, next, 100);
   };
 
+  // Passively keep the Garmin watch payload cache up to date in the background
+  // (debounced 2.5s so typing weights/reps does not spam Bluetooth or SharedPreferences).
+  useEffect(() => {
+    debouncedUpdateGarminWatchCache(routines, exercisesMap, 2500);
+  }, [routines, exercisesMap]);
+
   const handleAddExerciseToRoutine = (
     routineId: string,
     exerciseId: string,
@@ -517,7 +527,15 @@ export const App: React.FC = () => {
     if (replacingExIdx !== null && targetRoutine.exercises[replacingExIdx]) {
       const isWarmup = Boolean(targetRoutine.exercises[replacingExIdx].isWarmup);
       const nextExercises = targetRoutine.exercises.map((item, idx) =>
-        idx === replacingExIdx ? { ...item, exerciseId, isWarmup } : item
+        idx === replacingExIdx
+          ? {
+              ...item,
+              exerciseId,
+              isWarmup,
+              restSeconds:
+                item.restSeconds ?? getDefaultRestSeconds(ex, isWarmup),
+            }
+          : item
       );
       handleUpdateRoutine({ ...targetRoutine, exercises: nextExercises });
       showToast(`${t.pickerTitleSwap}: ${exName}`);
@@ -530,12 +548,15 @@ export const App: React.FC = () => {
       ? [{ weight: 20, reps: 15, type: 'warmup' }]
       : [{ weight: 60, reps: 10, type: 'normal' }];
 
+    const defaultRest = getDefaultRestSeconds(ex, asWarmup);
+
     const nextExercises: RoutineExerciseItem[] = asWarmup
       ? [
           ...targetRoutine.exercises.filter((e) => e.isWarmup),
           {
             exerciseId,
             isWarmup: true,
+            restSeconds: defaultRest,
             note: '',
             sets: defaultSets,
           },
@@ -546,6 +567,7 @@ export const App: React.FC = () => {
           {
             exerciseId,
             isWarmup: false,
+            restSeconds: defaultRest,
             note: '',
             sets: defaultSets,
           },
@@ -660,12 +682,28 @@ export const App: React.FC = () => {
 
     return (
       <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-xl bg-blue-600 text-white font-black text-sm flex items-center justify-center shadow-xs">
-          S
+        <div className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-700/60 flex items-center justify-center shadow-xs overflow-hidden shrink-0">
+          <svg viewBox="0 0 512 512" className="w-6 h-6" fill="none">
+            <rect x="144" y="226" width="224" height="60" rx="8" fill="#3B82F6" />
+            <polygon points="98,124 144,78 144,434 98,388" fill="#FFFFFF" />
+            <polygon points="144,78 174,108 174,404 144,434" fill="#94A3B8" />
+            <polygon points="368,78 338,108 338,404 368,434" fill="#94A3B8" />
+            <polygon points="414,124 368,78 368,434 414,388" fill="#FFFFFF" />
+          </svg>
         </div>
-        <h1 className="font-bold text-base text-slate-900 leading-tight">
-          Shaken
-        </h1>
+        <div>
+          <div className="flex items-center gap-1.5">
+            <h1 className="font-extrabold text-base text-slate-900 tracking-tight leading-none">
+              Hagane
+            </h1>
+            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/60 leading-none">
+              鋼
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-400 font-medium leading-none mt-0.5">
+            Forge your steel
+          </p>
+        </div>
       </div>
     );
   };
