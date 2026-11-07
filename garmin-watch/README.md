@@ -1,4 +1,4 @@
-# ⌚ Hagane (鋼) — Garmin Forerunner 255 Music (46mm) App
+# ⌚ Hagane — Garmin Forerunner 255 Music (46mm) App
 
 Custom English-only **Monkey C** strength-training watch app (`type="watch-app"`) designed specifically for the **Garmin Forerunner 255 Music (`260 × 260 px` MIP screen, 5 physical buttons)** and paired directly with the **Hagane Android App**.
 

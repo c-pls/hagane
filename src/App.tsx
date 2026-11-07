@@ -692,15 +692,10 @@ export const App: React.FC = () => {
           </svg>
         </div>
         <div>
-          <div className="flex items-center gap-1.5">
-            <h1 className="font-extrabold text-base text-slate-900 tracking-tight leading-none">
-              Hagane
-            </h1>
-            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/60 leading-none">
-              鋼
-            </span>
-          </div>
-          <p className="text-[10px] text-slate-400 font-medium leading-none mt-0.5">
+          <h1 className="font-extrabold text-base text-slate-900 tracking-tight leading-none">
+            Hagane
+          </h1>
+          <p className="text-[10px] text-slate-400 font-medium leading-none mt-1">
             Forge your steel
           </p>
         </div>

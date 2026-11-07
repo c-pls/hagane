@@ -1,9 +1,9 @@
-# ⚔️ Hagane (鋼)
+# ⚔️ Hagane
 
 > **"Forge your steel — Rèn thép mỗi ngày"**
 > *Offline Gym Workout Tracker, 1080p Exercise Wiki, & Garmin Forerunner Watch Companion for Android and Web*
 
-**Hagane (鋼)** is a fast, 100% offline-first gym companion engineered for distraction-free workouts. It bundles 199 high-definition 1080p exercise demo videos directly into the app, complete with 1-to-1 bilingual English and natural Vietnamese instructions, custom workout routine tracking with drag-and-drop reordering, per-exercise rest timers, Garmin Forerunner 255 Music watch integration, and smartphone gesture navigation.
+**Hagane** is a fast, 100% offline-first gym companion engineered for distraction-free workouts. It bundles 199 high-definition 1080p exercise demo videos directly into the app, complete with 1-to-1 bilingual English and natural Vietnamese instructions, custom workout routine tracking with drag-and-drop reordering, per-exercise rest timers, Garmin Forerunner 255 Music watch integration, and smartphone gesture navigation.
 
 ---
 

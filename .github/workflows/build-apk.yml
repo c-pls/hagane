@@ -83,7 +83,7 @@ jobs:
           make_latest: true
           generate_release_notes: true
           body: |
-            ## ⚔️ Hagane (鋼) - Forge Your Steel APK
+            ## ⚔️ Hagane - Forge Your Steel APK
             > *"Forge your steel — Rèn thép mỗi ngày"*
 
             Download and install the APK directly on your Samsung Galaxy or Android phone:
@@ -91,7 +91,7 @@ jobs:
 
             ---
             ### ✨ What's new in Hagane v1.3:
-            - **New Identity & Twin Katana Logo**: Rebranded to **Hagane (鋼)** with sleek Katana Barbell branding across Android and Garmin.
+            - **New Identity & Twin Katana Logo**: Rebranded to **Hagane** with sleek Katana Barbell branding across Android and Garmin.
             - **⌚ Garmin Forerunner 255 Watch Integration**: Custom English-only strength workout companion app (`type="watch-app"`) with live Heart Rate, set tracking, and native `.FIT` recording.
             - **⏱ Per-Exercise Rest Timers**: Custom rest countdowns (`2:30` compound, `1:30` isolation, `1:00` warm-up) with 360° watch progress ring and overtime tracking.
             - **⚡ Superset 0s Transitions**: Automatic chaining between paired exercises without interruption.
@@ -116,7 +116,7 @@ jobs:
         run: |
           echo "### ⚔️ Hagane Android APK Built Successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The official Android APK for **Hagane (鋼)** has been built, signed, uploaded as an artifact, and published to GitHub Releases." >> $GITHUB_STEP_SUMMARY
+          echo "The official Android APK for **Hagane** has been built, signed, uploaded as an artifact, and published to GitHub Releases." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "#### How to install on your Samsung Galaxy (Android):" >> $GITHUB_STEP_SUMMARY
           echo "1. Go to the **Releases** tab on your GitHub repository (or download from the release link above)." >> $GITHUB_STEP_SUMMARY
