@@ -35,11 +35,61 @@ export function deduplicateRoutineExercises(
   });
 }
 
+function groupContiguousSupersets(
+  sectionExercises: RoutineExerciseItem[]
+): RoutineExerciseItem[] {
+  // Count how many exercises belong to each supersetId in this section
+  const counts: Record<string, number> = {};
+  for (const item of sectionExercises) {
+    if (item.supersetId) {
+      counts[item.supersetId] = (counts[item.supersetId] || 0) + 1;
+    }
+  }
+
+  // Group exercises sharing a valid supersetId (>= 2 members) together as a single contiguous block
+  const result: RoutineExerciseItem[] = [];
+  const placedGroupIds = new Set<string>();
+
+  for (const item of sectionExercises) {
+    const sId = item.supersetId;
+    if (!sId) {
+      result.push(item);
+      continue;
+    }
+
+    if ((counts[sId] || 0) < 2) {
+      // Orphan single exercise -> strip supersetId
+      const copy = { ...item };
+      delete copy.supersetId;
+      result.push(copy);
+      continue;
+    }
+
+    if (placedGroupIds.has(sId)) {
+      // Already placed as part of its superset block
+      continue;
+    }
+
+    placedGroupIds.add(sId);
+    for (const member of sectionExercises) {
+      if (member.supersetId === sId) {
+        result.push(member);
+      }
+    }
+  }
+
+  return result;
+}
+
 export function sortRoutineExercisesBySection(
   exercises: RoutineExerciseItem[]
 ): RoutineExerciseItem[] {
-  const warmups = exercises.filter((e) => Boolean(e.isWarmup));
-  const mains = exercises.filter((e) => !e.isWarmup);
+  const warmups = groupContiguousSupersets(
+    exercises.filter((e) => Boolean(e.isWarmup))
+  );
+  const mains = groupContiguousSupersets(
+    exercises.filter((e) => !e.isWarmup)
+  );
   return [...warmups, ...mains];
 }
 
@@ -56,68 +106,7 @@ export function saveLanguage(lang: Language): void {
   }
 }
 
-const DEFAULT_ROUTINES: Routine[] = [
-  {
-    id: 'routine-default-1',
-    name: 'Leg & Compound Day',
-    tag: 'Custom Routine',
-    exercises: [
-      {
-        exerciseId: '0585', // Machine Leg Extension
-        isWarmup: true,
-        note: 'Light warmup to prime quads & knee joints',
-        sets: [
-          { weight: 20, reps: 15, type: 'warmup' },
-          { weight: 30, reps: 12, type: 'warmup' },
-        ],
-      },
-      {
-        exerciseId: '1435', // Barbell Back Squat
-        isWarmup: false,
-        note: 'Rack pin #11. Focus on bracing core and driving knees out.',
-        sets: [
-          { weight: 50, reps: 8, type: 'warmup' },
-          { weight: 70, reps: 10, type: 'normal' },
-          { weight: 70, reps: 10, type: 'normal' },
-        ],
-      },
-      {
-        exerciseId: '0116', // Barbell Straight Leg Deadlift
-        isWarmup: false,
-        sets: [
-          { weight: 50, reps: 10, type: 'warmup' },
-          { weight: 80, reps: 10, type: 'normal' },
-          { weight: 80, reps: 10, type: 'normal' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'routine-default-2',
-    name: 'Upper Body Push & Pull',
-    tag: 'Custom Routine',
-    exercises: [
-      {
-        exerciseId: '0025', // Barbell Bench Press
-        isWarmup: false,
-        sets: [
-          { weight: 40, reps: 10, type: 'warmup' },
-          { weight: 60, reps: 10, type: 'normal' },
-          { weight: 60, reps: 10, type: 'normal' },
-        ],
-      },
-      {
-        exerciseId: '0027', // Barbell Underhand Bent-Over Row
-        isWarmup: false,
-        sets: [
-          { weight: 30, reps: 12, type: 'warmup' },
-          { weight: 50, reps: 10, type: 'normal' },
-          { weight: 50, reps: 10, type: 'normal' },
-        ],
-      },
-    ],
-  },
-];
+const DEFAULT_ROUTINES: Routine[] = [];
 
 export const LAST_SAVED_AT_KEY = 'shaken_last_saved_at';
 

@@ -195,7 +195,13 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
                   : 'bg-blue-600 hover:bg-blue-700'
               }`}
             >
-              <span>{asWarmup ? t.addDirectlyToWarmup : t.addDirectlyToMain}</span>
+              <span>
+                {replacingExIdx !== null && replacingExIdx !== undefined
+                  ? `🔄 ${t.pickerTitleSwap}`
+                  : asWarmup
+                    ? t.addDirectlyToWarmup
+                    : t.addDirectlyToMain}
+              </span>
             </button>
           </div>
         )}

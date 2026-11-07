@@ -139,17 +139,26 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   const [highlightedCardIdx, setHighlightedCardIdx] = useState<number | null>(
     null
   );
-  const lastScrolledIndexRef = useRef<number | null>(null);
+  const lastScrolledKeyRef = useRef<string | null>(null);
 
   // When adding or swapping an exercise, automatically scroll to it and highlight it once
   useEffect(() => {
+    const targetExId =
+      scrollToIndex !== undefined
+        ? routine.exercises[scrollToIndex]?.exerciseId
+        : undefined;
+    const scrollKey =
+      scrollToIndex !== undefined && targetExId
+        ? `${scrollToIndex}-${targetExId}`
+        : null;
+
     if (
       scrollToIndex !== undefined &&
       scrollToIndex >= 0 &&
-      routine.exercises[scrollToIndex] &&
-      lastScrolledIndexRef.current !== scrollToIndex
+      scrollKey &&
+      lastScrolledKeyRef.current !== scrollKey
     ) {
-      lastScrolledIndexRef.current = scrollToIndex;
+      lastScrolledKeyRef.current = scrollKey;
       setHighlightedCardIdx(scrollToIndex);
 
       const timer = setTimeout(() => {
@@ -175,6 +184,17 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   // Drag-and-drop state (supports both desktop drag & mobile touch)
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [openMenuExIdx, setOpenMenuExIdx] = useState<number | null>(null);
+  const [confirmRemoveExIdx, setConfirmRemoveExIdx] = useState<number | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (!isEditMode) {
+      setOpenMenuExIdx(null);
+      setConfirmRemoveExIdx(null);
+    }
+  }, [isEditMode]);
 
   const warmupIndices = useMemo(
     () =>
@@ -287,9 +307,16 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     const next = routine.exercises[nextIdx];
 
     const groupId = current.supersetId || next.supersetId || `ss-${Date.now()}`;
+    const oldCurrentGroup = current.supersetId;
+    const oldNextGroup = next.supersetId;
 
     const nextExercises = routine.exercises.map((item, idx) => {
-      if (idx === exIndex || idx === nextIdx) {
+      if (
+        idx === exIndex ||
+        idx === nextIdx ||
+        (oldCurrentGroup && item.supersetId === oldCurrentGroup) ||
+        (oldNextGroup && item.supersetId === oldNextGroup)
+      ) {
         return { ...item, supersetId: groupId };
       }
       return item;
@@ -400,28 +427,124 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   };
 
   const handleRemoveExercise = (exIndex: number) => {
-    const exItem = routine.exercises[exIndex];
-    const exName = exercisesMap[exItem?.exerciseId]?.name || 'Exercise';
-    const confirmMsg =
-      lang === 'vi'
-        ? `Xóa bài tập "${exName}" khỏi buổi tập này?`
-        : `Remove "${exName}" from this routine?`;
-    if (!window.confirm(confirmMsg)) return;
-
     const nextExercises = routine.exercises.filter((_, idx) => idx !== exIndex);
     onUpdateRoutine({ ...routine, exercises: nextExercises });
+    setConfirmRemoveExIdx(null);
+  };
+
+  // Partition a section's exercise indices into logical blocks (a superset 3A+3B is 1 single block)
+  const getSectionIndexBlocks = (sectionIndices: number[]): number[][] => {
+    const blocks: number[][] = [];
+    let i = 0;
+    while (i < sectionIndices.length) {
+      const idx = sectionIndices[i];
+      const sId = routine.exercises[idx]?.supersetId;
+      if (!sId || !supersetInfoMap[idx]) {
+        blocks.push([idx]);
+        i++;
+        continue;
+      }
+      const groupBlock: number[] = [idx];
+      let j = i + 1;
+      while (
+        j < sectionIndices.length &&
+        routine.exercises[sectionIndices[j]]?.supersetId === sId
+      ) {
+        groupBlock.push(sectionIndices[j]);
+        j++;
+      }
+      blocks.push(groupBlock);
+      i = j;
+    }
+    return blocks;
   };
 
   const handleReorderExercises = (fromIdx: number, toIdx: number) => {
     if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return;
-    const fromIsWarmup = Boolean(routine.exercises[fromIdx]?.isWarmup);
-    const toIsWarmup = Boolean(routine.exercises[toIdx]?.isWarmup);
+    const fromItem = routine.exercises[fromIdx];
+    const toItem = routine.exercises[toIdx];
+    if (!fromItem || !toItem) return;
+
+    const fromIsWarmup = Boolean(fromItem.isWarmup);
+    const toIsWarmup = Boolean(toItem.isWarmup);
     // Strict isolation: warm-up and main exercises can never be dragged or swapped across sections
     if (fromIsWarmup !== toIsWarmup) return;
 
-    const nextExercises = [...routine.exercises];
-    const [moved] = nextExercises.splice(fromIdx, 1);
-    nextExercises.splice(toIdx, 0, moved);
+    // Case 1: Reordering within the exact same superset (e.g. swapping 3A and 3B with each other)
+    if (
+      fromItem.supersetId &&
+      fromItem.supersetId === toItem.supersetId &&
+      supersetInfoMap[fromIdx]
+    ) {
+      const nextExercises = [...routine.exercises];
+      const [moved] = nextExercises.splice(fromIdx, 1);
+      nextExercises.splice(toIdx, 0, moved);
+      onUpdateRoutine({ ...routine, exercises: nextExercises });
+      return;
+    }
+
+    // Case 2: Moving across blocks — treat an entire superset (e.g. 3A + 3B) as 1 single block!
+    const sectionIndices = fromIsWarmup ? warmupIndices : mainIndices;
+    const blocks = getSectionIndexBlocks(sectionIndices);
+    const fromBlockIdx = blocks.findIndex((b) => b.includes(fromIdx));
+    const toBlockIdx = blocks.findIndex((b) => b.includes(toIdx));
+    if (
+      fromBlockIdx === -1 ||
+      toBlockIdx === -1 ||
+      fromBlockIdx === toBlockIdx
+    ) {
+      return;
+    }
+
+    const nextBlocks = [...blocks];
+    const [movedBlock] = nextBlocks.splice(fromBlockIdx, 1);
+    nextBlocks.splice(toBlockIdx, 0, movedBlock);
+
+    const reorderedSectionItems = nextBlocks
+      .flat()
+      .map((i) => routine.exercises[i]);
+    const otherSectionItems = (fromIsWarmup ? mainIndices : warmupIndices).map(
+      (i) => routine.exercises[i]
+    );
+
+    const nextExercises = fromIsWarmup
+      ? [...reorderedSectionItems, ...otherSectionItems]
+      : [...otherSectionItems, ...reorderedSectionItems];
+
+    onUpdateRoutine({ ...routine, exercises: nextExercises });
+  };
+
+  const handleMoveBlock = (exIdx: number, direction: -1 | 1) => {
+    const item = routine.exercises[exIdx];
+    if (!item) return;
+    const isWarmupSection = Boolean(item.isWarmup);
+    const sectionIndices = isWarmupSection ? warmupIndices : mainIndices;
+    const blocks = getSectionIndexBlocks(sectionIndices);
+    const blockIdx = blocks.findIndex((b) => b.includes(exIdx));
+    const targetBlockIdx = blockIdx + direction;
+    if (
+      blockIdx === -1 ||
+      targetBlockIdx < 0 ||
+      targetBlockIdx >= blocks.length
+    ) {
+      return;
+    }
+
+    const nextBlocks = [...blocks];
+    const [movedBlock] = nextBlocks.splice(blockIdx, 1);
+    nextBlocks.splice(targetBlockIdx, 0, movedBlock);
+
+    const reorderedSectionItems = nextBlocks
+      .flat()
+      .map((i) => routine.exercises[i]);
+    const otherSectionItems = (
+      isWarmupSection ? mainIndices : warmupIndices
+    ).map((i) => routine.exercises[i]);
+
+    const nextExercises = isWarmupSection
+      ? [...reorderedSectionItems, ...otherSectionItems]
+      : [...otherSectionItems, ...reorderedSectionItems];
+
     onUpdateRoutine({ ...routine, exercises: nextExercises });
   };
 
@@ -468,16 +591,47 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     if (!ex) return null;
     const note = item.note || '';
     const displayName = lang === 'vi' && ex.nameVi ? ex.nameVi : ex.name;
-    const isBeingDragged = draggedIdx === exIdx;
     const isWarmupEx = Boolean(item.isWarmup);
-    const isDragTarget =
-      dragOverIdx === exIdx &&
-      draggedIdx !== null &&
-      draggedIdx !== exIdx &&
-      Boolean(routine.exercises[draggedIdx]?.isWarmup) === isWarmupEx;
     const supersetInfo = supersetInfoMap[exIdx];
     const isSuperset = Boolean(supersetInfo);
     const orderInfo = exerciseOrderMap[exIdx];
+    const isMenuOpen = openMenuExIdx === exIdx;
+
+    // Highlight the entire superset block together when dragging or hovering over a superset
+    const draggedItem =
+      draggedIdx !== null ? routine.exercises[draggedIdx] : null;
+    const isBeingDragged =
+      draggedIdx === exIdx ||
+      Boolean(
+        isSuperset &&
+          item.supersetId &&
+          draggedItem?.supersetId === item.supersetId
+      );
+
+    const dragOverItem =
+      dragOverIdx !== null ? routine.exercises[dragOverIdx] : null;
+    const isDragTarget =
+      draggedIdx !== null &&
+      draggedIdx !== exIdx &&
+      Boolean(draggedItem?.isWarmup) === isWarmupEx &&
+      (dragOverIdx === exIdx ||
+        Boolean(
+          isSuperset &&
+            item.supersetId &&
+            dragOverItem?.supersetId === item.supersetId &&
+            draggedItem?.supersetId !== item.supersetId
+        ));
+
+    const sectionIndices = isWarmupEx ? warmupIndices : mainIndices;
+    const blocks = getSectionIndexBlocks(sectionIndices);
+    const blockIdx = blocks.findIndex((b) => b.includes(exIdx));
+    const canMoveUp = blockIdx > 0;
+    const canMoveDown = blockIdx >= 0 && blockIdx < blocks.length - 1;
+    const canLinkWithBelow =
+      exIdx + 1 < routine.exercises.length &&
+      Boolean(routine.exercises[exIdx + 1].isWarmup) === isWarmupEx &&
+      (!item.supersetId ||
+        routine.exercises[exIdx + 1].supersetId !== item.supersetId);
 
     return (
       <div
@@ -487,6 +641,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
         onDragStart={(e) => {
           if (!isEditMode) return;
           setDraggedIdx(exIdx);
+          setOpenMenuExIdx(null);
           e.dataTransfer.effectAllowed = 'move';
           e.dataTransfer.setData('text/plain', String(exIdx));
         }}
@@ -514,7 +669,9 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
           setDraggedIdx(null);
           setDragOverIdx(null);
         }}
-        className={`bg-white rounded-[24px] p-4 shadow-xs space-y-3 transition duration-500 ${
+        className={`bg-white rounded-[24px] p-4 shadow-xs space-y-3 transition duration-500 relative ${
+          isMenuOpen ? 'z-30' : 'z-10'
+        } ${
           highlightedCardIdx === exIdx
             ? 'ring-2 ring-blue-500 bg-blue-50/20'
             : ''
@@ -530,11 +687,12 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
       >
         {/* Card Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-2.5 gap-2">
-          <div className="flex items-start gap-2 min-w-0">
+          <div className="flex items-start gap-2 min-w-0 flex-1">
             {/* Drag Handle in Edit Mode */}
             {isEditMode && (
               <div
                 onTouchStart={() => {
+                  setOpenMenuExIdx(null);
                   setDraggedIdx(exIdx);
                 }}
                 onTouchMove={handleTouchMove}
@@ -546,14 +704,13 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
               </div>
             )}
 
-            {/* Exercise Order Number / Superset Badge */}
+            {/* Compact Exercise Order Number / Superset Badge (no bulky icon) */}
             {orderInfo && (
               orderInfo.isSuperset ? (
                 <div
                   title={`Superset ${orderInfo.groupLetter}`}
-                  className="mt-0.5 px-2 h-6 min-w-[28px] rounded-lg bg-purple-100 text-purple-800 border border-purple-200 text-xs font-black flex items-center justify-center shrink-0 gap-0.5 shadow-2xs select-none"
+                  className="mt-0.5 px-1.5 h-6 min-w-[24px] rounded-lg bg-purple-100 text-purple-800 border border-purple-200 text-xs font-black flex items-center justify-center shrink-0 shadow-2xs select-none"
                 >
-                  <span className="text-[10px] leading-none">⚡</span>
                   <span className="leading-none">{orderInfo.orderLabel}</span>
                 </div>
               ) : isWarmupEx ? (
@@ -571,7 +728,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
               )
             )}
 
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   type="button"
@@ -596,80 +753,8 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-            {isEditMode && (
-              <>
-                {/* Superset Link / Unlink Button */}
-                {isSuperset ? (
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => handleUnlinkSuperset(exIdx)}
-                      className="px-2 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold transition cursor-pointer"
-                      title={t.unlinkSupersetBtn}
-                    >
-                      {t.unlinkSupersetBtn}
-                    </button>
-                    {/* If next exercise exists and is not yet in this superset, allow adding it to form a tri-set */}
-                    {exIdx + 1 < routine.exercises.length &&
-                      routine.exercises[exIdx + 1].supersetId !==
-                        item.supersetId &&
-                      Boolean(routine.exercises[exIdx + 1].isWarmup) ===
-                        isWarmupEx && (
-                        <button
-                          type="button"
-                          onClick={() => handleLinkSupersetWithNext(exIdx)}
-                          className="px-2 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold transition cursor-pointer"
-                          title={t.addNextToSupersetBtn}
-                        >
-                          {t.addNextToSupersetBtn}
-                        </button>
-                      )}
-                  </div>
-                ) : (
-                  /* Can link with next exercise if exists in same section */
-                  exIdx + 1 < routine.exercises.length &&
-                  Boolean(routine.exercises[exIdx + 1].isWarmup) ===
-                    isWarmupEx && (
-                    <button
-                      type="button"
-                      onClick={() => handleLinkSupersetWithNext(exIdx)}
-                      className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-purple-50 text-slate-600 hover:text-purple-700 text-xs font-semibold transition cursor-pointer"
-                      title={t.linkSupersetBtn}
-                    >
-                      {t.linkSupersetBtn}
-                    </button>
-                  )
-                )}
-
-                {/* Change / Swap Exercise Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onOpenPicker({
-                      asWarmup: isWarmupEx,
-                      replacingExIdx: exIdx,
-                      fromEditMode: isEditMode,
-                    });
-                  }}
-                  className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-xs font-semibold transition cursor-pointer"
-                >
-                  {t.changeExerciseBtn}
-                </button>
-
-                {/* Remove Exercise Button */}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveExercise(exIdx)}
-                  aria-label="Remove exercise"
-                  className="w-7 h-7 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 text-xs font-bold flex items-center justify-center cursor-pointer"
-                >
-                  ✕
-                </button>
-              </>
-            )}
-
-            {/* THE (i) ICON BUTTON */}
+          {/* Right Action Icons: Always (i), and (⋮) ONLY in Edit Mode */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={() => onOpenExerciseInfo(ex.id, exIdx)}
@@ -678,6 +763,108 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             >
               i
             </button>
+
+            {isEditMode && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setOpenMenuExIdx(isMenuOpen ? null : exIdx)}
+                  aria-label="Exercise options"
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-base flex items-center justify-center transition cursor-pointer"
+                >
+                  ⋮
+                </button>
+
+                {isMenuOpen && (
+                  <div className="absolute right-0 top-9 z-30 w-52 bg-white rounded-2xl shadow-lg border border-slate-200/90 py-1.5 text-xs font-semibold text-slate-700 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenMenuExIdx(null);
+                        onOpenPicker({
+                          asWarmup: isWarmupEx,
+                          replacingExIdx: exIdx,
+                          fromEditMode: isEditMode,
+                        });
+                      }}
+                      className="w-full px-3.5 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <span>🔄</span>
+                      <span>{t.changeExerciseBtn}</span>
+                    </button>
+
+                    {canLinkWithBelow && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenMenuExIdx(null);
+                          handleLinkSupersetWithNext(exIdx);
+                        }}
+                        className="w-full px-3.5 py-2.5 text-left hover:bg-purple-50 text-purple-700 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <span>⚡</span>
+                        <span>{t.linkSupersetBtn}</span>
+                      </button>
+                    )}
+
+                    {isSuperset && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenMenuExIdx(null);
+                          handleUnlinkSuperset(exIdx);
+                        }}
+                        className="w-full px-3.5 py-2.5 text-left hover:bg-purple-50 text-purple-700 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <span>✕</span>
+                        <span>{t.unlinkSupersetBtn}</span>
+                      </button>
+                    )}
+
+                    {canMoveUp && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenMenuExIdx(null);
+                          handleMoveBlock(exIdx, -1);
+                        }}
+                        className="w-full px-3.5 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <span className="text-slate-400">↑</span>
+                        <span>{t.moveUpBtn}</span>
+                      </button>
+                    )}
+
+                    {canMoveDown && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenMenuExIdx(null);
+                          handleMoveBlock(exIdx, 1);
+                        }}
+                        className="w-full px-3.5 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <span className="text-slate-400">↓</span>
+                        <span>{t.moveDownBtn}</span>
+                      </button>
+                    )}
+
+                    <div className="my-1 border-t border-slate-100" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenMenuExIdx(null);
+                        setConfirmRemoveExIdx(exIdx);
+                      }}
+                      className="w-full px-3.5 py-2.5 text-left text-red-600 hover:bg-red-50 flex items-center gap-2.5 font-bold cursor-pointer"
+                    >
+                      <span>🗑️</span>
+                      <span>{t.removeExerciseBtn}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -866,8 +1053,25 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     );
   };
 
+  const confirmRemoveEx =
+    confirmRemoveExIdx !== null
+      ? exercisesMap[routine.exercises[confirmRemoveExIdx]?.exerciseId]
+      : null;
+  const confirmRemoveExName =
+    confirmRemoveEx && lang === 'vi' && confirmRemoveEx.nameVi
+      ? confirmRemoveEx.nameVi
+      : confirmRemoveEx?.name || 'Exercise';
+
   return (
     <div className="space-y-4">
+      {/* Backdrop for closing active ⋮ menu */}
+      {openMenuExIdx !== null && (
+        <div
+          className="fixed inset-0 z-20"
+          onClick={() => setOpenMenuExIdx(null)}
+        />
+      )}
+
       {/* Drag Hint (Only in edit mode if more than 1 exercise) */}
       {isEditMode && routine.exercises.length > 1 && (
         <div className="flex items-center justify-between px-3.5 py-2 text-xs text-blue-700 bg-blue-50/80 rounded-2xl border border-blue-200/80 font-medium select-none">
@@ -927,9 +1131,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                   </span>
                 )}
               </div>
-              <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-                {t.warmupSectionSubtitle}
-              </span>
             </div>
 
             {warmupIndices.length > 0 ? (
@@ -950,14 +1151,8 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                       >
                         {renderExerciseCard(routine.exercises[idx], idx)}
                         {showConnector && (
-                          <div className="flex items-center justify-center -my-1 py-1 col-span-full">
-                            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200 shadow-2xs">
-                              <span>⚡</span>
-                              <span>
-                                {t.supersetConnector}{' '}
-                                {supersetInfoMap[idx].groupLetter}
-                              </span>
-                            </span>
+                          <div className="flex items-center pl-6 -my-3.5 py-0.5 col-span-full md:hidden pointer-events-none">
+                            <div className="w-1 h-3.5 rounded-full bg-purple-400" />
                           </div>
                         )}
                       </React.Fragment>
@@ -995,9 +1190,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
               >
                 <span>🔥</span>
                 <span>{t.addWarmupExerciseBtn}</span>
-                <span className="text-[11px] font-normal text-amber-700/80 hidden sm:inline">
-                  ({t.warmupSectionSubtitle})
-                </span>
               </button>
             )}
           </div>
@@ -1015,9 +1207,6 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                     {mainIndices.length}
                   </span>
                 </div>
-                <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-                  {t.mainSectionSubtitle}
-                </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 {mainIndices.map((idx, pos) => {
@@ -1035,14 +1224,8 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                     >
                       {renderExerciseCard(routine.exercises[idx], idx)}
                       {showConnector && (
-                        <div className="flex items-center justify-center -my-1 py-1 col-span-full">
-                          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200 shadow-2xs">
-                            <span>⚡</span>
-                            <span>
-                              {t.supersetConnector}{' '}
-                              {supersetInfoMap[idx].groupLetter}
-                            </span>
-                          </span>
+                        <div className="flex items-center pl-6 -my-3.5 py-0.5 col-span-full md:hidden pointer-events-none">
+                          <div className="w-1 h-3.5 rounded-full bg-purple-400" />
                         </div>
                       )}
                     </React.Fragment>
@@ -1067,6 +1250,52 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             >
               <span>{t.addExerciseBtn}</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Safe In-App Remove Exercise Confirmation Modal */}
+      {confirmRemoveExIdx !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setConfirmRemoveExIdx(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-[24px] p-5 w-full max-w-sm shadow-xl space-y-3.5 border border-red-100"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-lg shrink-0">
+                🗑️
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-bold text-base text-slate-900">
+                  {t.removeExerciseConfirmTitle}
+                </h3>
+                <p className="text-xs font-semibold text-red-600 truncate">
+                  “{confirmRemoveExName}”
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {t.removeExerciseConfirmDesc}
+            </p>
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setConfirmRemoveExIdx(null)}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+              >
+                {t.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRemoveExercise(confirmRemoveExIdx)}
+                className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+              >
+                {t.confirmDeleteBtn}
+              </button>
+            </div>
           </div>
         </div>
       )}

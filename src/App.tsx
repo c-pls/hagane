@@ -29,7 +29,7 @@ import {
   LAST_SAVED_AT_KEY,
   sortRoutineExercisesBySection,
 } from './services/storage';
-import { RoutineList } from './components/RoutineList';
+import { CategoryTagPicker, RoutineList } from './components/RoutineList';
 import { RoutineDetail } from './components/RoutineDetail';
 import { ExercisePickerView } from './components/ExercisePickerView';
 import { ExerciseWiki } from './components/ExerciseWiki';
@@ -64,12 +64,7 @@ export const App: React.FC = () => {
   const [wikiMuscleFilter, setWikiMuscleFilter] = useState<string>('All');
   const [wikiEquipmentFilter, setWikiEquipmentFilter] = useState<string>('All');
   const wikiScrollPosRef = useRef<number>(0);
-  const [route, setRoute] = useState<ScreenRoute>(() => {
-    const initial = loadRoutines();
-    return initial.length > 0
-      ? { name: 'routineDetail', routineId: initial[0].id }
-      : { name: 'routineList' };
-  });
+  const [route, setRoute] = useState<ScreenRoute>({ name: 'routineList' });
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
@@ -102,31 +97,34 @@ export const App: React.FC = () => {
     setTimeout(applyScroll, 80);
   };
 
-  // Routine Edit Mode & Title editing (Header Option A)
+  // Routine Edit Mode & Title/Category editing
   const [isRoutineEditMode, setIsRoutineEditMode] = useState<boolean>(false);
   const [isEditingRoutineTitle, setIsEditingRoutineTitle] =
     useState<boolean>(false);
   const [routineTitleDraft, setRoutineTitleDraft] = useState<string>('');
+  const [routineTagDraft, setRoutineTagDraft] = useState<string>('');
 
   useEffect(() => {
     if (route.name === 'routineDetail') {
       if (route.initialEditMode !== undefined) {
         setIsRoutineEditMode(route.initialEditMode);
       }
-    } else {
+    } else if (route.name === 'routineList' || route.name === 'wikiList') {
       setIsRoutineEditMode(false);
+      setIsEditingRoutineTitle(false);
+    } else {
       setIsEditingRoutineTitle(false);
     }
   }, [route]);
 
-  const handleSaveRoutineTitle = () => {
+  const handleSaveRoutineTitle = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (route.name !== 'routineDetail') return;
     const routine = routines.find((r) => r.id === route.routineId);
     if (!routine) return;
-    const trimmed = routineTitleDraft.trim();
-    if (trimmed && trimmed !== routine.name) {
-      handleUpdateRoutine({ ...routine, name: trimmed });
-    }
+    const trimmedName = routineTitleDraft.trim() || routine.name;
+    const trimmedTag = routineTagDraft.trim();
+    handleUpdateRoutineMeta(routine.id, trimmedName, trimmedTag);
     setIsEditingRoutineTitle(false);
   };
 
@@ -144,16 +142,15 @@ export const App: React.FC = () => {
     autoLoadFromDevice()
       .then((backup) => {
         if (backup && Array.isArray(backup.routines)) {
-          const current = loadRoutines();
           const localTimestamp = Number(
             localStorage.getItem(LAST_SAVED_AT_KEY) || '0'
           );
           const backupTimestamp = backup.timestamp || 0;
 
-          // Safe restore: only restore if local routines are empty (fresh install)
-          // or device backup is strictly newer than the local store
+          // Safe restore: only restore on true fresh install (localTimestamp === 0 with non-empty backup)
+          // or when device backup is strictly newer than the local store
           const shouldRestore =
-            current.length === 0 ||
+            (localTimestamp === 0 && backup.routines.length > 0) ||
             (backupTimestamp > 0 && backupTimestamp > localTimestamp);
 
           if (shouldRestore) {
@@ -167,12 +164,14 @@ export const App: React.FC = () => {
               setCustomExercises(backup.customExercises);
               saveCustomExercises(backup.customExercises);
             }
-            const currentLang = loadLanguage();
-            showToast(
-              currentLang === 'vi'
-                ? 'Đã tự động khôi phục giáo án từ bộ nhớ máy'
-                : 'Auto-restored routines from device storage'
-            );
+            if (backup.routines.length > 0) {
+              const currentLang = loadLanguage();
+              showToast(
+                currentLang === 'vi'
+                  ? 'Đã tự động khôi phục giáo án từ bộ nhớ máy'
+                  : 'Auto-restored routines from device storage'
+              );
+            }
           }
         }
       })
@@ -435,6 +434,37 @@ export const App: React.FC = () => {
     showToast(t.toastDeletedRoutine);
   };
 
+  const handleReorderRoutines = (fromIdx: number, toIdx: number) => {
+    if (
+      fromIdx === toIdx ||
+      fromIdx < 0 ||
+      toIdx < 0 ||
+      fromIdx >= routines.length ||
+      toIdx >= routines.length
+    ) {
+      return;
+    }
+    const next = [...routines];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setRoutines(next);
+    saveRoutines(next);
+    debouncedAutoSaveToDevice(next, comments, customExercises, 100);
+  };
+
+  const handleUpdateRoutineMeta = (
+    routineId: string,
+    name: string,
+    tag: string
+  ) => {
+    const next = routines.map((r) =>
+      r.id === routineId ? { ...r, name, tag } : r
+    );
+    setRoutines(next);
+    saveRoutines(next);
+    debouncedAutoSaveToDevice(next, comments, customExercises, 100);
+  };
+
   const handleSaveRoutineExerciseComment = (
     routineId: string | undefined,
     routineExIndex: number | undefined,
@@ -569,7 +599,11 @@ export const App: React.FC = () => {
             {t.back}
           </button>
           <h1 className="font-bold text-base text-slate-900 leading-tight truncate">
-            {route.asWarmup ? t.pickerTitleWarmup : t.pickerTitleAdd}
+            {route.replacingExIdx !== null
+              ? t.pickerTitleSwap
+              : route.asWarmup
+                ? t.pickerTitleWarmup
+                : t.pickerTitleAdd}
           </h1>
         </div>
       );
@@ -590,22 +624,13 @@ export const App: React.FC = () => {
             {t.routinesBack}
           </button>
           <div className="min-w-0">
-            {isRoutineEditMode && isEditingRoutineTitle ? (
-              <input
-                type="text"
-                value={routineTitleDraft}
-                autoFocus
-                onChange={(e) => setRoutineTitleDraft(e.target.value)}
-                onBlur={handleSaveRoutineTitle}
-                onKeyDown={(e) => e.key === 'Enter' && handleSaveRoutineTitle()}
-                className="rounded-xl bg-slate-100 px-2.5 py-1 font-bold text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[180px] sm:max-w-[240px]"
-              />
-            ) : isRoutineEditMode ? (
+            {isRoutineEditMode ? (
               <button
                 type="button"
                 onClick={() => {
                   if (routine) {
                     setRoutineTitleDraft(routine.name);
+                    setRoutineTagDraft(routine.tag || '');
                     setIsEditingRoutineTitle(true);
                   }
                 }}
@@ -623,7 +648,7 @@ export const App: React.FC = () => {
                 {routineName}
               </h1>
             )}
-            {routine?.tag && !isEditingRoutineTitle && (
+            {routine?.tag && (
               <p className="text-xs text-slate-400 font-medium truncate">
                 {translateRoutineText(routine.tag, lang)}
               </p>
@@ -765,6 +790,8 @@ export const App: React.FC = () => {
             }
             onCreateRoutine={handleCreateRoutine}
             onDeleteRoutine={handleDeleteRoutine}
+            onReorderRoutines={handleReorderRoutines}
+            onUpdateRoutineMeta={handleUpdateRoutineMeta}
           />
         )}
 
@@ -801,6 +828,7 @@ export const App: React.FC = () => {
                 routineExIndex,
                 returnTo: {
                   ...route,
+                  initialEditMode: isRoutineEditMode,
                   savedScrollY: currentScroll,
                 },
               });
@@ -889,6 +917,7 @@ export const App: React.FC = () => {
                   routineId: route.routineId,
                   asWarmup: route.asWarmup,
                   replacingExIdx: route.replacingExIdx,
+                  fromEditMode: route.fromEditMode,
                   searchQuery: currentSearch,
                   muscleFilter: currentMuscle,
                   equipmentFilter: currentEquipment,
@@ -946,18 +975,37 @@ export const App: React.FC = () => {
                 commentText
               )
             }
-            activeRoutineId={route.routineId}
+            activeRoutineId={
+              route.routineExIndex === undefined ? route.routineId : undefined
+            }
             asWarmup={route.asWarmup}
             replacingExIdx={route.replacingExIdx}
             allExercises={allExercises}
             onSelectExercise={(newExId) => {
+              const currentRoutine = routines.find(
+                (r) => r.id === route.routineId
+              );
+              const inferredWarmup =
+                route.asWarmup ??
+                (route.routineExIndex !== undefined
+                  ? Boolean(
+                      currentRoutine?.exercises[route.routineExIndex]?.isWarmup
+                    )
+                  : false);
+              const inferredReplacingIdx =
+                route.replacingExIdx !== undefined
+                  ? route.replacingExIdx
+                  : route.routineExIndex !== undefined
+                    ? route.routineExIndex
+                    : null;
+
               setRoute({
                 name: 'exerciseInfo',
                 exerciseId: newExId,
                 routineId: route.routineId,
-                routineExIndex: route.routineExIndex,
-                asWarmup: route.asWarmup,
-                replacingExIdx: route.replacingExIdx,
+                routineExIndex: undefined,
+                asWarmup: inferredWarmup,
+                replacingExIdx: inferredReplacingIdx,
                 returnTo: route,
               });
             }}
@@ -967,6 +1015,18 @@ export const App: React.FC = () => {
               asWarmup,
               replacingExIdx
             ) => {
+              const targetRoutine = routines.find((r) => r.id === routineId);
+              let scrollIdx = 0;
+              if (replacingExIdx !== null && replacingExIdx !== undefined) {
+                scrollIdx = replacingExIdx;
+              } else if (asWarmup) {
+                scrollIdx = (targetRoutine?.exercises || []).filter(
+                  (e) => e.isWarmup
+                ).length;
+              } else {
+                scrollIdx = (targetRoutine?.exercises || []).length;
+              }
+
               const success = handleAddExerciseToRoutine(
                 routineId,
                 exerciseId,
@@ -974,21 +1034,6 @@ export const App: React.FC = () => {
                 replacingExIdx
               );
               if (success) {
-                const targetRoutine = routines.find((r) => r.id === routineId);
-                let scrollIdx = 0;
-                if (replacingExIdx !== null && replacingExIdx !== undefined) {
-                  scrollIdx = replacingExIdx;
-                } else if (asWarmup) {
-                  scrollIdx = Math.max(
-                    0,
-                    (targetRoutine?.exercises || []).filter((e) => e.isWarmup).length - 1
-                  );
-                } else {
-                  scrollIdx = Math.max(
-                    0,
-                    (targetRoutine?.exercises || []).length - 1
-                  );
-                }
                 setRoute({
                   name: 'routineDetail',
                   routineId,
@@ -1000,6 +1045,54 @@ export const App: React.FC = () => {
           />
         )}
       </main>
+
+      {/* Edit Routine Name & Category Modal from Routine Detail Header */}
+      {route.name === 'routineDetail' && isEditingRoutineTitle && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setIsEditingRoutineTitle(false)}
+        >
+          <form
+            onSubmit={handleSaveRoutineTitle}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-[24px] p-5 w-full max-w-sm shadow-xl space-y-3.5 border border-slate-100"
+          >
+            <h3 className="font-bold text-base text-slate-900">
+              {t.editRoutineInfoBtn}
+            </h3>
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={routineTitleDraft}
+                onChange={(e) => setRoutineTitleDraft(e.target.value)}
+                placeholder={t.routineNamePlaceholder}
+                autoFocus
+                className="w-full rounded-xl bg-slate-100 px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <CategoryTagPicker
+                value={routineTagDraft}
+                onChange={setRoutineTagDraft}
+                lang={lang}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setIsEditingRoutineTitle(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+              >
+                {t.cancel}
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
+              >
+                {t.save}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Bottom Sticky Navigation Bar (Hidden when searching in Exercise Picker) */}
       {route.name !== 'exercisePicker' && (
