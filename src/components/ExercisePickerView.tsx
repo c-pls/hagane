@@ -141,7 +141,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
   const routineDisplayName = translateRoutineText(routine.name, lang);
 
   return (
-    <div className="space-y-3 pb-24">
+    <div className="space-y-3 pb-24 pt-safe">
       {/* 1. TOP SEARCH BAR (HEVY STYLE: [ ← ] [ 🔍 Search exercise... ✕ ]) */}
       <div className="flex items-center gap-2">
         <button

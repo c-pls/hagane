@@ -277,6 +277,10 @@ export const App: React.FC = () => {
     if (isMobile) {
       document.documentElement.classList.add('is-mobile');
       document.body.classList.add('is-mobile');
+      if (Capacitor.isNativePlatform()) {
+        document.documentElement.classList.add('is-native');
+        document.body.classList.add('is-native');
+      }
 
       const handleCopy = (e: ClipboardEvent) => {
         e.preventDefault();
@@ -287,6 +291,8 @@ export const App: React.FC = () => {
       return () => {
         document.documentElement.classList.remove('is-mobile');
         document.body.classList.remove('is-mobile');
+        document.documentElement.classList.remove('is-native');
+        document.body.classList.remove('is-native');
         document.removeEventListener('copy', handleCopy);
       };
     } else {
@@ -965,7 +971,7 @@ export const App: React.FC = () => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="min-h-screen bg-[#f2f4f7] text-slate-900 flex flex-col pb-20"
+      className="min-h-screen bg-[#f2f4f7] text-slate-900 flex flex-col pb-28"
     >
       {/* Edge Swipe Back Visual Chevron Indicator */}
       {swipeProgress !== null && swipeProgress > 15 && (
@@ -1008,7 +1014,7 @@ export const App: React.FC = () => {
         </div>
       )}
       {route.name !== 'exercisePicker' && (
-        <header className="bg-white/95 backdrop-blur-xs border-b border-slate-200/70 sticky top-0 z-30">
+        <header className="bg-white/95 backdrop-blur-xs border-b border-slate-200/70 sticky top-0 z-30 pt-safe">
           <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
             {renderHeaderLeft()}
 
@@ -1626,7 +1632,7 @@ export const App: React.FC = () => {
 
       {/* Bottom Sticky Navigation Bar (Hidden when searching in Exercise Picker) */}
       {route.name !== 'exercisePicker' && (
-        <nav className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-xs border-t border-slate-200/80 z-30">
+        <nav className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-xs border-t border-slate-200/80 z-30 pb-safe">
           <div className="max-w-md mx-auto px-6 py-2 grid grid-cols-2 gap-4">
             <button
               onClick={() => {

@@ -24,10 +24,14 @@ android {
             def keystorePath = System.getenv("RELEASE_KEYSTORE_PATH") ?: "hagane.keystore"
             def keystoreFile = file(keystorePath)
             if (keystoreFile.exists()) {
+                def storePass = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: System.getenv("RELEASE_STORE_PASSWORD")
+                def keyPass = System.getenv("RELEASE_KEY_PASSWORD")
+                def alias = System.getenv("RELEASE_KEY_ALIAS")
+
                 storeFile keystoreFile
-                storePassword System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: System.getenv("RELEASE_STORE_PASSWORD") ?: "haganeappkeystore"
-                keyAlias System.getenv("RELEASE_KEY_ALIAS") ?: "hagane"
-                keyPassword System.getenv("RELEASE_KEY_PASSWORD") ?: "haganeappkeystore"
+                storePassword (storePass && !storePass.trim().isEmpty()) ? storePass : "haganeappkeystore"
+                keyAlias (alias && !alias.trim().isEmpty()) ? alias : "hagane"
+                keyPassword (keyPass && !keyPass.trim().isEmpty()) ? keyPass : "haganeappkeystore"
             }
         }
     }
@@ -37,10 +41,11 @@ android {
         }
         release {
             def keystorePath = System.getenv("RELEASE_KEYSTORE_PATH") ?: "hagane.keystore"
-            if (file(keystorePath).exists()) {
+            def keystoreFile = file(keystorePath)
+            if (keystoreFile.exists()) {
                 signingConfig signingConfigs.release
             } else {
-                signingConfig signingConfigs.debug
+                throw new GradleException("Release keystore not found at: " + keystoreFile.absolutePath + ". Cannot build release APK without a valid keystore!")
             }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

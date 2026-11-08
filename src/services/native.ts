@@ -7,9 +7,11 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 export const initNativeStatusBar = async () => {
   if (!Capacitor.isNativePlatform()) return;
   try {
+    document.documentElement.classList.add('is-native');
+    document.body.classList.add('is-native');
     await StatusBar.setStyle({ style: Style.Light });
     await StatusBar.setBackgroundColor({ color: '#FFFFFF' });
-    await StatusBar.setOverlaysWebView({ overlay: false });
+    await StatusBar.setOverlaysWebView({ overlay: true });
   } catch (err) {
     console.debug('StatusBar configuration not supported', err);
   }
