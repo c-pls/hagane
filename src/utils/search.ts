@@ -70,9 +70,35 @@ export function searchAndRankExercises(
             mLower === 'traps'
           );
         }
+        if (filterLower === 'shoulders') {
+          return (
+            mLower === 'shoulders' ||
+            mLower === 'delts' ||
+            mLower === 'front delts' ||
+            mLower === 'rear delts'
+          );
+        }
+        if (filterLower === 'core') {
+          return (
+            mLower === 'core' ||
+            mLower === 'abs' ||
+            mLower === 'obliques' ||
+            mLower === 'hip flexors'
+          );
+        }
         return mLower === filterLower;
       });
-      if (!matchCat && !matchMuscle) return false;
+
+      // Specific muscle pills match exercises working that muscle as primary or secondary.
+      // Group umbrella pills ('shoulders', 'back', 'core') avoid broad multi-muscle secondary
+      // expansion to prevent pulling in unrelated compound movements (e.g. chest presses into shoulders).
+      const matchSecondary =
+        filterLower !== 'shoulders' &&
+        filterLower !== 'back' &&
+        filterLower !== 'core' &&
+        ex.secondaryMuscles.some((m) => m.toLowerCase() === filterLower);
+
+      if (!matchCat && !matchMuscle && !matchSecondary) return false;
     }
 
     // Equipment filter

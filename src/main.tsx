@@ -71,7 +71,7 @@ class AppErrorBoundary extends React.Component<
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
+                className="w-full min-h-[44px] inline-flex items-center justify-center py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
               >
                 Tải lại ứng dụng / Reload App
               </button>
@@ -80,30 +80,16 @@ class AppErrorBoundary extends React.Component<
                 onClick={() => {
                   try {
                     const raw = localStorage.getItem('hagane_routines_v1');
-                    const existingBak = localStorage.getItem('hagane_routines_v1_corrupt_bak');
-                    if (existingBak && raw) {
-                      localStorage.setItem(`hagane_routines_v1_corrupt_bak_${Date.now()}`, existingBak);
-                    }
                     if (raw) {
                       localStorage.setItem('hagane_routines_v1_corrupt_bak', raw);
                     }
                     localStorage.removeItem('hagane_routines_v1');
-
-                    const rawCustom = localStorage.getItem('hagane_custom_exercises_v1');
-                    const existingCustomBak = localStorage.getItem('hagane_custom_exercises_v1_corrupt_bak');
-                    if (existingCustomBak && rawCustom) {
-                      localStorage.setItem(`hagane_custom_exercises_v1_corrupt_bak_${Date.now()}`, existingCustomBak);
-                    }
-                    if (rawCustom) {
-                      localStorage.setItem('hagane_custom_exercises_v1_corrupt_bak', rawCustom);
-                    }
-                    localStorage.removeItem('hagane_custom_exercises_v1');
                   } catch {
                     // ignore
                   }
                   window.location.reload();
                 }}
-                className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                className="w-full min-h-[44px] inline-flex items-center justify-center py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
               >
                 Đặt lại dữ liệu lỗi / Reset Corrupted Cache
               </button>

@@ -67,6 +67,8 @@ export type ScreenRoute =
       muscleFilter?: string;
       equipmentFilter?: string;
       fromEditMode?: boolean;
+      savedScrollY?: number;
+      pickerTab?: 'most_used' | 'all';
     }
   | {
       name: 'exerciseInfo';

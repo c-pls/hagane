@@ -72,4 +72,4 @@ garmin-watch/*.prg.debug.xml
 *.iq
 *.prg.debug.xml
 developer_key.*
-*.bak
+*.bak*

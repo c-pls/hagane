@@ -29,6 +29,80 @@ FAMOUS_VIDEO_MAP = {
     "famous-bb-overhand-bent-over-row": "/videos/barbell-overhand-bent-over-row.mp4",
 }
 
+EXERCISE_SCHEMA_KEYS = [
+    "id",
+    "slug",
+    "name",
+    "nameVi",
+    "aliases",
+    "category",
+    "equipment",
+    "videoUrl",
+    "primaryMuscles",
+    "secondaryMuscles",
+    "primarySlugs",
+    "secondarySlugs",
+    "shortDescription",
+    "steps",
+    "stepsVi",
+]
+
+EXPECTED_MUSCLE_SLUG_MAP = {
+    "Abs": "abs",
+    "Adductors": "adductors",
+    "Biceps": "biceps",
+    "Calves": "calves",
+    "Cardio": "cardio",
+    "Chest": "chest",
+    "Delts": "deltoids",
+    "Forearms": "forearm",
+    "Front Delts": "deltoids",
+    "Glutes": "gluteal",
+    "Hamstrings": "hamstring",
+    "Hip Flexors": "hip-flexors",
+    "Lats": "upper-back",
+    "Lower Back": "lower-back",
+    "Obliques": "obliques",
+    "Quads": "quadriceps",
+    "Rear Delts": "deltoids",
+    "Serratus Anterior": "serratus",
+    "Shoulders": "deltoids",
+    "Tibialis": "tibialis",
+    "Traps": "trapezius",
+    "Triceps": "triceps",
+    "Upper Back": "upper-back",
+    "Upper Chest": "chest",
+}
+
+VALID_ANATOMY_SLUGS = {
+    "abs",
+    "adductors",
+    "ankles",
+    "biceps",
+    "calves",
+    "cardio",
+    "chest",
+    "deltoids",
+    "feet",
+    "forearm",
+    "gluteal",
+    "hair",
+    "hamstring",
+    "hands",
+    "head",
+    "hip-flexors",
+    "knees",
+    "lower-back",
+    "neck",
+    "obliques",
+    "quadriceps",
+    "serratus",
+    "tibialis",
+    "trapezius",
+    "triceps",
+    "upper-back",
+}
+
 
 def derive_safe_slug(name: str) -> str:
     cleaned = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
@@ -36,19 +110,122 @@ def derive_safe_slug(name: str) -> str:
 
 
 def derive_video_url(ex_id: str, slug: str) -> str:
+    if not os.path.isdir(VIDEOS_DIR):
+        raise FileNotFoundError(f"Videos directory not found at {VIDEOS_DIR}")
     if ex_id in FAMOUS_VIDEO_MAP:
         return FAMOUS_VIDEO_MAP[ex_id]
     candidate_named = f"/videos/{slug}-{ex_id}.mp4"
     if os.path.isfile(os.path.join(VIDEOS_DIR, f"{slug}-{ex_id}.mp4")):
         return candidate_named
-    # Scan VIDEOS_DIR for any file matching *-[ex_id].mp4 or [ex_id].mp4
-    if os.path.isdir(VIDEOS_DIR):
-        for fname in os.listdir(VIDEOS_DIR):
-            if fname.endswith(f"-{ex_id}.mp4") or fname == f"{ex_id}.mp4":
-                return f"/videos/{fname}"
+    # Scan VIDEOS_DIR deterministically for any file matching *-[ex_id].mp4 or [ex_id].mp4
+    for fname in sorted(os.listdir(VIDEOS_DIR)):
+        if fname.endswith(f"-{ex_id}.mp4") or fname == f"{ex_id}.mp4":
+            return f"/videos/{fname}"
     if os.path.isfile(os.path.join(VIDEOS_DIR, f"{slug}.mp4")):
         return f"/videos/{slug}.mp4"
-    return candidate_named
+    raise FileNotFoundError(
+        f"[{ex_id}] Cannot derive valid video URL: no matching video file found in {VIDEOS_DIR}"
+    )
+
+
+def validate_exercise_structure(row: dict, location: str = ""):
+    ex_id = row.get("id", "unknown")
+    # Schema whitelist
+    extra_keys = set(row.keys()) - set(EXERCISE_SCHEMA_KEYS)
+    if extra_keys:
+        raise ValueError(
+            f"{location}[{ex_id}] Unexpected extra keys in exercise data: {sorted(extra_keys)}"
+        )
+    missing_keys = set(EXERCISE_SCHEMA_KEYS) - set(row.keys())
+    if missing_keys:
+        raise ValueError(
+            f"{location}[{ex_id}] Missing required schema keys: {sorted(missing_keys)}"
+        )
+
+    # Core non-empty string fields
+    for field in ("name", "nameVi", "category", "equipment", "shortDescription", "videoUrl"):
+        val = row.get(field)
+        if not isinstance(val, str) or not val.strip():
+            raise ValueError(f"{location}[{ex_id}] Field '{field}' must be a non-empty string!")
+
+    # Muscles and aliases non-empty validation
+    primary_muscles = row.get("primaryMuscles")
+    primary_slugs = row.get("primarySlugs")
+    if not isinstance(primary_muscles, list) or len(primary_muscles) == 0:
+        raise ValueError(f"{location}[{ex_id}] primaryMuscles must be a non-empty list!")
+    for pm in primary_muscles:
+        if not isinstance(pm, str) or not pm.strip():
+            raise ValueError(f"{location}[{ex_id}] primaryMuscles entries must be non-empty strings!")
+    if not isinstance(primary_slugs, list) or len(primary_slugs) == 0:
+        raise ValueError(f"{location}[{ex_id}] primarySlugs must be a non-empty list!")
+    for ps in primary_slugs:
+        if not isinstance(ps, str) or not ps.strip():
+            raise ValueError(f"{location}[{ex_id}] primarySlugs entries must be non-empty strings!")
+
+    secondary_muscles = row.get("secondaryMuscles")
+    secondary_slugs = row.get("secondarySlugs")
+    if not isinstance(secondary_muscles, list) or len(secondary_muscles) == 0:
+        raise ValueError(f"{location}[{ex_id}] secondaryMuscles must be a non-empty list!")
+    for sm in secondary_muscles:
+        if not isinstance(sm, str) or not sm.strip():
+            raise ValueError(f"{location}[{ex_id}] secondaryMuscles entries must be non-empty strings!")
+    if not isinstance(secondary_slugs, list) or len(secondary_slugs) == 0:
+        raise ValueError(f"{location}[{ex_id}] secondarySlugs must be a non-empty list!")
+    for ss in secondary_slugs:
+        if not isinstance(ss, str) or not ss.strip():
+            raise ValueError(f"{location}[{ex_id}] secondarySlugs entries must be non-empty strings!")
+
+    aliases = row.get("aliases")
+    if not isinstance(aliases, list) or len(aliases) == 0:
+        raise ValueError(f"{location}[{ex_id}] aliases must be a non-empty list!")
+    for a in aliases:
+        if not isinstance(a, str) or not a.strip():
+            raise ValueError(f"{location}[{ex_id}] aliases entries must be non-empty strings!")
+
+    # Steps validation: prepare, execution, breathing must be non-empty lists in both EN and VI
+    for step_field, lang in [("steps", "English"), ("stepsVi", "Vietnamese")]:
+        step_dict = row.get(step_field)
+        if not isinstance(step_dict, dict):
+            raise ValueError(f"{location}[{ex_id}] {step_field} ({lang}) must be an object")
+        for subkey in ("prepare", "execution", "breathing"):
+            items = step_dict.get(subkey)
+            if not isinstance(items, list) or len(items) == 0:
+                raise ValueError(
+                    f"{location}[{ex_id}] {step_field}.{subkey} ({lang}) must be a non-empty list of steps"
+                )
+            for s_idx, item in enumerate(items):
+                if not isinstance(item, str) or not item.strip():
+                    raise ValueError(
+                        f"{location}[{ex_id}] {step_field}.{subkey}[{s_idx}] ({lang}) must be a non-empty string"
+                    )
+
+    # Muscle-Slug pairing validation
+    for m_field, s_field in [("primaryMuscles", "primarySlugs"), ("secondaryMuscles", "secondarySlugs")]:
+        muscles = row.get(m_field, [])
+        slugs = row.get(s_field, [])
+        if len(muscles) != len(slugs):
+            raise ValueError(
+                f"{location}[{ex_id}] {m_field} ({len(muscles)}) and {s_field} ({len(slugs)}) length mismatch!"
+            )
+        for m, s in zip(muscles, slugs):
+            if s not in VALID_ANATOMY_SLUGS:
+                raise ValueError(f"{location}[{ex_id}] Unknown anatomy slug '{s}' for muscle '{m}'")
+            expected_slug = EXPECTED_MUSCLE_SLUG_MAP.get(m)
+            if expected_slug and s != expected_slug:
+                raise ValueError(
+                    f"{location}[{ex_id}] Muscle '{m}' mapped to slug '{s}', expected '{expected_slug}'"
+                )
+
+    # Video file verification on disk
+    if not os.path.isdir(VIDEOS_DIR):
+        raise FileNotFoundError(f"Videos directory not found at {VIDEOS_DIR}")
+    v_url = row.get("videoUrl", "")
+    if not v_url.startswith("/videos/"):
+        raise ValueError(f"{location}[{ex_id}] Invalid videoUrl format: {v_url}")
+    v_filename = v_url.replace("/videos/", "")
+    v_path = os.path.join(VIDEOS_DIR, v_filename)
+    if not os.path.isfile(v_path):
+        raise FileNotFoundError(f"{location}[{ex_id}] Video file not found on disk: {v_path}")
 
 
 def restore():
@@ -56,8 +233,16 @@ def restore():
         print(f"❌ Error: Snapshot file not found at {SNAPSHOT_PATH}")
         sys.exit(1)
 
+    def detect_duplicate_keys(pairs):
+        res = {}
+        for k, v in pairs:
+            if k in res:
+                raise ValueError(f"Duplicate key detected in {SNAPSHOT_PATH}: '{k}'")
+            res[k] = v
+        return res
+
     with open(SNAPSHOT_PATH, "r", encoding="utf-8") as f:
-        snapshot = json.load(f)
+        snapshot = json.load(f, object_pairs_hook=detect_duplicate_keys)
 
     if not isinstance(snapshot, dict) or len(snapshot) == 0:
         print("❌ Error: Invalid snapshot format (expected non-empty dict).")
@@ -65,13 +250,35 @@ def restore():
 
     print(f"📦 Loaded {len(snapshot)} curated exercises from snapshot.")
 
+    # Validate all snapshot entries against extra schema keys upfront
+    for snap_id, snap_entry in snapshot.items():
+        if not isinstance(snap_entry, dict):
+            raise ValueError(f"Snapshot entry '{snap_id}' is not a dict!")
+        extra_keys = set(snap_entry.keys()) - set(EXERCISE_SCHEMA_KEYS)
+        if extra_keys:
+            raise ValueError(
+                f"[{snap_id}] Snapshot contains unexpected extra schema keys: {sorted(extra_keys)}"
+            )
+
     existing_exercises = []
     if os.path.isfile(EXERCISES_PATH):
-        try:
-            with open(EXERCISES_PATH, "r", encoding="utf-8") as f:
-                existing_exercises = json.load(f)
-        except Exception:
-            existing_exercises = []
+        with open(EXERCISES_PATH, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+        if not isinstance(loaded, list):
+            raise ValueError(
+                f"Expected JSON list in {EXERCISES_PATH}, got {type(loaded).__name__}. Refusing to proceed."
+            )
+        existing_exercises = loaded
+
+    # Check for duplicate IDs in existing file
+    existing_ids_list = [ex.get("id") for ex in existing_exercises if isinstance(ex, dict) and "id" in ex]
+    if len(existing_ids_list) != len(set(existing_ids_list)):
+        dupes = [x for x in existing_ids_list if existing_ids_list.count(x) > 1]
+        raise ValueError(f"Duplicate exercise IDs detected in {EXERCISES_PATH}: {sorted(set(dupes))}")
+
+    for idx, ex in enumerate(existing_exercises):
+        if not isinstance(ex, dict) or "id" not in ex:
+            raise ValueError(f"Existing exercises entry at index {idx} is invalid (missing 'id')")
 
     existing_map = {ex["id"]: ex for ex in existing_exercises if "id" in ex}
     existing_ids = set(existing_map.keys())
@@ -87,59 +294,95 @@ def restore():
         )
 
     merged_list = []
-    all_ids = sorted(list(snapshot_ids | existing_ids), key=lambda x: (len(x), x))
+    sort_key = lambda x: (0, int(x)) if x.isdigit() else (1, x)
+    all_ids = sorted(list(snapshot_ids | existing_ids), key=sort_key)
 
     for ex_id in all_ids:
         if ex_id not in snapshot:
             # Preserve non-snapshot existing exercise exactly
             preserved = existing_map[ex_id]
+            validate_exercise_structure(preserved, location="Preserved ")
             merged_list.append(preserved)
             continue
 
         snap_data = snapshot[ex_id]
         base = existing_map.get(ex_id, {})
-        name = snap_data.get("name") or base.get("name") or ex_id
+
+        if "name" in snap_data:
+            name = snap_data["name"]
+            if not isinstance(name, str) or not name.strip():
+                raise ValueError(f"[{ex_id}] Snapshot has missing or empty 'name'!")
+        else:
+            name = base.get("name")
+            if not isinstance(name, str) or not name.strip():
+                raise ValueError(f"[{ex_id}] Missing or empty 'name' in exercise data!")
+
         slug = snap_data.get("slug") or base.get("slug") or derive_safe_slug(name)
-        video_url = snap_data.get("videoUrl") or base.get("videoUrl") or derive_video_url(ex_id, slug)
 
-        short_desc = snap_data.get("shortDescription") or base.get("shortDescription")
-        if not short_desc:
-            raise ValueError(
-                f"[{ex_id}] Missing shortDescription in both snapshot and existing data! "
-                f"Refusing to invent fake description."
-            )
+        if "nameVi" in snap_data:
+            name_vi = snap_data["nameVi"]
+            if not isinstance(name_vi, str) or not name_vi.strip():
+                raise ValueError(f"[{ex_id}] Snapshot has missing or empty 'nameVi'!")
+        else:
+            name_vi = base.get("nameVi")
+            if not isinstance(name_vi, str) or not name_vi.strip():
+                raise ValueError(f"[{ex_id}] Missing or empty 'nameVi' in exercise data!")
 
-        name_vi = snap_data.get("nameVi") or base.get("nameVi")
-        if not name_vi:
-            raise ValueError(f"[{ex_id}] Missing nameVi in both snapshot and existing data!")
+        if "category" in snap_data:
+            category = snap_data["category"]
+            if not isinstance(category, str) or not category.strip():
+                raise ValueError(f"[{ex_id}] Snapshot has missing or empty 'category'!")
+        else:
+            category = base.get("category")
+            if not isinstance(category, str) or not category.strip():
+                raise ValueError(f"[{ex_id}] Missing or empty 'category' in exercise data!")
 
-        steps_en = snap_data.get("steps") or base.get("steps")
-        if not steps_en or not isinstance(steps_en, dict) or not steps_en.get("prepare"):
-            raise ValueError(f"[{ex_id}] Missing or malformed steps (English)!")
+        if "equipment" in snap_data:
+            equipment = snap_data["equipment"]
+            if not isinstance(equipment, str) or not equipment.strip():
+                raise ValueError(f"[{ex_id}] Snapshot has missing or empty 'equipment'!")
+        else:
+            equipment = base.get("equipment")
+            if not isinstance(equipment, str) or not equipment.strip():
+                raise ValueError(f"[{ex_id}] Missing or empty 'equipment' in exercise data!")
 
-        steps_vi = snap_data.get("stepsVi") or base.get("stepsVi")
-        if not steps_vi or not isinstance(steps_vi, dict) or not steps_vi.get("prepare"):
-            raise ValueError(f"[{ex_id}] Missing or malformed stepsVi (Vietnamese)!")
+        # Video URL resolution: verify snapshot video exists on disk, otherwise derive
+        snap_v = snap_data.get("videoUrl")
+        if snap_v and os.path.isfile(os.path.join(VIDEOS_DIR, snap_v.lstrip("/").replace("videos/", ""))):
+            video_url = snap_v
+        else:
+            video_url = derive_video_url(ex_id, slug)
 
-        primary_muscles = snap_data.get("primaryMuscles") or base.get("primaryMuscles") or []
-        primary_slugs = snap_data.get("primarySlugs") or base.get("primarySlugs") or []
-        secondary_muscles = snap_data.get("secondaryMuscles") or base.get("secondaryMuscles") or []
-        secondary_slugs = snap_data.get("secondarySlugs") or base.get("secondarySlugs") or []
+        if "shortDescription" in snap_data:
+            short_desc = snap_data["shortDescription"]
+            if not isinstance(short_desc, str) or not short_desc.strip():
+                raise ValueError(f"[{ex_id}] Snapshot has missing or empty 'shortDescription'!")
+        else:
+            short_desc = base.get("shortDescription")
+            if not isinstance(short_desc, str) or not short_desc.strip():
+                raise ValueError(
+                    f"[{ex_id}] Missing shortDescription in both snapshot and existing data! "
+                    f"Refusing to invent fake description."
+                )
 
-        # Length equality checks
-        if len(primary_muscles) != len(primary_slugs):
-            raise ValueError(f"[{ex_id}] Primary muscles ({len(primary_muscles)}) and slugs ({len(primary_slugs)}) mismatch!")
-        if len(secondary_muscles) != len(secondary_slugs):
-            raise ValueError(f"[{ex_id}] Secondary muscles ({len(secondary_muscles)}) and slugs ({len(secondary_slugs)}) mismatch!")
+        steps_en = snap_data["steps"] if "steps" in snap_data else base.get("steps")
+        steps_vi = snap_data["stepsVi"] if "stepsVi" in snap_data else base.get("stepsVi")
+
+        # Explicit list fallback: do not treat [] as falsy to fall back to base
+        primary_muscles = snap_data["primaryMuscles"] if "primaryMuscles" in snap_data else base.get("primaryMuscles", [])
+        secondary_muscles = snap_data["secondaryMuscles"] if "secondaryMuscles" in snap_data else base.get("secondaryMuscles", [])
+        primary_slugs = snap_data["primarySlugs"] if "primarySlugs" in snap_data else base.get("primarySlugs", [])
+        secondary_slugs = snap_data["secondarySlugs"] if "secondarySlugs" in snap_data else base.get("secondarySlugs", [])
+        aliases = snap_data["aliases"] if "aliases" in snap_data else base.get("aliases", [])
 
         merged = {
             "id": ex_id,
             "slug": slug,
             "name": name,
             "nameVi": name_vi,
-            "aliases": snap_data.get("aliases") or base.get("aliases") or [],
-            "category": snap_data.get("category") or base.get("category") or "Other",
-            "equipment": snap_data.get("equipment") or base.get("equipment") or "Bodyweight",
+            "aliases": aliases,
+            "category": category,
+            "equipment": equipment,
             "videoUrl": video_url,
             "primaryMuscles": primary_muscles,
             "secondaryMuscles": secondary_muscles,
@@ -149,12 +392,15 @@ def restore():
             "steps": steps_en,
             "stepsVi": steps_vi,
         }
+
+        # Validate structure before appending
+        validate_exercise_structure(merged, location="Snapshot ")
         merged_list.append(merged)
 
-    # Sort deterministically
-    merged_list.sort(key=lambda x: (len(x["id"]), x["id"]))
+    # Sort deterministically: numeric IDs first (0025-3012), then named IDs alphabetically (drv-*, famous-*, new-*)
+    merged_list.sort(key=lambda x: (0, int(x["id"])) if x["id"].isdigit() else (1, x["id"]))
 
-    # Backup existing file
+    # Backup existing file to .bak
     if os.path.isfile(EXERCISES_PATH):
         shutil.copyfile(EXERCISES_PATH, BAK_PATH)
         print(f"💾 Backed up existing exercises to {BAK_PATH}")
@@ -169,17 +415,18 @@ def restore():
         verified = json.load(f)
 
     if len(verified) != len(merged_list):
-        raise ValueError("Verification failed: row count mismatch after write!")
-    for row in verified:
-        if len(row["primaryMuscles"]) != len(row["primarySlugs"]):
-            raise ValueError(f"Verification failed: {row['id']} primary length mismatch!")
-        if len(row["secondaryMuscles"]) != len(row["secondarySlugs"]):
-            raise ValueError(f"Verification failed: {row['id']} secondary length mismatch!")
-        if os.path.isdir(VIDEOS_DIR):
-            v_rel = row["videoUrl"].lstrip("/").replace("videos/", "")
-            v_path = os.path.join(VIDEOS_DIR, v_rel)
-            if not os.path.isfile(v_path):
-                print(f"⚠️ Notice: Video file not found on disk for {row['id']}: {v_path}")
+        raise ValueError(
+            f"Verification failed: row count mismatch after write ({len(verified)} vs {len(merged_list)})!"
+        )
+    for idx, row in enumerate(verified):
+        validate_exercise_structure(row, location="Post-write ")
+        expected_row = merged_list[idx]
+        if row != expected_row:
+            diff_fields = [k for k in EXERCISE_SCHEMA_KEYS if row.get(k) != expected_row.get(k)]
+            raise ValueError(
+                f"Post-write mismatch at index {idx} (ID: {row.get('id')} vs expected {expected_row.get('id')}): "
+                f"mismatched fields {diff_fields}"
+            )
 
     print(f"✅ Successfully restored and verified {len(verified)} exercises in {EXERCISES_PATH}!")
 

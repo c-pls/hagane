@@ -8,6 +8,7 @@ import {
 } from '../i18n/translations';
 import { searchAndRankExercises } from '../utils/search';
 import { getSimilarExercises } from '../utils/exerciseAlternatives';
+import { MUSCLE_FILTER_CHOICES } from '../data/exerciseConstants';
 
 interface ExercisePickerViewProps {
   routine: Routine;
@@ -18,6 +19,8 @@ interface ExercisePickerViewProps {
   initialSearch?: string;
   initialMuscle?: string;
   initialEquipment?: string;
+  initialTab?: 'most_used' | 'all';
+  autoFocusSearch?: boolean;
   onBack: () => void;
   onSelectExercise: (exerciseId: string) => void;
   onDuplicateWarning?: (exerciseName: string) => void;
@@ -25,7 +28,8 @@ interface ExercisePickerViewProps {
     exerciseId: string,
     currentSearch: string,
     currentMuscle: string,
-    currentEquipment: string
+    currentEquipment: string,
+    currentTab?: 'most_used' | 'all'
   ) => void;
 }
 
@@ -48,20 +52,7 @@ const MOST_USED_IDS = [
   '0203', // Face Pull (Cable)
 ];
 
-const MUSCLE_QUICK_FILTERS = [
-  'Quads',
-  'Calves',
-  'Chest',
-  'Back',
-  'Shoulders',
-  'Biceps',
-  'Triceps',
-  'Forearms',
-  'Hamstrings',
-  'Glutes',
-  'Core',
-  'Cardio',
-];
+const MUSCLE_QUICK_FILTERS = [...MUSCLE_FILTER_CHOICES];
 
 const EQUIPMENT_QUICK_FILTERS = [
   'All',
@@ -84,6 +75,8 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
   initialSearch = '',
   initialMuscle = 'All',
   initialEquipment = 'All',
+  initialTab = 'most_used',
+  autoFocusSearch = true,
   onBack,
   onSelectExercise,
   onDuplicateWarning,
@@ -91,7 +84,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
 }) => {
   const t = UI_TEXT[lang];
   const [search, setSearch] = useState(initialSearch);
-  const [activeTab, setActiveTab] = useState<'most_used' | 'all'>('most_used');
+  const [activeTab, setActiveTab] = useState<'most_used' | 'all'>(initialTab);
   const [muscleFilter, setMuscleFilter] = useState(initialMuscle);
   const [equipmentFilter, setEquipmentFilter] = useState(initialEquipment);
 
@@ -154,7 +147,8 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
         <button
           type="button"
           onClick={onBack}
-          className="w-10 h-10 rounded-full bg-white shadow-xs border border-slate-200/80 flex items-center justify-center text-slate-700 hover:bg-slate-100 font-bold transition cursor-pointer shrink-0"
+          aria-label={t.back}
+          className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-white shadow-xs border border-slate-200/80 flex items-center justify-center text-slate-700 hover:bg-slate-100 font-bold transition cursor-pointer shrink-0"
           title={t.back}
         >
           <svg
@@ -189,7 +183,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
           <input
             type="text"
             value={search}
-            autoFocus
+            autoFocus={autoFocusSearch}
             onChange={(e) => setSearch(e.target.value)}
             onFocus={(e) => e.target.select()}
             autoComplete="off"
@@ -197,6 +191,11 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
             autoCapitalize="off"
             spellCheck={false}
             name="picker-search-input"
+            aria-label={
+              asWarmup
+                ? `${t.pickerTitleWarmup}`
+                : `${t.searchExercisePlaceholder}`
+            }
             placeholder={
               asWarmup
                 ? `${t.pickerTitleWarmup}...`
@@ -375,13 +374,12 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                         </span>
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      className="px-2.5 py-1.5 rounded-xl bg-blue-600 group-hover:bg-blue-700 text-white font-bold text-xs shrink-0 transition"
+                    <span
+                      aria-hidden="true"
+                      className="px-2.5 py-1.5 rounded-xl bg-blue-600 group-hover:bg-blue-700 text-white font-bold text-xs shrink-0 transition select-none pointer-events-none"
                     >
                       {t.changeExerciseBtn}
-                    </button>
+                    </span>
                   </div>
                 );
               })}
@@ -398,33 +396,27 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
           return (
             <div
               key={ex.id}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
+              className={`flex items-center justify-between px-4 py-2.5 transition select-none group rounded-xl ${
+                isAlreadyAdded
+                  ? 'bg-amber-50/30 opacity-70'
+                  : 'hover:bg-slate-50'
+              }`}
+            >
+              {/* Left Column: Title & Subtitle clickable as an accessible button */}
+              <button
+                type="button"
+                aria-label={`${lang === 'vi' ? 'Chọn bài tập' : 'Select exercise'}: ${displayName}`}
+                onClick={() => {
                   if (isAlreadyAdded) {
                     onDuplicateWarning?.(displayName);
                     return;
                   }
                   onSelectExercise(ex.id);
-                }
-              }}
-              onClick={() => {
-                if (isAlreadyAdded) {
-                  onDuplicateWarning?.(displayName);
-                  return;
-                }
-                onSelectExercise(ex.id);
-              }}
-              className={`flex items-center justify-between px-4 py-3 transition select-none group focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl ${
-                isAlreadyAdded
-                  ? 'bg-amber-50/30 opacity-70 cursor-not-allowed'
-                  : 'hover:bg-slate-50 active:bg-blue-50/50 cursor-pointer'
-              }`}
-            >
-              {/* Left Column: Title & Subtitle */}
-              <div className="flex-1 min-w-0 pr-2">
+                }}
+                className={`flex-1 min-w-0 min-h-[44px] pr-2 py-1 text-left transition rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isAlreadyAdded ? 'cursor-not-allowed' : 'cursor-pointer'
+                }`}
+              >
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3
                     className={`font-semibold text-[15px] leading-snug truncate ${
@@ -451,18 +443,17 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                       .join(', ')}
                   </span>
                 </p>
-              </div>
+              </button>
 
               {/* Right Column: Circular (?) Button to inspect video/wiki */}
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenWiki(ex.id, search, muscleFilter, equipmentFilter);
+                onClick={() => {
+                  onOpenWiki(ex.id, search, muscleFilter, equipmentFilter, activeTab);
                 }}
                 className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition shrink-0 -mr-1 cursor-pointer"
                 title={t.viewWikiAndVideo}
-                aria-label={t.viewWikiAndVideo}
+                aria-label={`${t.viewWikiAndVideo}: ${displayName}`}
               >
                 <span className="w-6 h-6 rounded-full border border-slate-300 group-hover:border-slate-400 text-slate-500 font-bold text-xs flex items-center justify-center">
                   ?
@@ -486,7 +477,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                 setMuscleFilter('All');
                 setEquipmentFilter('All');
               }}
-              className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+              className="text-xs font-bold text-blue-600 hover:underline cursor-pointer min-h-[44px] inline-flex items-center justify-center"
             >
               {lang === 'vi'
                 ? `Xem tất cả ${allExercises.length} bài tập`

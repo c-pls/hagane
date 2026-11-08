@@ -56,6 +56,8 @@ export interface GarminRoutinePayload {
 
 export interface GarminSyncPayload {
   v: number;
+  /** 1 if any portion of routines/exercises/sets was trimmed to fit BLE memory limits */
+  tr?: number;
   routines: GarminRoutinePayload[];
 }
 
@@ -131,6 +133,12 @@ function getSupersetLetter(idx: number): string {
   return `${first}${second}`;
 }
 
+export interface GarminBuildResult {
+  payload: GarminSyncPayload;
+  isTrimmed: boolean;
+  trimReason: string;
+}
+
 /**
  * Builds the compact, English-only workout payload for the Garmin watch,
  * enforcing `GARMIN_MAX_PAYLOAD_BYTES` so large routine libraries never overflow
@@ -139,7 +147,7 @@ function getSupersetLetter(idx: number): string {
 export function buildGarminPayload(
   routines: Routine[],
   exercisesMap: Record<string, Exercise>
-): GarminSyncPayload {
+): GarminBuildResult {
   const payloadRoutines: GarminRoutinePayload[] = routines.map((routine, rIdx) => {
     const orderedItems = sortRoutineExercisesBySection(routine.exercises || []);
 
@@ -154,18 +162,8 @@ export function buildGarminPayload(
     const exercises: GarminExercisePayload[] = orderedItems.map((item, idx) => {
       const ex = exercisesMap[item.exerciseId];
       // Always use the English exercise name (`ex.name`), never `ex.nameVi`
-      let fallbackLabel = 'Exercise';
-      if (item.exerciseId.startsWith('custom-')) {
-        const cleaned = item.exerciseId
-          .replace(/^custom-[0-9a-fA-F-]+/, '')
-          .replace(/^custom-\d+-?/, '')
-          .replace(/^custom-/, '')
-          .replace(/[-_]/g, ' ')
-          .trim();
-        fallbackLabel = cleaned || 'Custom Exercise';
-      }
       const englishName = toGarminEnglishText(
-        ex ? ex.name : fallbackLabel,
+        ex ? ex.name : 'Exercise',
         36
       );
 
@@ -285,14 +283,26 @@ export function buildGarminPayload(
     }
   }
 
+  let isTrimmed = false;
+  let trimReason = '';
+
   // Enforce BLE / Storage payload budget (~10 KB UTF-8)
   let serializedBytes = getPayloadUtf8Bytes(payload);
   if (serializedBytes > GARMIN_MAX_PAYLOAD_BYTES) {
     // Step 1: Strip per-exercise notes to save space
+    let hadNotes = false;
     for (const r of payload.routines) {
       for (const ex of r.e) {
-        ex.nt = '';
+        if (ex.nt) {
+          hadNotes = true;
+          ex.nt = '';
+        }
       }
+    }
+    if (hadNotes) {
+      isTrimmed = true;
+      trimReason = 'Exercise notes removed to fit watch memory limit';
+      console.warn(`[GarminSync] ${trimReason}`);
     }
     serializedBytes = getPayloadUtf8Bytes(payload);
   }
@@ -306,9 +316,10 @@ export function buildGarminPayload(
     payload.routines.pop();
   }
   if (payload.routines.length < originalRoutinesCount) {
-    console.warn(
-      `[GarminSync] Trimming ${originalRoutinesCount - payload.routines.length} trailing routines to fit BLE limit.`
-    );
+    isTrimmed = true;
+    const omitted = originalRoutinesCount - payload.routines.length;
+    trimReason = `Trimmed ${omitted} routine(s) to fit watch memory limit`;
+    console.warn(`[GarminSync] ${trimReason}`);
   }
 
   // Step 3: If a single giant routine still exceeds budget, trim trailing exercises/sets so it never overflows BLE
@@ -317,10 +328,17 @@ export function buildGarminPayload(
     getPayloadUtf8Bytes(payload) > GARMIN_MAX_PAYLOAD_BYTES
   ) {
     const firstRoutine = payload.routines[0];
+    const origExCount = firstRoutine.e.length;
+    let didTrimSets = false;
     for (const ex of firstRoutine.e) {
       if (ex.s.length > 20) {
         ex.s = ex.s.slice(0, 20);
+        didTrimSets = true;
       }
+    }
+    if (didTrimSets) {
+      isTrimmed = true;
+      trimReason = `Trimmed excessive sets (>20) to fit watch memory limit`;
     }
     while (
       firstRoutine.e.length > 1 &&
@@ -328,12 +346,42 @@ export function buildGarminPayload(
     ) {
       firstRoutine.e.pop();
     }
+    if (firstRoutine.e.length < origExCount) {
+      isTrimmed = true;
+      trimReason = `Trimmed exercises to fit watch memory limit`;
+    }
   }
 
-  return payload;
+  // Step 3 final check: if still over budget on a single exercise, trim sets to guarantee < 10KB
+  if (getPayloadUtf8Bytes(payload) > GARMIN_MAX_PAYLOAD_BYTES) {
+    if (payload.routines.length > 0 && payload.routines[0].e.length > 0) {
+      const singleEx = payload.routines[0].e[0];
+      const origSingleExSets = singleEx.s.length;
+      while (
+        singleEx.s.length > 1 &&
+        getPayloadUtf8Bytes(payload) > GARMIN_MAX_PAYLOAD_BYTES
+      ) {
+        singleEx.s.pop();
+      }
+      if (singleEx.s.length < origSingleExSets) {
+        isTrimmed = true;
+        trimReason = `Trimmed sets to fit watch memory limit`;
+      }
+    }
+  }
+
+  if (isTrimmed) {
+    payload.tr = 1;
+  }
+
+  return { payload, isTrimmed, trimReason };
 }
 
-export type GarminSyncStatusHandler = (info: { success: boolean; message?: string }) => void;
+export type GarminSyncStatusHandler = (info: {
+  success: boolean;
+  message?: string;
+  isTrimmed?: boolean;
+}) => void;
 let garminSyncStatusHandler: GarminSyncStatusHandler | null = null;
 export function setGarminSyncStatusHandler(handler: GarminSyncStatusHandler | null) {
   garminSyncStatusHandler = handler;
@@ -351,7 +399,10 @@ async function executeGarminCacheUpdate(
   exercisesMap: Record<string, Exercise>
 ): Promise<void> {
   try {
-    const payload = buildGarminPayload(routines, exercisesMap);
+    const { payload, isTrimmed, trimReason } = buildGarminPayload(
+      routines,
+      exercisesMap
+    );
     const jsonStr = JSON.stringify(payload);
     if (jsonStr === lastSentPayloadJson) {
       return;
@@ -359,7 +410,11 @@ async function executeGarminCacheUpdate(
     const res = await GarminSyncNative.cacheRoutinesForWatch({ payload });
     if (res && res.success) {
       lastSentPayloadJson = jsonStr;
-      garminSyncStatusHandler?.({ success: true });
+      garminSyncStatusHandler?.({
+        success: true,
+        isTrimmed,
+        message: isTrimmed ? trimReason : undefined,
+      });
     } else {
       console.warn('[GarminSync] Cache/push returned non-success:', res);
       garminSyncStatusHandler?.({

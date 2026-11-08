@@ -44,6 +44,7 @@ export const AnatomicalMuscleMap: React.FC<AnatomicalMuscleMapProps> = ({
     label: string
   ) => (
     <svg
+      role="img"
       viewBox={viewBox}
       aria-label={label}
       className="w-full h-auto max-h-[340px] select-none"
@@ -82,13 +83,13 @@ export const AnatomicalMuscleMap: React.FC<AnatomicalMuscleMapProps> = ({
             BODY_FRONT,
             MALE_OUTLINE_FRONT,
             '0 50 724 1350',
-            'Front muscle diagram'
+            lang === 'vi' ? 'Sơ đồ cơ bắp mặt trước' : 'Front muscle diagram'
           )}
           {renderBodySide(
             BODY_BACK,
             MALE_OUTLINE_BACK,
             '724 50 724 1350',
-            'Back muscle diagram'
+            lang === 'vi' ? 'Sơ đồ cơ bắp mặt sau' : 'Back muscle diagram'
           )}
         </div>
       </div>

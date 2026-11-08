@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Exercise, Language } from '../types/gym';
 import {
   translateEquipment,
@@ -9,14 +9,13 @@ import { searchAndRankExercises } from '../utils/search';
 
 import {
   EQUIPMENT_CHOICES,
-  ANATOMY_CHOICES,
+  MUSCLE_FILTER_CHOICES,
 } from '../data/exerciseConstants';
 
 interface ExerciseWikiProps {
   exercises: Exercise[];
   lang: Language;
   onSelectExercise: (exerciseId: string) => void;
-  onAddCustomExercise: (newExercise: Exercise) => void;
   search: string;
   onSearchChange: (search: string) => void;
   muscleFilter: string;
@@ -27,18 +26,7 @@ interface ExerciseWikiProps {
 
 const MUSCLE_CATEGORIES = [
   'All',
-  'Quads',
-  'Glutes',
-  'Hamstrings',
-  'Chest',
-  'Back',
-  'Shoulders',
-  'Biceps',
-  'Triceps',
-  'Forearms',
-  'Core',
-  'Calves',
-  'Cardio',
+  ...MUSCLE_FILTER_CHOICES,
 ];
 
 const EQUIPMENT_CATEGORIES = ['All', ...EQUIPMENT_CHOICES];
@@ -47,7 +35,6 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
   exercises,
   lang,
   onSelectExercise,
-  onAddCustomExercise,
   search,
   onSearchChange,
   muscleFilter,
@@ -56,17 +43,6 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
   onEquipmentFilterChange,
 }) => {
   const t = UI_TEXT[lang];
-  const [showAddCustom, setShowAddCustom] = useState(false);
-
-  // Custom Exercise Form State
-  const [customName, setCustomName] = useState('');
-  const [customNameVi, setCustomNameVi] = useState('');
-  const [customEquipment, setCustomEquipment] = useState('Barbell');
-  const [customVideoUrl, setCustomVideoUrl] = useState('');
-  const [customPrimaryIdx, setCustomPrimaryIdx] = useState(0);
-  const [customPrepare, setCustomPrepare] = useState('');
-  const [customExecution, setCustomExecution] = useState('');
-  const [customBreathing, setCustomBreathing] = useState('');
 
   const filtered = useMemo(() => {
     return searchAndRankExercises(
@@ -77,98 +53,6 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
       lang
     );
   }, [exercises, search, muscleFilter, equipmentFilter, lang]);
-
-  const handleCreateCustom = (e: React.FormEvent) => {
-    e.preventDefault();
-    const enName = customName.trim() || customNameVi.trim();
-    const viName = customNameVi.trim() || customName.trim();
-    if (!enName && !viName) return;
-
-    const chosen = ANATOMY_CHOICES[customPrimaryIdx] || ANATOMY_CHOICES[0];
-    const uniqueSuffix =
-      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const newId = `custom-${uniqueSuffix}`;
-    const prepList = customPrepare
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const execList = customExecution
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const breathList = customBreathing
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    const viPrepare = ['Chuẩn bị vào tư thế bắt đầu.'];
-    const viExecution = ['Thực hiện động tác với biên độ chuyển động hoàn chỉnh.'];
-    const viBreathing = ['Hít vào khi hạ/giãn cơ, thở ra khi phát lực co cơ.'];
-
-    const enPrepare = ['Set up in starting position.'];
-    const enExecution = ['Execute movement with full range of motion.'];
-    const enBreathing = ['Inhale on eccentric, exhale on concentric.'];
-
-    const stepsEn = {
-      prepare: lang === 'vi' ? enPrepare : (prepList.length > 0 ? prepList : enPrepare),
-      execution: lang === 'vi' ? enExecution : (execList.length > 0 ? execList : enExecution),
-      breathing: lang === 'vi' ? enBreathing : (breathList.length > 0 ? breathList : enBreathing),
-    };
-
-    const stepsVi = {
-      prepare: lang === 'vi' ? (prepList.length > 0 ? prepList : viPrepare) : viPrepare,
-      execution: lang === 'vi' ? (execList.length > 0 ? execList : viExecution) : viExecution,
-      breathing: lang === 'vi' ? (breathList.length > 0 ? breathList : viBreathing) : viBreathing,
-    };
-
-    const asciiSlug = (enName || viName)
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/đ/g, 'd')
-      .replace(/Đ/g, 'D')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-
-    const validVideoUrl =
-      customVideoUrl.trim().startsWith('http://') ||
-      customVideoUrl.trim().startsWith('https://') ||
-      customVideoUrl.trim().startsWith('/')
-        ? customVideoUrl.trim()
-        : '';
-
-    const newEx: Exercise = {
-      id: newId,
-      slug: asciiSlug || `custom-${Date.now()}`,
-      name: enName,
-      nameVi: viName,
-      aliases: [],
-      category: chosen.label,
-      equipment: customEquipment,
-      videoUrl: validVideoUrl,
-      primaryMuscles: [chosen.label],
-      secondaryMuscles: [],
-      primarySlugs: [chosen.slug],
-      secondarySlugs: [],
-      shortDescription:
-        lang === 'vi'
-          ? `Bài tập tự tạo: ${viName}`
-          : `Custom user exercise: ${enName}`,
-      steps: stepsEn,
-      stepsVi: stepsVi,
-    };
-    onAddCustomExercise(newEx);
-    setCustomName('');
-    setCustomNameVi('');
-    setCustomVideoUrl('');
-    setCustomPrepare('');
-    setCustomExecution('');
-    setCustomBreathing('');
-    setShowAddCustom(false);
-    onSelectExercise(newId);
-  };
 
   return (
     <div className="space-y-4">
@@ -186,6 +70,7 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
             autoCapitalize="off"
             spellCheck={false}
             name="wiki-search-clean"
+            aria-label={t.searchExercisePlaceholder}
             placeholder={t.searchExercisePlaceholder}
             className="w-full rounded-2xl bg-slate-100 pl-4 pr-10 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -223,7 +108,7 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
                 onMuscleFilterChange('All');
                 onEquipmentFilterChange('All');
               }}
-              className="text-xs font-semibold text-slate-500 hover:text-red-600 transition cursor-pointer underline shrink-0 ml-2"
+              className="text-xs font-semibold text-slate-500 hover:text-red-600 transition cursor-pointer underline shrink-0 ml-2 min-h-[44px] inline-flex items-center"
             >
               {lang === 'vi' ? 'Đặt lại bộ lọc' : 'Clear all'}
             </button>
@@ -266,104 +151,6 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Add Custom Exercise Drawer */}
-      {showAddCustom && (
-        <form
-          onSubmit={handleCreateCustom}
-          className="bg-white rounded-[24px] p-5 shadow-xs space-y-3 border border-blue-100"
-        >
-          <h3 className="font-bold text-sm text-slate-900">
-            {t.addCustomExerciseTitle}
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input
-              type="text"
-              required={!customNameVi.trim()}
-              value={customName}
-              onChange={(e) => setCustomName(e.target.value)}
-              placeholder="Exercise name (English)"
-              className="rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-900 focus:outline-none"
-            />
-            <input
-              type="text"
-              value={customNameVi}
-              onChange={(e) => setCustomNameVi(e.target.value)}
-              placeholder="Tên bài tập (Tiếng Việt - tuỳ chọn)"
-              className="rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-900 focus:outline-none"
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <select
-              value={customEquipment}
-              onChange={(e) => setCustomEquipment(e.target.value)}
-              className="rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-900 focus:outline-none"
-            >
-              {EQUIPMENT_CATEGORIES.filter((e) => e !== 'All').map((eq) => (
-                <option key={eq} value={eq}>
-                  {translateEquipment(eq, lang)}
-                </option>
-              ))}
-            </select>
-            <select
-              value={customPrimaryIdx}
-              onChange={(e) => setCustomPrimaryIdx(Number(e.target.value))}
-              className="rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-900 focus:outline-none"
-            >
-              {ANATOMY_CHOICES.map((ch, idx) => (
-                <option key={ch.slug} value={idx}>
-                  {t.primaryLabel}: {translateMuscle(ch.label, lang)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <input
-            type="text"
-            value={customVideoUrl}
-            onChange={(e) => setCustomVideoUrl(e.target.value)}
-            placeholder={t.customVideoPlaceholder}
-            className="w-full rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-900 focus:outline-none"
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <textarea
-              rows={2}
-              value={customPrepare}
-              onChange={(e) => setCustomPrepare(e.target.value)}
-              placeholder={t.customPrepPlaceholder}
-              className="rounded-xl bg-slate-100 p-2.5 text-xs text-slate-900 focus:outline-none"
-            />
-            <textarea
-              rows={2}
-              value={customExecution}
-              onChange={(e) => setCustomExecution(e.target.value)}
-              placeholder={t.customExecPlaceholder}
-              className="rounded-xl bg-slate-100 p-2.5 text-xs text-slate-900 focus:outline-none"
-            />
-            <textarea
-              rows={2}
-              value={customBreathing}
-              onChange={(e) => setCustomBreathing(e.target.value)}
-              placeholder={t.customBreathPlaceholder}
-              className="rounded-xl bg-slate-100 p-2.5 text-xs text-slate-900 focus:outline-none"
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setShowAddCustom(false)}
-              className="px-4 py-1.5 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold cursor-pointer"
-            >
-              {t.cancel}
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold cursor-pointer"
-            >
-              {t.saveExerciseBtn}
-            </button>
-          </div>
-        </form>
-      )}
 
       {/* Exercise Cards Grid (Clean Wiki — no routine comment pins) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -421,27 +208,12 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
                 onMuscleFilterChange('All');
                 onEquipmentFilterChange('All');
               }}
-              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+              className="px-4 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
             >
               {lang === 'vi' ? 'Đặt lại bộ lọc' : 'Clear search & filters'}
             </button>
           </div>
         )}
-      </div>
-
-      {/* Subtle Custom Exercise Action at Bottom */}
-      <div className="py-4 flex justify-center">
-        <button
-          type="button"
-          onClick={() => {
-            setShowAddCustom(true);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
-        >
-          <span>+</span>
-          <span>{t.customExerciseBtn}</span>
-        </button>
       </div>
     </div>
   );

@@ -45,13 +45,36 @@ const SetNumberInput: React.FC<SetNumberInputProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const selectTimerRef = useRef<number | null>(null);
 
+  const isFocusedRef = useRef(false);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
   useEffect(() => {
     return () => {
       if (selectTimerRef.current) {
         clearTimeout(selectTimerRef.current);
       }
+      if (isFocusedRef.current) {
+        const ceiling = max ?? 1000;
+        const curDraft = draftRef.current;
+        if (curDraft === '' || curDraft === '.') {
+          onChangeRef.current(min);
+        } else {
+          const parsed = parseFloat(curDraft);
+          const safe = Number.isNaN(parsed)
+            ? min
+            : Math.min(ceiling, Math.max(min, parsed));
+          if (safe !== valueRef.current) {
+            onChangeRef.current(safe);
+          }
+        }
+      }
     };
-  }, []);
+  }, [min, max]);
 
   useEffect(() => {
     if (!isFocused) {
@@ -81,6 +104,7 @@ const SetNumberInput: React.FC<SetNumberInputProps> = ({
   };
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    isFocusedRef.current = true;
     setIsFocused(true);
     const target = e.target;
     // Auto-select entire number on tap so typing immediately overwrites old number
@@ -96,6 +120,7 @@ const SetNumberInput: React.FC<SetNumberInputProps> = ({
   };
 
   const handleBlur = () => {
+    isFocusedRef.current = false;
     setIsFocused(false);
     const ceiling = max ?? 1000;
     if (draft === '' || draft === '.') {
@@ -134,7 +159,6 @@ interface RoutineDetailProps {
   routine: Routine;
   lang: Language;
   exercisesMap: Record<string, Exercise>;
-  allExercises: Exercise[];
   isEditMode?: boolean;
   scrollToIndex?: number;
   onClearScrollToIndex?: () => void;
@@ -155,6 +179,27 @@ const CustomRestInput: React.FC<{
   const [val, setVal] = useState<string>(
     currentSec !== undefined ? String(currentSec) : ''
   );
+  const isFocusedRef = useRef(false);
+  const valRef = useRef(val);
+  valRef.current = val;
+  const currentSecRef = useRef(currentSec);
+  currentSecRef.current = currentSec;
+  const onCommitRef = useRef(onCommit);
+  onCommitRef.current = onCommit;
+
+  useEffect(() => {
+    return () => {
+      if (isFocusedRef.current) {
+        const parsed = parseInt(valRef.current, 10);
+        if (!isNaN(parsed)) {
+          const clamped = Math.max(15, Math.min(900, parsed));
+          if (clamped !== currentSecRef.current) {
+            onCommitRef.current(clamped);
+          }
+        }
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setVal(currentSec !== undefined ? String(currentSec) : '');
@@ -179,10 +224,17 @@ const CustomRestInput: React.FC<{
         type="number"
         min="15"
         max="900"
+        aria-label={lang === 'vi' ? 'Thời gian nghỉ (giây)' : 'Rest timer (seconds)'}
         placeholder={lang === 'vi' ? 'Giây' : 'Sec'}
         value={val}
         onChange={(e) => setVal(e.target.value)}
-        onBlur={commit}
+        onFocus={() => {
+          isFocusedRef.current = true;
+        }}
+        onBlur={() => {
+          isFocusedRef.current = false;
+          commit();
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.currentTarget.blur();
@@ -213,6 +265,38 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     null
   );
   const lastScrolledKeyRef = useRef<string | null>(null);
+  const onClearScrollToIndexRef = useRef(onClearScrollToIndex);
+  useEffect(() => {
+    onClearScrollToIndexRef.current = onClearScrollToIndex;
+  });
+
+  const routineRef = useRef(routine);
+  useEffect(() => {
+    routineRef.current = routine;
+  });
+
+  const editingNoteIdxRef = useRef<number | null>(null);
+  const noteDraftRef = useRef<string>('');
+  const handleSaveExerciseNoteRef = useRef<(idx: number, text: string) => void>(() => {});
+
+  useEffect(() => {
+    editingNoteIdxRef.current = editingNoteIdx;
+    noteDraftRef.current = noteDraft;
+  }, [editingNoteIdx, noteDraft]);
+
+  // Auto-save unsaved inline note draft on unmount (including clearing/deleting empty notes)
+  useEffect(() => {
+    return () => {
+      const idx = editingNoteIdxRef.current;
+      const draft = noteDraftRef.current;
+      if (idx !== null) {
+        const originalNote = routineRef.current.exercises[idx]?.note || '';
+        if (draft.trim() !== originalNote.trim()) {
+          handleSaveExerciseNoteRef.current(idx, draft.trim());
+        }
+      }
+    };
+  }, []);
 
   // When adding or swapping an exercise, automatically scroll to it and highlight it once
   useEffect(() => {
@@ -246,7 +330,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
         if (targetCard) {
           targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        onClearScrollToIndex?.();
+        onClearScrollToIndexRef.current?.();
       }, 120);
 
       const highlightTimer = setTimeout(() => {
@@ -258,7 +342,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
         clearTimeout(highlightTimer);
       };
     }
-  }, [scrollToIndex, routine.exercises, onClearScrollToIndex]);
+  }, [scrollToIndex, routine.exercises]);
 
   // Drag-and-drop state (supports both desktop drag & mobile touch)
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
@@ -507,6 +591,29 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     onUpdateRoutine({ ...routine, exercises: nextExercises });
     setEditingNoteIdx(null);
   };
+  useEffect(() => {
+    handleSaveExerciseNoteRef.current = handleSaveExerciseNote;
+  });
+
+  const handleToggleNoteEdit = (targetExIdx: number, targetNote: string) => {
+    if (editingNoteIdx !== null) {
+      const curDraft = noteDraft.trim();
+      const origNote = (routine.exercises[editingNoteIdx]?.note || '').trim();
+      if (curDraft !== origNote) {
+        const nextExercises = routine.exercises.map((item, idx) =>
+          idx === editingNoteIdx ? { ...item, note: curDraft } : item
+        );
+        onUpdateRoutine({ ...routine, exercises: nextExercises });
+      }
+    }
+    if (editingNoteIdx === targetExIdx) {
+      setEditingNoteIdx(null);
+      setNoteDraft('');
+    } else {
+      setNoteDraft(targetNote);
+      setEditingNoteIdx(targetExIdx);
+    }
+  };
 
   const handleRestTimeChange = (exIndex: number, restSeconds: number) => {
     const nextExercises = routine.exercises.map((item, idx) =>
@@ -558,6 +665,18 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   };
 
   const handleRemoveExercise = (exIndex: number) => {
+    if (editingNoteIdx === exIndex) {
+      setEditingNoteIdx(null);
+      setNoteDraft('');
+    } else if (editingNoteIdx !== null && editingNoteIdx > exIndex) {
+      setEditingNoteIdx(editingNoteIdx - 1);
+    }
+    if (editingRestIdx === exIndex) {
+      setEditingRestIdx(null);
+    } else if (editingRestIdx !== null && editingRestIdx > exIndex) {
+      setEditingRestIdx(editingRestIdx - 1);
+    }
+
     const nextExercises = routine.exercises.filter((_, idx) => idx !== exIndex);
     onUpdateRoutine({ ...routine, exercises: nextExercises });
     setConfirmRemoveExIdx(null);
@@ -592,14 +711,42 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
 
   const handleReorderExercises = (fromIdx: number, toIdx: number) => {
     if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return;
-    const fromItem = routine.exercises[fromIdx];
-    const toItem = routine.exercises[toIdx];
-    if (!fromItem || !toItem) return;
+
+    let workingExercises = [...routine.exercises];
+
+    if (editingNoteIdx !== null) {
+      const curDraft = noteDraft.trim();
+      const origNote = (workingExercises[editingNoteIdx]?.note || '').trim();
+      if (curDraft !== origNote) {
+        workingExercises = workingExercises.map((item, idx) =>
+          idx === editingNoteIdx ? { ...item, note: curDraft } : item
+        );
+      }
+      setEditingNoteIdx(null);
+      setNoteDraft('');
+    }
+    if (editingRestIdx !== null) {
+      setEditingRestIdx(null);
+    }
+
+    const fromItem = workingExercises[fromIdx];
+    const toItem = workingExercises[toIdx];
+    if (!fromItem || !toItem) {
+      if (workingExercises !== routine.exercises) {
+        onUpdateRoutine({ ...routine, exercises: workingExercises });
+      }
+      return;
+    }
 
     const fromIsWarmup = Boolean(fromItem.isWarmup);
     const toIsWarmup = Boolean(toItem.isWarmup);
     // Strict isolation: warm-up and main exercises can never be dragged or swapped across sections
-    if (fromIsWarmup !== toIsWarmup) return;
+    if (fromIsWarmup !== toIsWarmup) {
+      if (workingExercises !== routine.exercises) {
+        onUpdateRoutine({ ...routine, exercises: workingExercises });
+      }
+      return;
+    }
 
     // Case 1: Reordering within the exact same superset (e.g. swapping 3A and 3B with each other)
     if (
@@ -607,7 +754,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
       fromItem.supersetId === toItem.supersetId &&
       supersetInfoMap[fromIdx]
     ) {
-      const nextExercises = [...routine.exercises];
+      const nextExercises = [...workingExercises];
       const [moved] = nextExercises.splice(fromIdx, 1);
       nextExercises.splice(toIdx, 0, moved);
       onUpdateRoutine({ ...routine, exercises: nextExercises });
@@ -624,6 +771,9 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
       toBlockIdx === -1 ||
       fromBlockIdx === toBlockIdx
     ) {
+      if (workingExercises !== routine.exercises) {
+        onUpdateRoutine({ ...routine, exercises: workingExercises });
+      }
       return;
     }
 
@@ -633,9 +783,9 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
 
     const reorderedSectionItems = nextBlocks
       .flat()
-      .map((i) => routine.exercises[i]);
+      .map((i) => workingExercises[i]);
     const otherSectionItems = (fromIsWarmup ? mainIndices : warmupIndices).map(
-      (i) => routine.exercises[i]
+      (i) => workingExercises[i]
     );
 
     const nextExercises = fromIsWarmup
@@ -646,8 +796,30 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   };
 
   const handleMoveBlock = (exIdx: number, direction: -1 | 1) => {
-    const item = routine.exercises[exIdx];
-    if (!item) return;
+    let workingExercises = [...routine.exercises];
+
+    if (editingNoteIdx !== null) {
+      const curDraft = noteDraft.trim();
+      const origNote = (workingExercises[editingNoteIdx]?.note || '').trim();
+      if (curDraft !== origNote) {
+        workingExercises = workingExercises.map((item, idx) =>
+          idx === editingNoteIdx ? { ...item, note: curDraft } : item
+        );
+      }
+      setEditingNoteIdx(null);
+      setNoteDraft('');
+    }
+    if (editingRestIdx !== null) {
+      setEditingRestIdx(null);
+    }
+
+    const item = workingExercises[exIdx];
+    if (!item) {
+      if (workingExercises !== routine.exercises) {
+        onUpdateRoutine({ ...routine, exercises: workingExercises });
+      }
+      return;
+    }
     const isWarmupSection = Boolean(item.isWarmup);
     const sectionIndices = isWarmupSection ? warmupIndices : mainIndices;
     const blocks = getSectionIndexBlocks(sectionIndices);
@@ -658,6 +830,9 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
       targetBlockIdx < 0 ||
       targetBlockIdx >= blocks.length
     ) {
+      if (workingExercises !== routine.exercises) {
+        onUpdateRoutine({ ...routine, exercises: workingExercises });
+      }
       return;
     }
 
@@ -667,10 +842,10 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
 
     const reorderedSectionItems = nextBlocks
       .flat()
-      .map((i) => routine.exercises[i]);
+      .map((i) => workingExercises[i]);
     const otherSectionItems = (
       isWarmupSection ? mainIndices : warmupIndices
-    ).map((i) => routine.exercises[i]);
+    ).map((i) => workingExercises[i]);
 
     const nextExercises = isWarmupSection
       ? [...reorderedSectionItems, ...otherSectionItems]
@@ -732,28 +907,30 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             </h3>
             <p className="text-xs text-slate-500">{t.unknownExerciseDesc}</p>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={() =>
-                onOpenPicker({
-                  asWarmup: Boolean(item.isWarmup),
-                  replacingExIdx: exIdx,
-                  fromEditMode: isEditMode,
-                })
-              }
-              className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold cursor-pointer"
-            >
-              {t.changeExerciseBtn}
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmRemoveExIdx(exIdx)}
-              className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold cursor-pointer"
-            >
-              {t.confirmDeleteBtn}
-            </button>
-          </div>
+          {isEditMode && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() =>
+                  onOpenPicker({
+                    asWarmup: Boolean(item.isWarmup),
+                    replacingExIdx: exIdx,
+                    fromEditMode: isEditMode,
+                  })
+                }
+                className="px-3 py-1.5 min-h-[44px] flex items-center justify-center rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold cursor-pointer"
+              >
+                {t.changeExerciseBtn}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmRemoveExIdx(exIdx)}
+                className="px-3 py-1.5 min-h-[44px] flex items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold cursor-pointer"
+              >
+                {lang === 'vi' ? 'Xóa...' : 'Remove...'}
+              </button>
+            </div>
+          )}
         </div>
       );
     }
@@ -805,7 +982,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
       <div
         key={`${ex.id}-${exIdx}`}
         data-routine-card-idx={exIdx}
-        draggable={isEditMode && editingNoteIdx === null}
+        draggable={isEditMode && editingNoteIdx === null && editingRestIdx === null}
         onDragStart={(e) => {
           if (!isEditMode) return;
           setDraggedIdx(exIdx);
@@ -860,6 +1037,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             {isEditMode && (
               <div
                 onTouchStart={(e) => {
+                  if (editingNoteIdx !== null || editingRestIdx !== null) return;
                   e.stopPropagation();
                   setOpenMenuExIdx(null);
                   setDraggedIdx(exIdx);
@@ -867,7 +1045,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 title={t.dragHint}
-                className="mt-0.5 px-1.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 cursor-grab active:cursor-grabbing select-none touch-none shrink-0 font-bold text-xs leading-none"
+                className="mt-0.5 px-1.5 py-1 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 cursor-grab active:cursor-grabbing select-none touch-none shrink-0 font-bold text-xs leading-none"
               >
                 ⋮⋮
               </div>
@@ -902,7 +1080,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenExerciseInfo(ex.id, exIdx)}
-                  className="text-left hover:text-blue-600 transition cursor-pointer"
+                  className="text-left min-h-[44px] inline-flex items-center hover:text-blue-600 transition cursor-pointer"
                 >
                   <h3 className="font-bold text-base text-slate-900 leading-snug">
                     {displayName}
@@ -1007,7 +1185,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                           fromEditMode: isEditMode,
                         });
                       }}
-                      className="w-full px-3.5 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
+                      className="w-full px-3.5 py-2.5 min-h-[44px] text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
                     >
                       <span>🔄</span>
                       <span>{t.changeExerciseBtn}</span>
@@ -1022,7 +1200,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                             editingRestIdx === exIdx ? null : exIdx
                           );
                         }}
-                        className="w-full px-3.5 py-2.5 text-left hover:bg-blue-50 text-blue-600 flex items-center gap-2.5 cursor-pointer"
+                        className="w-full px-3.5 py-2.5 min-h-[44px] text-left hover:bg-blue-50 text-blue-600 flex items-center gap-2.5 cursor-pointer"
                       >
                         <span>⏱</span>
                         <span>{t.restTimeLabel}</span>
@@ -1036,7 +1214,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                           setOpenMenuExIdx(null);
                           handleLinkSupersetWithNext(exIdx);
                         }}
-                        className="w-full px-3.5 py-2.5 text-left hover:bg-purple-50 text-purple-700 flex items-center gap-2.5 cursor-pointer"
+                        className="w-full px-3.5 py-2.5 min-h-[44px] text-left hover:bg-purple-50 text-purple-700 flex items-center gap-2.5 cursor-pointer"
                       >
                         <span>⚡</span>
                         <span>{t.linkSupersetBtn}</span>
@@ -1050,7 +1228,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                           setOpenMenuExIdx(null);
                           handleUnlinkSuperset(exIdx);
                         }}
-                        className="w-full px-3.5 py-2.5 text-left hover:bg-purple-50 text-purple-700 flex items-center gap-2.5 cursor-pointer"
+                        className="w-full px-3.5 py-2.5 min-h-[44px] text-left hover:bg-purple-50 text-purple-700 flex items-center gap-2.5 cursor-pointer"
                       >
                         <span>✕</span>
                         <span>{t.unlinkSupersetBtn}</span>
@@ -1064,7 +1242,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                           setOpenMenuExIdx(null);
                           handleMoveBlock(exIdx, -1);
                         }}
-                        className="w-full px-3.5 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
+                        className="w-full px-3.5 py-2.5 min-h-[44px] text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
                       >
                         <span className="text-slate-400">↑</span>
                         <span>{t.moveUpBtn}</span>
@@ -1078,7 +1256,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                           setOpenMenuExIdx(null);
                           handleMoveBlock(exIdx, 1);
                         }}
-                        className="w-full px-3.5 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
+                        className="w-full px-3.5 py-2.5 min-h-[44px] text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
                       >
                         <span className="text-slate-400">↓</span>
                         <span>{t.moveDownBtn}</span>
@@ -1092,7 +1270,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                         setOpenMenuExIdx(null);
                         setConfirmRemoveExIdx(exIdx);
                       }}
-                      className="w-full px-3.5 py-2.5 text-left text-red-600 hover:bg-red-50 flex items-center gap-2.5 font-bold cursor-pointer"
+                      className="w-full px-3.5 py-2.5 min-h-[44px] text-left text-red-600 hover:bg-red-50 flex items-center gap-2.5 font-bold cursor-pointer"
                     >
                       <span>🗑️</span>
                       <span>{t.removeExerciseBtn}</span>
@@ -1280,16 +1458,17 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 if (e.key === 'Enter') {
                   handleSaveExerciseNote(exIdx, noteDraft);
                 } else if (e.key === 'Escape') {
-                  setEditingNoteIdx(null);
+                  handleSaveExerciseNote(exIdx, noteDraft);
                 }
               }}
+              aria-label={t.commentPlaceholder}
               placeholder={t.commentPlaceholder}
               className="flex-1 rounded-xl bg-slate-100 px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               type="button"
               onClick={() => handleSaveExerciseNote(exIdx, noteDraft)}
-              className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold cursor-pointer"
+              className="px-3 py-1.5 min-h-[44px] flex items-center justify-center rounded-xl bg-blue-600 text-white text-xs font-bold cursor-pointer"
             >
               {t.saveNoteBtn}
             </button>
@@ -1301,11 +1480,8 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
             <button
               type="button"
-              onClick={() => {
-                setNoteDraft(note);
-                setEditingNoteIdx(editingNoteIdx === exIdx ? null : exIdx);
-              }}
-              className="text-xs text-blue-600 hover:underline truncate max-w-[55%] text-left cursor-pointer font-medium"
+              onClick={() => handleToggleNoteEdit(exIdx, note)}
+              className="text-xs text-blue-600 hover:underline truncate max-w-[55%] text-left cursor-pointer font-medium min-h-[44px] inline-flex items-center"
             >
               {note ? (
                 <span>📌 {note}</span>
@@ -1346,14 +1522,16 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
     );
   };
 
-  const confirmRemoveEx =
+  const confirmRemoveItem =
     confirmRemoveExIdx !== null
-      ? exercisesMap[routine.exercises[confirmRemoveExIdx]?.exerciseId]
+      ? routine.exercises[confirmRemoveExIdx]
       : null;
+  const confirmRemoveEx =
+    confirmRemoveItem ? exercisesMap[confirmRemoveItem.exerciseId] : null;
   const confirmRemoveExName =
     confirmRemoveEx && lang === 'vi' && confirmRemoveEx.nameVi
       ? confirmRemoveEx.nameVi
-      : confirmRemoveEx?.name || 'Exercise';
+      : confirmRemoveEx?.name || confirmRemoveItem?.exerciseId || 'Exercise';
 
   return (
     <div className="space-y-4">
@@ -1376,100 +1554,8 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
       {routine.exercises.length === 0 && (
         <div className="bg-white rounded-[24px] p-8 text-center shadow-xs space-y-3">
           <p className="text-sm text-slate-500">{t.emptyRoutineText}</p>
-          <div className="flex items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                onOpenPicker({
-                  asWarmup: true,
-                  replacingExIdx: null,
-                  fromEditMode: isEditMode,
-                });
-              }}
-              className="px-4 py-2.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition cursor-pointer shadow-xs"
-            >
-              {t.addWarmupExerciseBtn}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onOpenPicker({
-                  asWarmup: false,
-                  replacingExIdx: null,
-                  fromEditMode: isEditMode,
-                });
-              }}
-              className="px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition cursor-pointer"
-            >
-              {t.addFirstExerciseBtn}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Routine Sections */}
-      {routine.exercises.length > 0 && (
-        <div className="space-y-6">
-          {/* 1. Warm-up Exercises Section (Dedicated Warm-up Zone) */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                <h3 className="font-bold text-sm text-slate-900 tracking-wide uppercase">
-                  {t.warmupSectionTitle}
-                </h3>
-                {warmupIndices.length > 0 && (
-                  <span className="text-xs text-amber-800 font-semibold bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-200">
-                    {warmupIndices.length}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {warmupIndices.length > 0 ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                  {warmupIndices.map((idx, pos) => {
-                    const nextSectionIdx = warmupIndices[pos + 1];
-                    const showConnector = Boolean(
-                      supersetInfoMap[idx] &&
-                        nextSectionIdx !== undefined &&
-                        routine.exercises[idx]?.supersetId &&
-                        routine.exercises[idx]?.supersetId ===
-                          routine.exercises[nextSectionIdx]?.supersetId
-                    );
-                    return (
-                      <React.Fragment
-                        key={`${routine.exercises[idx].exerciseId}-${idx}`}
-                      >
-                        {renderExerciseCard(routine.exercises[idx], idx)}
-                        {showConnector && (
-                          <div className="flex items-center pl-6 -my-3.5 py-0.5 col-span-full md:hidden pointer-events-none">
-                            <div className="w-1 h-3.5 rounded-full bg-purple-400" />
-                          </div>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
-                {/* Button to add more warm-up exercises inside the warm-up zone */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onOpenPicker({
-                      asWarmup: true,
-                      replacingExIdx: null,
-                      fromEditMode: isEditMode,
-                    });
-                  }}
-                  className="w-full py-2.5 px-4 rounded-xl border border-dashed border-amber-300 bg-amber-50/50 hover:bg-amber-100/60 text-amber-800 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
-                >
-                  <span>🔥</span>
-                  <span>{t.addWarmupExerciseBtn}</span>
-                </button>
-              </div>
-            ) : (
-              /* Clean dashed button to add warm-up exercises directly into this zone */
+          {isEditMode && (
+            <div className="flex items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -1479,13 +1565,113 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                     fromEditMode: isEditMode,
                   });
                 }}
-                className="w-full py-3 px-4 rounded-[20px] border-2 border-dashed border-amber-300/80 bg-amber-50/40 hover:bg-amber-50/80 text-amber-800 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
+                className="px-4 py-2.5 min-h-[44px] flex items-center justify-center rounded-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition cursor-pointer shadow-xs"
               >
-                <span>🔥</span>
-                <span>{t.addWarmupExerciseBtn}</span>
+                {t.addWarmupExerciseBtn}
               </button>
-            )}
-          </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenPicker({
+                    asWarmup: false,
+                    replacingExIdx: null,
+                    fromEditMode: isEditMode,
+                  });
+                }}
+                className="px-5 py-2.5 min-h-[44px] flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition cursor-pointer"
+              >
+                {t.addFirstExerciseBtn}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Routine Sections */}
+      {routine.exercises.length > 0 && (
+        <div className="space-y-6">
+          {/* 1. Warm-up Exercises Section (Dedicated Warm-up Zone) */}
+          {(warmupIndices.length > 0 || isEditMode) && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                  <h3 className="font-bold text-sm text-slate-900 tracking-wide uppercase">
+                    {t.warmupSectionTitle}
+                  </h3>
+                  {warmupIndices.length > 0 && (
+                    <span className="text-xs text-amber-800 font-semibold bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-200">
+                      {warmupIndices.length}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {warmupIndices.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                    {warmupIndices.map((idx, pos) => {
+                      const nextSectionIdx = warmupIndices[pos + 1];
+                      const showConnector = Boolean(
+                        supersetInfoMap[idx] &&
+                          nextSectionIdx !== undefined &&
+                          routine.exercises[idx]?.supersetId &&
+                          routine.exercises[idx]?.supersetId ===
+                            routine.exercises[nextSectionIdx]?.supersetId
+                      );
+                      return (
+                        <React.Fragment
+                          key={`${routine.exercises[idx].exerciseId}-${idx}`}
+                        >
+                          {renderExerciseCard(routine.exercises[idx], idx)}
+                          {showConnector && (
+                            <div className="flex items-center pl-6 -my-3.5 py-0.5 col-span-full md:hidden pointer-events-none">
+                              <div className="w-1 h-3.5 rounded-full bg-purple-400" />
+                            </div>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                  {/* Button to add more warm-up exercises inside the warm-up zone (Edit mode only) */}
+                  {isEditMode && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOpenPicker({
+                          asWarmup: true,
+                          replacingExIdx: null,
+                          fromEditMode: isEditMode,
+                        });
+                      }}
+                      className="w-full py-2.5 px-4 min-h-[44px] rounded-xl border border-dashed border-amber-300 bg-amber-50/50 hover:bg-amber-100/60 text-amber-800 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    >
+                      <span>🔥</span>
+                      <span>{t.addWarmupExerciseBtn}</span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                /* Clean dashed button to add warm-up exercises directly into this zone (Edit mode only) */
+                isEditMode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenPicker({
+                        asWarmup: true,
+                        replacingExIdx: null,
+                        fromEditMode: isEditMode,
+                      });
+                    }}
+                    className="w-full py-3 px-4 min-h-[44px] rounded-[20px] border-2 border-dashed border-amber-300/80 bg-amber-50/40 hover:bg-amber-50/80 text-amber-800 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
+                  >
+                    <span>🔥</span>
+                    <span>{t.addWarmupExerciseBtn}</span>
+                  </button>
+                )
+              )}
+            </div>
+          )}
 
           {/* 2. Main Workout Section */}
           {mainIndices.length > 0 && (
@@ -1528,22 +1714,24 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             </div>
           )}
 
-          {/* 3. Bottom Action: Add Exercise to Main Workout (Single + icon, no warmup mixed in) */}
-          <div className="pt-3 pb-8">
-            <button
-              type="button"
-              onClick={() => {
-                onOpenPicker({
-                  asWarmup: false,
-                  replacingExIdx: null,
-                  fromEditMode: isEditMode,
-                });
-              }}
-              className="w-full py-3.5 px-5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition cursor-pointer"
-            >
-              <span>{t.addExerciseBtn}</span>
-            </button>
-          </div>
+          {/* 3. Bottom Action: Add Exercise to Main Workout (Only in Edit Mode) */}
+          {isEditMode && (
+            <div className="pt-3 pb-8">
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenPicker({
+                    asWarmup: false,
+                    replacingExIdx: null,
+                    fromEditMode: isEditMode,
+                  });
+                }}
+                className="w-full py-3.5 px-5 min-h-[44px] rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition cursor-pointer"
+              >
+                <span>{t.addExerciseBtn}</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -1580,14 +1768,14 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
               <button
                 type="button"
                 onClick={() => setConfirmRemoveExIdx(null)}
-                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                className="px-4 py-2.5 min-h-[44px] flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
               >
                 {t.cancel}
               </button>
               <button
                 type="button"
                 onClick={() => handleRemoveExercise(confirmRemoveExIdx)}
-                className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                className="px-4 py-2.5 min-h-[44px] flex items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs cursor-pointer"
               >
                 {t.confirmDeleteBtn}
               </button>

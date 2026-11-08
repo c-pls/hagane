@@ -1,7 +1,7 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
-import { Routine, Exercise } from '../types/gym';
-import { sanitizeCustomExercises, sanitizeRoutines } from './storage';
+import { Routine } from '../types/gym';
+import { sanitizeRoutines } from './storage';
 
 const BACKUP_DIR = 'Hagane';
 const BACKUP_FILE = 'hagane_backup.json';
@@ -10,7 +10,6 @@ export interface HaganeDeviceBackup {
   version: number;
   timestamp: number;
   routines: Routine[];
-  customExercises?: Exercise[];
   isCorrupted?: boolean;
 }
 
@@ -26,10 +25,7 @@ export function setDeviceBackupErrorHandler(handler: DeviceBackupErrorHandler | 
  * This storage is NOT deleted when the app is uninstalled on Android, allowing
  * seamless restoration even after a complete app uninstall/reinstall.
  */
-export async function autoSaveToDevice(
-  routines: Routine[],
-  customExercises: Exercise[] = []
-): Promise<boolean> {
+export async function autoSaveToDevice(routines: Routine[]): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) {
     return false;
   }
@@ -39,7 +35,6 @@ export async function autoSaveToDevice(
       version: 1,
       timestamp: Date.now(),
       routines,
-      customExercises,
     };
 
     const data = JSON.stringify(payload, null, 2);
@@ -71,7 +66,6 @@ export async function autoSaveToDevice(
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingSaveArgs: {
   routines: Routine[];
-  customExercises: Exercise[];
 } | null = null;
 let isWriting = false;
 
@@ -81,23 +75,18 @@ let isWriting = false;
  */
 export function debouncedAutoSaveToDevice(
   routines: Routine[],
-  customExercises: Exercise[] = [],
   delayMs = 500
 ): void {
   if (!Capacitor.isNativePlatform()) return;
 
-  pendingSaveArgs = { routines, customExercises };
+  pendingSaveArgs = { routines };
   if (debounceTimer) clearTimeout(debounceTimer);
 
   debounceTimer = setTimeout(async () => {
     debounceTimer = null;
     if (isWriting) {
       if (pendingSaveArgs) {
-        debouncedAutoSaveToDevice(
-          pendingSaveArgs.routines,
-          pendingSaveArgs.customExercises,
-          150
-        );
+        debouncedAutoSaveToDevice(pendingSaveArgs.routines, 150);
       }
       return;
     }
@@ -106,7 +95,7 @@ export function debouncedAutoSaveToDevice(
     pendingSaveArgs = null;
     isWriting = true;
     try {
-      const ok = await autoSaveToDevice(toSave.routines, toSave.customExercises);
+      const ok = await autoSaveToDevice(toSave.routines);
       if (!ok) {
         console.error('[Hagane] Device backup failed to write to physical storage.');
         if (backupErrorHandler) backupErrorHandler(true);
@@ -138,7 +127,7 @@ export function flushPendingDeviceSave(): void {
   const toSave = pendingSaveArgs;
   pendingSaveArgs = null;
   isWriting = true;
-  autoSaveToDevice(toSave.routines, toSave.customExercises).then((ok) => {
+  autoSaveToDevice(toSave.routines).then((ok) => {
     if (!ok) {
       console.error('[Hagane] Flush device backup failed on app background.');
       if (backupErrorHandler) backupErrorHandler(true);
@@ -155,7 +144,7 @@ export function flushPendingDeviceSave(): void {
 
 /**
  * Check and restore routines from the device's public Documents folder.
- * Validates and normalizes all routines and custom exercises via `sanitizeRoutines` / `sanitizeCustomExercises`.
+ * Validates and normalizes all routines via `sanitizeRoutines`.
  */
 export async function autoLoadFromDevice(): Promise<HaganeDeviceBackup | null> {
   if (!Capacitor.isNativePlatform()) {
@@ -181,27 +170,18 @@ export async function autoLoadFromDevice(): Promise<HaganeDeviceBackup | null> {
             parsed.routines,
             legacyComments
           );
-          const sanitizedCustom = sanitizeCustomExercises(parsed.customExercises);
           const ts = Number(parsed.timestamp);
 
           return {
             version: Number(parsed.version) || 1,
             timestamp: Number.isFinite(ts) && ts > 0 ? ts : 0,
             routines: sanitizedRoutines,
-            customExercises: sanitizedCustom,
           };
         }
       } catch (parseErr) {
         console.error('[Hagane] Backup file exists on device but is corrupted or malformed:', parseErr);
-        // Quarantine corrupt backup so raw data can still be examined (versioned with timestamp)
+        // Quarantine corrupt backup to a single deterministic file to avoid unbounded file accumulation
         try {
-          const timestamp = Date.now();
-          await Filesystem.writeFile({
-            path: `${BACKUP_DIR}/hagane_backup_corrupt_${timestamp}.json`,
-            data: result.data,
-            directory: Directory.Documents,
-            encoding: Encoding.UTF8,
-          });
           await Filesystem.writeFile({
             path: `${BACKUP_DIR}/hagane_backup_corrupt.json`,
             data: result.data,

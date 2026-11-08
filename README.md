@@ -11,8 +11,8 @@
 
 ### 🎥 197 Offline HD Exercise Demos
 - **Bundled 1080p 30-FPS Videos:** Play instantly without buffering, internet connection, or cellular data in the gym.
-- **Gym Staples & Famous Variations:** Romanian Deadlift (RDL), Bulgarian Split Squat, Barbell & Sumo Deadlifts, Hip Thrusts, Flat/Incline Dumbbell Bench Press, Yates Row, Seal Row, Spider Curls, Skullcrushers, Cable Face Pulls, Lat Prayer, Leg Press Calf Raise, Captain's Chair Leg Raise, Hex Press, and more.
-- **Smart Filtering:** Filter by target muscle group (Quads, Chest, Back, Shoulders, Biceps, Triceps, Hamstrings, Glutes, Core, Calves, Forearms, Cardio) and equipment (Barbell, Dumbbell, Machine, Cable, EZ-Bar, Kettlebell, Bodyweight).
+- **Gym Staples & Famous Variations:** Romanian Deadlift (RDL), Bulgarian Split Squat, Barbell & Sumo Deadlifts, Hip Thrusts, Flat/Incline Dumbbell Bench Press, Yates Row, Seal Row, Spider Curls, Skullcrushers, Cable Face Pulls, Lat Prayer, Leg Press Calf Raise, Captain's Chair Leg Raise, Close-Grip Press (Dumbbell), and more.
+- **Smart Filtering:** Filter by target muscle group (Quads, Chest, Back, Shoulders, Biceps, Triceps, Hamstrings, Glutes, Core, Calves, Forearms, Cardio) and equipment (Barbell, Dumbbell, Machine, Cable, EZ-Bar, Kettlebell, Bodyweight, Cardio).
 
 ### 🌐 1-Click Instant Language Switcher (`🇺🇸 EN` / `🇻🇳 VI`)
 - Switch instantly between **English** and **Tiếng Việt** with a single tap in the header (no dropdown menus).

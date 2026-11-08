@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import {
@@ -16,19 +16,15 @@ import {
   UI_TEXT,
 } from './i18n/translations';
 import {
-  clearCustomCorruptionLock,
   clearStorageCorruptionLock,
   deduplicateRoutineExercises,
   getAllExercises,
   getCorruptBackupRaw,
-  getCorruptCustomBackupRaw,
   getDefaultRestSeconds,
-  isCustomCorruptionLocked,
   isStorageCorruptionLocked,
-  loadCustomExercises,
   loadLanguage,
   loadRoutines,
-  saveCustomExercises,
+  sanitizeRoutines,
   saveLanguage,
   saveRoutines,
   LAST_SAVED_AT_KEY,
@@ -52,6 +48,7 @@ import {
 import {
   debouncedUpdateGarminWatchCache,
   flushGarminWatchCache,
+  setGarminSyncStatusHandler,
 } from './services/garminSync';
 
 export const App: React.FC = () => {
@@ -64,11 +61,13 @@ export const App: React.FC = () => {
       ),
     }))
   );
-  const [customExercises, setCustomExercises] = useState<Exercise[]>(() =>
-    loadCustomExercises()
-  );
+  const routinesRef = useRef(routines);
+  useEffect(() => {
+    routinesRef.current = routines;
+  }, [routines]);
+
   const [isCorruptLocked, setIsCorruptLocked] = useState<boolean>(() =>
-    isStorageCorruptionLocked() || isCustomCorruptionLocked()
+    isStorageCorruptionLocked()
   );
   const [showCorruptModal, setShowCorruptModal] = useState<boolean>(false);
   const [pendingBackupRestore, setPendingBackupRestore] =
@@ -81,6 +80,9 @@ export const App: React.FC = () => {
   const wikiScrollPosRef = useRef<number>(0);
   const [route, setRoute] = useState<ScreenRoute>({ name: 'routineList' });
   const [deviceBackupError, setDeviceBackupError] = useState(false);
+  const [routineVersion, setRoutineVersion] = useState(0);
+  const isRestoringRef = useRef(false);
+  const hasDiscardedDraftRef = useRef(false);
 
   useEffect(() => {
     setDeviceBackupErrorHandler((hasError) => {
@@ -91,8 +93,12 @@ export const App: React.FC = () => {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
+  const toastQueueRef = useRef<{ msg: string; durationMs: number }[]>([]);
+  const isToastActiveRef = useRef(false);
+  const activeToastMsgRef = useRef<string | null>(null);
   const lastBackPressRef = useRef<number>(0);
   const routineScrollPosRef = useRef<number>(0);
+  const routineListScrollPosRef = useRef<number>(0);
   const scrollTimersRef = useRef<number[]>([]);
 
   const clearScrollTimers = () => {
@@ -100,9 +106,8 @@ export const App: React.FC = () => {
     scrollTimersRef.current = [];
   };
 
-  const restoreRoutineScroll = (savedY?: number) => {
+  const restoreScrollPosition = (targetY = 0) => {
     clearScrollTimers();
-    const targetY = savedY ?? routineScrollPosRef.current ?? 0;
     const applyScroll = () => {
       window.scrollTo({ top: targetY, left: 0, behavior: 'instant' });
       document.documentElement.scrollTop = targetY;
@@ -115,20 +120,17 @@ export const App: React.FC = () => {
     scrollTimersRef.current.push(t1, t2);
   };
 
-  const restoreWikiScroll = (savedY?: number) => {
-    clearScrollTimers();
-    const targetY = savedY ?? wikiScrollPosRef.current ?? 0;
-    const applyScroll = () => {
-      window.scrollTo({ top: targetY, left: 0, behavior: 'instant' });
-      document.documentElement.scrollTop = targetY;
-      document.body.scrollTop = targetY;
-    };
-    applyScroll();
-    requestAnimationFrame(applyScroll);
-    const t1 = window.setTimeout(applyScroll, 30);
-    const t2 = window.setTimeout(applyScroll, 80);
-    scrollTimersRef.current.push(t1, t2);
-  };
+  const restoreRoutineScroll = (savedY?: number) =>
+    restoreScrollPosition(savedY ?? routineScrollPosRef.current ?? 0);
+
+  const restoreRoutineListScroll = (savedY?: number) =>
+    restoreScrollPosition(savedY ?? routineListScrollPosRef.current ?? 0);
+
+  const restoreWikiScroll = (savedY?: number) =>
+    restoreScrollPosition(savedY ?? wikiScrollPosRef.current ?? 0);
+
+  const restorePickerScroll = (savedY?: number) =>
+    restoreScrollPosition(savedY ?? 0);
 
   // Routine Edit Mode & Title/Category editing
   const [isRoutineEditMode, setIsRoutineEditMode] = useState<boolean>(false);
@@ -153,7 +155,8 @@ export const App: React.FC = () => {
   const handleSaveRoutineTitle = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (route.name !== 'routineDetail') return;
-    const routine = routines.find((r) => r.id === route.routineId);
+    const currentRoutines = routinesRef.current || routines;
+    const routine = currentRoutines.find((r) => r.id === route.routineId);
     if (!routine) return;
     const trimmedName = routineTitleDraft.trim() || routine.name;
     const trimmedTag = routineTagDraft.trim();
@@ -190,24 +193,31 @@ export const App: React.FC = () => {
           const backupTimestamp = backup.timestamp || 0;
 
           if (
-            routines.length === 0 &&
+            routinesRef.current.length === 0 &&
             localTimestamp === 0 &&
             backup.routines.length > 0 &&
             !isStorageCorruptionLocked()
           ) {
             // True fresh install / reinstall with empty local state -> auto-restore immediately
-            setRoutines(backup.routines);
-            saveRoutines(backup.routines);
-            if (backup.customExercises) {
-              setCustomExercises(backup.customExercises);
-              saveCustomExercises(backup.customExercises);
-            }
+            isRestoringRef.current = true;
+            const sanitized = sanitizeRoutines(backup.routines);
+            setRoutines(sanitized);
+            setRoutineVersion((v) => v + 1);
+            const ok = saveRoutines(sanitized);
             const currentLang = loadLanguage();
-            showToast(
-              currentLang === 'vi'
-                ? 'Đã tự động khôi phục giáo án từ bộ nhớ máy'
-                : 'Auto-restored routines from device storage'
-            );
+            if (ok) {
+              showToast(
+                currentLang === 'vi'
+                  ? 'Đã tự động khôi phục giáo án từ bộ nhớ máy'
+                  : 'Auto-restored routines from device storage'
+              );
+            } else {
+              showToast(
+                currentLang === 'vi'
+                  ? 'Lỗi: Không thể lưu giáo án đã khôi phục'
+                  : 'Error: Failed to save restored routines'
+              );
+            }
           } else if (
             backup.routines.length > 0 &&
             (isStorageCorruptionLocked() ||
@@ -330,6 +340,9 @@ export const App: React.FC = () => {
       } else if (target.name === 'wikiList') {
         const savedY = 'savedScrollY' in target && typeof target.savedScrollY === 'number' ? target.savedScrollY : undefined;
         restoreWikiScroll(savedY);
+      } else if (target.name === 'exercisePicker') {
+        const savedY = 'savedScrollY' in target && typeof target.savedScrollY === 'number' ? target.savedScrollY : undefined;
+        restorePickerScroll(savedY);
       } else {
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         document.documentElement.scrollTop = 0;
@@ -341,9 +354,11 @@ export const App: React.FC = () => {
         routineId: route.routineId,
         initialEditMode: route.fromEditMode ?? false,
       });
+      restoreRoutineScroll();
     } else if (route.name === 'routineDetail') {
       setRoute({ name: 'routineList' });
       setActiveTab('routines');
+      restoreRoutineListScroll();
     }
   };
 
@@ -403,6 +418,9 @@ export const App: React.FC = () => {
       document.querySelector('[role="dialog"]')
     );
     if (!canGoBack || document.body.dataset.dragging === 'true' || isAnyModalOpen) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('.overflow-x-auto, pre')) return;
+
     const touch = e.touches[0];
     if (touch && touch.clientX <= 48) {
       touchStartRef.current = {
@@ -469,20 +487,59 @@ export const App: React.FC = () => {
     saveLanguage(nextLang);
   };
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    if (toastTimeoutRef.current) {
-      window.clearTimeout(toastTimeoutRef.current);
-    }
-    toastTimeoutRef.current = window.setTimeout(() => {
+  const processToastQueue = () => {
+    if (toastQueueRef.current.length === 0) {
+      isToastActiveRef.current = false;
+      activeToastMsgRef.current = null;
       setToastMessage(null);
-    }, 1800);
+      return;
+    }
+    const next = toastQueueRef.current.shift()!;
+    isToastActiveRef.current = true;
+    activeToastMsgRef.current = next.msg;
+    setToastMessage(next.msg);
+    toastTimeoutRef.current = window.setTimeout(() => {
+      processToastQueue();
+    }, next.durationMs);
   };
 
-  const allExercises = useMemo(
-    () => getAllExercises(customExercises),
-    [customExercises]
-  );
+  const showToast = (msg: string, durationMs = 1800) => {
+    if (!isToastActiveRef.current) {
+      isToastActiveRef.current = true;
+      activeToastMsgRef.current = msg;
+      setToastMessage(msg);
+      if (toastTimeoutRef.current) {
+        window.clearTimeout(toastTimeoutRef.current);
+      }
+      toastTimeoutRef.current = window.setTimeout(() => {
+        processToastQueue();
+      }, durationMs);
+    } else {
+      if (
+        msg !== activeToastMsgRef.current &&
+        !toastQueueRef.current.some((item) => item.msg === msg)
+      ) {
+        if (toastQueueRef.current.length < 5) {
+          toastQueueRef.current.push({ msg, durationMs });
+        }
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isRestoringRef.current && hasDiscardedDraftRef.current) {
+      showToast(
+        lang === 'vi'
+          ? '⚠️ Bản nháp ghi chú chưa lưu đã bị hủy do khôi phục sao lưu'
+          : '⚠️ Unsaved note draft was discarded due to backup restore',
+        2200
+      );
+    }
+    isRestoringRef.current = false;
+    hasDiscardedDraftRef.current = false;
+  }, [routineVersion, lang]);
+
+  const allExercises = useMemo(() => getAllExercises(), []);
 
   const exercisesMap = useMemo(() => {
     const map: Record<string, Exercise> = {};
@@ -496,6 +553,7 @@ export const App: React.FC = () => {
     setActiveTab(tab);
     if (tab === 'routines') {
       setRoute({ name: 'routineList' });
+      restoreRoutineListScroll();
     } else if (tab === 'wiki') {
       setRoute({ name: 'wikiList' });
       restoreWikiScroll();
@@ -504,13 +562,13 @@ export const App: React.FC = () => {
 
   const persistRoutines = (
     next: Routine[],
-    customList: Exercise[] = customExercises,
     delayMs = 500
   ) => {
+    routinesRef.current = next;
     setRoutines(next);
     const savedOk = saveRoutines(next);
     if (!savedOk) {
-      if (isStorageCorruptionLocked() || isCustomCorruptionLocked()) {
+      if (isStorageCorruptionLocked()) {
         showToast(
           lang === 'vi'
             ? '⚠️ Chưa lưu vào bộ nhớ! Dữ liệu đang bị khóa cách ly, hãy chọn Khôi phục hoặc Bắt đầu mới.'
@@ -520,29 +578,36 @@ export const App: React.FC = () => {
         showToast(t.toastSaveError);
       }
     }
-    debouncedAutoSaveToDevice(next, customList, delayMs);
+    debouncedAutoSaveToDevice(next, delayMs);
   };
 
   const handleUpdateRoutine = (updated: Routine) => {
+    if (isRestoringRef.current) {
+      console.warn('[Hagane] Dropped stale routine update during restore');
+      hasDiscardedDraftRef.current = true;
+      return;
+    }
     const cleanedRoutine = {
       ...updated,
       exercises: sortRoutineExercisesBySection(
         deduplicateRoutineExercises(updated.exercises)
       ),
     };
-    const next = routines.map((r) =>
+    const currentRoutines = routinesRef.current || routines;
+    const next = currentRoutines.map((r) =>
       r.id === cleanedRoutine.id ? cleanedRoutine : r
     );
     persistRoutines(next);
   };
 
   const handleCreateRoutine = (name: string, tag: string) => {
+    const currentRoutines = routinesRef.current || routines;
     let trimmed = name.trim();
     if (!trimmed) {
       trimmed = lang === 'vi' ? 'Buổi tập mới' : 'New Routine';
     }
     const existingNames = new Set(
-      routines.map((r) => r.name.trim().toLowerCase())
+      currentRoutines.map((r) => r.name.trim().toLowerCase())
     );
     if (existingNames.has(trimmed.toLowerCase())) {
       let counter = 2;
@@ -561,31 +626,33 @@ export const App: React.FC = () => {
       tag,
       exercises: [],
     };
-    const next = [...routines, newRoutine];
-    persistRoutines(next, customExercises, 100);
+    const next = [...currentRoutines, newRoutine];
+    persistRoutines(next, 100);
     setRoute({ name: 'routineDetail', routineId: newRoutine.id });
   };
 
   const handleDeleteRoutine = (routineId: string) => {
-    const next = routines.filter((r) => r.id !== routineId);
-    persistRoutines(next, customExercises, 100);
+    const currentRoutines = routinesRef.current || routines;
+    const next = currentRoutines.filter((r) => r.id !== routineId);
+    persistRoutines(next, 100);
     showToast(t.toastDeletedRoutine);
   };
 
   const handleReorderRoutines = (fromIdx: number, toIdx: number) => {
+    const currentRoutines = routinesRef.current || routines;
     if (
       fromIdx === toIdx ||
       fromIdx < 0 ||
       toIdx < 0 ||
-      fromIdx >= routines.length ||
-      toIdx >= routines.length
+      fromIdx >= currentRoutines.length ||
+      toIdx >= currentRoutines.length
     ) {
       return;
     }
-    const next = [...routines];
+    const next = [...currentRoutines];
     const [moved] = next.splice(fromIdx, 1);
     next.splice(toIdx, 0, moved);
-    persistRoutines(next, customExercises, 100);
+    persistRoutines(next, 100);
   };
 
   const handleUpdateRoutineMeta = (
@@ -593,9 +660,10 @@ export const App: React.FC = () => {
     name: string,
     tag: string
   ) => {
+    const currentRoutines = routinesRef.current || routines;
     let trimmed = name.trim();
     const otherNames = new Set(
-      routines
+      currentRoutines
         .filter((r) => r.id !== routineId)
         .map((r) => r.name.trim().toLowerCase())
     );
@@ -606,35 +674,31 @@ export const App: React.FC = () => {
       }
       trimmed = `${trimmed} (${counter})`;
     }
-    const next = routines.map((r) =>
+    const next = currentRoutines.map((r) =>
       r.id === routineId ? { ...r, name: trimmed, tag } : r
     );
-    persistRoutines(next, customExercises, 100);
-  };
-
-  const handleUpdateCustomExercise = (updated: Exercise) => {
-    const nextCustom = customExercises.map((e) =>
-      e.id === updated.id ? updated : e
-    );
-    setCustomExercises(nextCustom);
-    if (!saveCustomExercises(nextCustom)) {
-      showToast(t.toastSaveError);
-    } else {
-      showToast(lang === 'vi' ? 'Đã cập nhật bài tập!' : 'Exercise updated!');
-    }
-    debouncedAutoSaveToDevice(routines, nextCustom, 100);
+    persistRoutines(next, 100);
   };
 
   const handleSaveRoutineExerciseComment = (
     routineId: string | undefined,
     routineExIndex: number | undefined,
-    commentText: string
+    commentText: string,
+    expectedExerciseId?: string
   ) => {
+    if (isRestoringRef.current) {
+      hasDiscardedDraftRef.current = true;
+      return;
+    }
     if (!routineId || routineExIndex === undefined) return;
-    const targetRoutine = routines.find((r) => r.id === routineId);
+    const currentRoutines = routinesRef.current || routines;
+    const targetRoutine = currentRoutines.find((r) => r.id === routineId);
     if (!targetRoutine) return;
+    const targetExercise = targetRoutine.exercises[routineExIndex];
+    if (!targetExercise) return;
+    if (expectedExerciseId && targetExercise.exerciseId !== expectedExerciseId) return;
     const trimmed = commentText.trim();
-    if (targetRoutine.exercises[routineExIndex]?.note === trimmed) return;
+    if ((targetExercise.note || '').trim() === trimmed) return;
     const nextExercises = targetRoutine.exercises.map((item, idx) =>
       idx === routineExIndex ? { ...item, note: trimmed } : item
     );
@@ -642,39 +706,35 @@ export const App: React.FC = () => {
     showToast(t.toastSavedNote);
   };
 
-  const handleAddCustomExercise = (newExercise: Exercise) => {
-    const next = [newExercise, ...customExercises];
-    setCustomExercises(next);
-    if (!saveCustomExercises(next)) {
-      showToast(t.toastSaveError);
-    }
-    debouncedAutoSaveToDevice(routines, next, 100);
-  };
+  // Listen for Garmin sync status updates
+  useEffect(() => {
+    setGarminSyncStatusHandler((info) => {
+      if (!info.success && info.message) {
+        showToast(
+          lang === 'vi'
+            ? `⚠️ Đồng bộ Garmin: ${info.message}`
+            : `⚠️ Garmin sync: ${info.message}`
+        );
+      } else if (info.isTrimmed && info.message) {
+        showToast(
+          lang === 'vi'
+            ? `ℹ️ Giới hạn bộ nhớ Garmin: ${info.message}`
+            : `ℹ️ Garmin watch memory: ${info.message}`
+        );
+      }
+    });
+    return () => {
+      setGarminSyncStatusHandler(null);
+    };
+  }, [lang]);
 
-  const handleDeleteCustomExercise = (exerciseId: string) => {
-    const nextCustom = customExercises.filter((e) => e.id !== exerciseId);
-    setCustomExercises(nextCustom);
-    if (!saveCustomExercises(nextCustom)) {
-      showToast(t.toastSaveError);
-    }
-
-    const nextRoutines = routines.map((r) => ({
-      ...r,
-      exercises: sortRoutineExercisesBySection(
-        deduplicateRoutineExercises(
-          r.exercises.filter((item) => item.exerciseId !== exerciseId)
-        )
-      ),
-    }));
-    persistRoutines(nextRoutines, nextCustom, 100);
-
-    // If deleting custom exercise mid-swap, safely return to routineDetail to avoid stale picker index (m9)
-    if (route.name === 'exerciseInfo' && route.replacingExIdx !== undefined && route.routineId) {
-      setRoute({ name: 'routineDetail', routineId: route.routineId });
-      return;
-    }
-    handleNavigateBack();
-  };
+  const handleClearScrollToIndex = useCallback(() => {
+    setRoute((prev) =>
+      prev.name === 'routineDetail' && prev.scrollToIndex !== undefined
+        ? { ...prev, scrollToIndex: undefined }
+        : prev
+    );
+  }, []);
 
   // Passively keep the Garmin watch payload cache up to date in the background
   // (debounced 2.5s so typing weights/reps does not spam Bluetooth or SharedPreferences).
@@ -688,7 +748,8 @@ export const App: React.FC = () => {
     asWarmup: boolean = false,
     replacingExIdx: number | null = null
   ): boolean => {
-    const targetRoutine = routines.find((r) => r.id === routineId);
+    const currentRoutines = routinesRef.current || routines;
+    const targetRoutine = currentRoutines.find((r) => r.id === routineId);
     if (!targetRoutine) return false;
 
     const ex = exercisesMap[exerciseId];
@@ -787,7 +848,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             onClick={handleNavigateBack}
-            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer shrink-0"
+            className="hidden sm:inline-flex items-center px-3 py-1.5 min-h-[44px] rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer shrink-0"
           >
             {backLabel}
           </button>
@@ -812,7 +873,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             onClick={handleNavigateBack}
-            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer shrink-0"
+            className="hidden sm:inline-flex items-center px-3 py-1.5 min-h-[44px] rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer shrink-0"
           >
             {t.back}
           </button>
@@ -836,8 +897,8 @@ export const App: React.FC = () => {
         <div className="flex items-center gap-2.5 min-w-0 pr-2">
           <button
             type="button"
-            onClick={() => setRoute({ name: 'routineList' })}
-            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer shrink-0"
+            onClick={handleNavigateBack}
+            className="hidden sm:inline-flex items-center px-3 py-1.5 min-h-[44px] rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer shrink-0"
           >
             {t.routinesBack}
           </button>
@@ -852,7 +913,7 @@ export const App: React.FC = () => {
                     setIsEditingRoutineTitle(true);
                   }
                 }}
-                className="text-left group cursor-pointer flex items-center gap-1.5"
+                className="text-left group cursor-pointer flex items-center gap-1.5 min-h-[44px]"
               >
                 <h1 className="font-bold text-base text-slate-900 group-hover:text-blue-600 transition truncate max-w-[180px] sm:max-w-[240px]">
                   {routineName}
@@ -1039,7 +1100,7 @@ export const App: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCorruptModal(true)}
-                className="px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-bold cursor-pointer"
+                className="px-3.5 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-bold cursor-pointer"
               >
                 {lang === 'vi' ? '📋 Xem dữ liệu' : '📋 View Data'}
               </button>
@@ -1047,18 +1108,19 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
+                    isRestoringRef.current = true;
                     clearStorageCorruptionLock();
-                    clearCustomCorruptionLock();
                     setIsCorruptLocked(false);
-                    setRoutines(pendingBackupRestore.routines);
-                    saveRoutines(pendingBackupRestore.routines);
-                    if (pendingBackupRestore.customExercises) {
-                      setCustomExercises(pendingBackupRestore.customExercises);
-                      saveCustomExercises(pendingBackupRestore.customExercises);
+                    const sanitized = sanitizeRoutines(pendingBackupRestore.routines);
+                    setRoutines(sanitized);
+                    setRoutineVersion((v) => v + 1);
+                    const ok = saveRoutines(sanitized);
+                    if (!ok) {
+                      showToast(t.toastSaveError || (lang === 'vi' ? 'Không thể lưu giáo án' : 'Failed to save routines'));
                     }
                     setPendingBackupRestore(null);
                   }}
-                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
+                  className="px-3.5 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
                 >
                   {t.restoreNowBtn}
                 </button>
@@ -1072,13 +1134,16 @@ export const App: React.FC = () => {
                       : 'Are you sure you want to start fresh? The corrupt data is preserved in storage.'
                   );
                   if (!confirmFresh) return;
+                  isRestoringRef.current = true;
                   clearStorageCorruptionLock(false);
-                  clearCustomCorruptionLock(false);
                   setIsCorruptLocked(false);
-                  saveRoutines(routines);
-                  saveCustomExercises(customExercises);
+                  setRoutineVersion((v) => v + 1);
+                  const ok = saveRoutines(routines);
+                  if (!ok) {
+                    showToast(t.toastSaveError || (lang === 'vi' ? 'Không thể lưu giáo án' : 'Failed to save routines'));
+                  }
                 }}
-                className="px-3.5 py-2 rounded-xl bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold cursor-pointer"
+                className="px-3.5 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold cursor-pointer"
               >
                 {t.startFreshBtn}
               </button>
@@ -1103,29 +1168,35 @@ export const App: React.FC = () => {
                 onClick={() => {
                   setPendingBackupRestore(null);
                   // Touch local timestamp so we don't re-prompt on next launch unless backup changes again
-                  saveRoutines(routines);
+                  const ok = saveRoutines(routines);
+                  if (!ok) {
+                    showToast(t.toastSaveError || (lang === 'vi' ? 'Không thể lưu giáo án' : 'Failed to save routines'));
+                  }
                 }}
-                className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold cursor-pointer"
+                className="px-3.5 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold cursor-pointer"
               >
                 {t.keepLocalBtn}
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  setRoutines(pendingBackupRestore.routines);
-                  saveRoutines(pendingBackupRestore.routines);
-                  if (pendingBackupRestore.customExercises) {
-                    setCustomExercises(pendingBackupRestore.customExercises);
-                    saveCustomExercises(pendingBackupRestore.customExercises);
-                  }
+                  isRestoringRef.current = true;
+                  const sanitized = sanitizeRoutines(pendingBackupRestore.routines);
+                  setRoutines(sanitized);
+                  setRoutineVersion((v) => v + 1);
+                  const ok = saveRoutines(sanitized);
                   setPendingBackupRestore(null);
-                  showToast(
-                    lang === 'vi'
-                      ? 'Đã khôi phục giáo án từ bộ nhớ máy'
-                      : 'Restored routines from device storage'
-                  );
+                  if (ok) {
+                    showToast(
+                      lang === 'vi'
+                        ? 'Đã khôi phục giáo án từ bộ nhớ máy'
+                        : 'Restored routines from device storage'
+                    );
+                  } else {
+                    showToast(t.toastSaveError || (lang === 'vi' ? 'Không thể lưu giáo án' : 'Failed to save routines'));
+                  }
                 }}
-                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
+                className="px-3.5 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
               >
                 {t.restoreNowBtn}
               </button>
@@ -1149,7 +1220,8 @@ export const App: React.FC = () => {
             <button
               type="button"
               onClick={() => setDeviceBackupError(false)}
-              className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold cursor-pointer shrink-0"
+              aria-label={lang === 'vi' ? 'Đóng thông báo' : 'Dismiss'}
+              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center bg-amber-100 hover:bg-amber-200 text-amber-900 text-sm font-bold cursor-pointer shrink-0"
             >
               ✕
             </button>
@@ -1161,9 +1233,15 @@ export const App: React.FC = () => {
             routines={routines}
             lang={lang}
             exercisesMap={exercisesMap}
-            onOpenRoutine={(routineId) =>
-              setRoute({ name: 'routineDetail', routineId })
-            }
+            onOpenRoutine={(routineId) => {
+              const currentScroll =
+                window.scrollY ||
+                document.documentElement.scrollTop ||
+                document.body.scrollTop ||
+                0;
+              routineListScrollPosRef.current = currentScroll;
+              setRoute({ name: 'routineDetail', routineId });
+            }}
             onCreateRoutine={handleCreateRoutine}
             onDeleteRoutine={handleDeleteRoutine}
             onReorderRoutines={handleReorderRoutines}
@@ -1184,8 +1262,11 @@ export const App: React.FC = () => {
                   </p>
                   <button
                     type="button"
-                    onClick={() => setRoute({ name: 'routineList' })}
-                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
+                    onClick={() => {
+                      setRoute({ name: 'routineList' });
+                      restoreRoutineListScroll();
+                    }}
+                    className="px-4 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
                   >
                     {t.routinesBack}
                   </button>
@@ -1194,19 +1275,13 @@ export const App: React.FC = () => {
             }
             return (
               <RoutineDetail
+                key={`${activeRoutine.id}_${routineVersion}`}
                 routine={activeRoutine}
                 isEditMode={isRoutineEditMode}
                 scrollToIndex={route.scrollToIndex}
-                onClearScrollToIndex={() => {
-                  setRoute((prev) =>
-                    prev.name === 'routineDetail' && prev.scrollToIndex !== undefined
-                      ? { ...prev, scrollToIndex: undefined }
-                      : prev
-                  );
-                }}
+                onClearScrollToIndex={handleClearScrollToIndex}
                 lang={lang}
                 exercisesMap={exercisesMap}
-                allExercises={allExercises}
                 onUpdateRoutine={handleUpdateRoutine}
                 onOpenExerciseInfo={(exerciseId, routineExIndex) => {
                   const currentScroll =
@@ -1228,6 +1303,12 @@ export const App: React.FC = () => {
                   });
                 }}
                 onOpenPicker={({ asWarmup, replacingExIdx }) => {
+                  const currentScroll =
+                    window.scrollY ||
+                    document.documentElement.scrollTop ||
+                    document.body.scrollTop ||
+                    0;
+                  routineScrollPosRef.current = currentScroll;
                   setRoute({
                     name: 'exercisePicker',
                     routineId: activeRoutine.id,
@@ -1253,8 +1334,11 @@ export const App: React.FC = () => {
                   </p>
                   <button
                     type="button"
-                    onClick={() => setRoute({ name: 'routineList' })}
-                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
+                    onClick={() => {
+                      setRoute({ name: 'routineList' });
+                      restoreRoutineListScroll();
+                    }}
+                    className="px-4 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
                   >
                     {t.routinesBack}
                   </button>
@@ -1271,13 +1355,16 @@ export const App: React.FC = () => {
                 initialSearch={route.searchQuery || ''}
                 initialMuscle={route.muscleFilter || 'All'}
                 initialEquipment={route.equipmentFilter || 'All'}
-                onBack={() =>
+                initialTab={route.pickerTab}
+                autoFocusSearch={route.savedScrollY === undefined}
+                onBack={() => {
                   setRoute({
                     name: 'routineDetail',
                     routineId: targetRoutine.id,
                     initialEditMode: route.fromEditMode ?? false,
-                  })
-                }
+                  });
+                  restoreRoutineScroll();
+                }}
                 onSelectExercise={(exerciseId) => {
                   let scrollIdx = 0;
                   if (route.replacingExIdx !== null) {
@@ -1316,8 +1403,14 @@ export const App: React.FC = () => {
                   exerciseId,
                   currentSearch,
                   currentMuscle,
-                  currentEquipment
+                  currentEquipment,
+                  currentTab
                 ) => {
+                  const currentScroll =
+                    window.scrollY ||
+                    document.documentElement.scrollTop ||
+                    document.body.scrollTop ||
+                    0;
                   setRoute({
                     name: 'exerciseInfo',
                     exerciseId,
@@ -1333,6 +1426,8 @@ export const App: React.FC = () => {
                       searchQuery: currentSearch,
                       muscleFilter: currentMuscle,
                       equipmentFilter: currentEquipment,
+                      savedScrollY: currentScroll,
+                      pickerTab: currentTab,
                     },
                   });
                 }}
@@ -1363,13 +1458,13 @@ export const App: React.FC = () => {
                 returnTo: { name: 'wikiList', savedScrollY: currentScroll },
               });
             }}
-            onAddCustomExercise={handleAddCustomExercise}
           />
         )}
 
         {route.name === 'exerciseInfo' &&
           (exercisesMap[route.exerciseId] ? (
             <ExerciseDetail
+              key={`${route.exerciseId}_${route.routineId || ''}_${route.routineExIndex ?? ''}_${routineVersion}`}
               exercise={exercisesMap[route.exerciseId]}
               lang={lang}
               showComment={
@@ -1386,7 +1481,8 @@ export const App: React.FC = () => {
                 handleSaveRoutineExerciseComment(
                   route.routineId,
                   route.routineExIndex,
-                  commentText
+                  commentText,
+                  route.exerciseId
                 )
               }
               activeRoutineId={
@@ -1395,10 +1491,9 @@ export const App: React.FC = () => {
               asWarmup={route.asWarmup}
               replacingExIdx={route.replacingExIdx}
               allExercises={allExercises}
-              onDeleteCustomExercise={handleDeleteCustomExercise}
-              onUpdateCustomExercise={handleUpdateCustomExercise}
               onSelectExercise={(newExId) => {
-                const currentRoutine = routines.find(
+                const currentRoutines = routinesRef.current || routines;
+                const currentRoutine = currentRoutines.find(
                   (r) => r.id === route.routineId
                 );
                 const inferredWarmup =
@@ -1432,7 +1527,8 @@ export const App: React.FC = () => {
                 asWarmup,
                 replacingExIdx
               ) => {
-                const targetRoutine = routines.find((r) => r.id === routineId);
+                const currentRoutines = routinesRef.current || routines;
+                const targetRoutine = currentRoutines.find((r) => r.id === routineId);
                 let scrollIdx = 0;
                 if (replacingExIdx !== null && replacingExIdx !== undefined) {
                   scrollIdx = replacingExIdx;
@@ -1468,7 +1564,7 @@ export const App: React.FC = () => {
               <button
                 type="button"
                 onClick={handleNavigateBack}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
+                className="px-4 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
               >
                 {t.back}
               </button>
@@ -1498,6 +1594,7 @@ export const App: React.FC = () => {
                 type="text"
                 value={routineTitleDraft}
                 onChange={(e) => setRoutineTitleDraft(e.target.value)}
+                aria-label={t.routineNamePlaceholder}
                 placeholder={t.routineNamePlaceholder}
                 autoFocus
                 className="w-full rounded-xl bg-slate-100 px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1512,13 +1609,13 @@ export const App: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsEditingRoutineTitle(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                className="px-4 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
               >
                 {t.cancel}
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
+                className="px-4 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
               >
                 {t.save}
               </button>
@@ -1590,11 +1687,9 @@ export const App: React.FC = () => {
 
       {showCorruptModal && (() => {
         const rawRoutines = getCorruptBackupRaw();
-        const rawCustom = getCorruptCustomBackupRaw();
-        const combinedRaw = [
-          rawRoutines ? `=== QUARANTINED ROUTINES ===\n${rawRoutines}` : '',
-          rawCustom ? `=== QUARANTINED CUSTOM EXERCISES ===\n${rawCustom}` : '',
-        ].filter(Boolean).join('\n\n') || '(Empty)';
+        const combinedRaw = rawRoutines
+          ? `=== QUARANTINED ROUTINES ===\n${rawRoutines}`
+          : '(Empty)';
 
         return (
           <div
@@ -1608,23 +1703,28 @@ export const App: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-base text-slate-900">
+                <h3 id="corrupt-modal-title" className="font-bold text-base text-slate-900">
                   {lang === 'vi' ? 'Dữ liệu bộ nhớ lỗi (Quarantine)' : 'Corrupted Storage Data'}
                 </h3>
                 <button
                   type="button"
                   onClick={() => setShowCorruptModal(false)}
-                  className="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer"
+                  aria-label={t.cancel}
+                  className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
-              <p className="text-xs text-slate-500">
+              <p id="corrupt-modal-desc" className="text-xs text-slate-500">
                 {lang === 'vi'
                   ? 'Dưới đây là chuỗi JSON thô được trích xuất từ dữ liệu bị lỗi trước đó. Bạn có thể sao chép để lưu giữ.'
                   : 'Raw JSON payload preserved from corrupted storage. You can copy it to preserve your history.'}
               </p>
               <textarea
+                id="corrupt-raw-textarea"
+                aria-label={lang === 'vi' ? 'Dữ liệu JSON sao lưu bị lỗi' : 'Corrupted backup JSON payload'}
+                aria-labelledby="corrupt-modal-title"
+                aria-describedby="corrupt-modal-desc"
                 readOnly
                 value={combinedRaw}
                 className="w-full flex-1 min-h-[220px] rounded-xl bg-slate-50 p-3 text-[11px] font-mono text-slate-800 border border-slate-200 select-all"
@@ -1640,14 +1740,14 @@ export const App: React.FC = () => {
                       showToast(lang === 'vi' ? 'Không thể tự động sao chép, vui lòng copy thủ công' : 'Could not copy to clipboard');
                     }
                   }}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
                 >
                   {lang === 'vi' ? 'Sao chép JSON' : 'Copy JSON'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowCorruptModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 min-h-[44px] inline-flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
                 >
                   {t.cancel}
                 </button>

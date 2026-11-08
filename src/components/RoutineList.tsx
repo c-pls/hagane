@@ -39,7 +39,7 @@ export const CategoryTagPicker: React.FC<CategoryTagPickerProps> = ({
                 setShowCustomInput(false);
                 onChange(active ? '' : preset);
               }}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
+              className={`px-3 py-1.5 min-h-[44px] flex items-center justify-center rounded-full text-xs font-bold transition cursor-pointer ${
                 active
                   ? 'bg-blue-600 text-white shadow-2xs'
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
@@ -63,7 +63,7 @@ export const CategoryTagPicker: React.FC<CategoryTagPickerProps> = ({
               }
             }
           }}
-          className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
+          className={`px-3 py-1.5 min-h-[44px] flex items-center justify-center rounded-full text-xs font-bold transition cursor-pointer ${
             showCustomInput
               ? 'bg-blue-600 text-white shadow-2xs'
               : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
@@ -78,6 +78,7 @@ export const CategoryTagPicker: React.FC<CategoryTagPickerProps> = ({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          aria-label={t.routineTagPlaceholder}
           placeholder={t.routineTagPlaceholder}
           autoFocus
           className="w-full rounded-xl bg-slate-100 px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -218,7 +219,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                 setIsEditMode(!isEditMode);
                 setOpenMenuRoutineId(null);
               }}
-              className={`px-3.5 py-2 rounded-full text-xs font-bold transition shadow-xs cursor-pointer ${
+              className={`px-3.5 py-2 min-h-[44px] flex items-center justify-center rounded-full text-xs font-bold transition shadow-xs cursor-pointer ${
                 isEditMode
                   ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                   : 'bg-slate-200/80 hover:bg-slate-300 text-slate-800'
@@ -235,7 +236,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
               setNewTag('');
               setShowNewModal(true);
             }}
-            className="px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+            className="px-4 py-2 min-h-[44px] flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
           >
             {t.newRoutineBtn}
           </button>
@@ -263,6 +264,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
+              aria-label={t.routineNamePlaceholder}
               placeholder={t.routineNamePlaceholder}
               autoFocus
               className="w-full rounded-xl bg-slate-100 px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -277,13 +279,13 @@ export const RoutineList: React.FC<RoutineListProps> = ({
             <button
               type="button"
               onClick={() => setShowNewModal(false)}
-              className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold cursor-pointer"
+              className="px-4 py-2 min-h-[44px] flex items-center justify-center rounded-xl bg-slate-100 text-slate-600 text-xs font-bold cursor-pointer"
             >
               {t.cancel}
             </button>
             <button
               type="submit"
-              className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold cursor-pointer"
+              className="px-4 py-2 min-h-[44px] flex items-center justify-center rounded-xl bg-blue-600 text-white text-xs font-bold cursor-pointer"
             >
               {t.createAndOpen}
             </button>
@@ -308,7 +310,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                 setNewTag('');
                 setShowNewModal(true);
               }}
-              className="px-5 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              className="px-5 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
             >
               {t.newRoutineBtn}
             </button>
@@ -390,13 +392,22 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                         onTouchMove={handleTouchMove}
                         onTouchEnd={handleTouchEnd}
                         title={t.dragRoutineHint}
-                        className="mt-0.5 px-1.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 cursor-grab active:cursor-grabbing select-none touch-none shrink-0 font-bold text-xs leading-none"
+                        className="mt-0.5 px-1.5 py-1 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 cursor-grab active:cursor-grabbing select-none touch-none shrink-0 font-bold text-xs leading-none"
                       >
                         ⋮⋮
                       </div>
                     )}
                     <div
                       className="min-w-0 cursor-pointer"
+                      role={isEditMode ? 'button' : undefined}
+                      tabIndex={isEditMode ? 0 : undefined}
+                      onKeyDown={(e) => {
+                        if (isEditMode && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onOpenRoutine(routine.id);
+                        }
+                      }}
                       onClick={(e) => {
                         if (isEditMode) {
                           e.stopPropagation();
@@ -554,6 +565,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                 type="text"
                 value={editNameDraft}
                 onChange={(e) => setEditNameDraft(e.target.value)}
+                aria-label={t.routineNamePlaceholder}
                 placeholder={t.routineNamePlaceholder}
                 autoFocus
                 className="w-full rounded-xl bg-slate-100 px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -568,13 +580,13 @@ export const RoutineList: React.FC<RoutineListProps> = ({
               <button
                 type="button"
                 onClick={() => setEditingRoutine(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                className="px-4 py-2 min-h-[44px] flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
               >
                 {t.cancel}
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
+                className="px-4 py-2 min-h-[44px] flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer"
               >
                 {t.save}
               </button>
@@ -616,7 +628,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
               <button
                 type="button"
                 onClick={() => setConfirmDeleteRoutine(null)}
-                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                className="px-4 py-2.5 min-h-[44px] flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
               >
                 {t.cancel}
               </button>
@@ -626,7 +638,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                   onDeleteRoutine(confirmDeleteRoutine.id);
                   setConfirmDeleteRoutine(null);
                 }}
-                className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                className="px-4 py-2.5 min-h-[44px] flex items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs cursor-pointer"
               >
                 {t.confirmDeleteBtn}
               </button>
