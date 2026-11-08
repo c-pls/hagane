@@ -55,21 +55,18 @@ jobs:
           chmod +x android/gradlew
 
       - name: Restore Keystore from Secret
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         run: |
-          echo "$KEYSTORE_B64" | base64 --decode > android/app/hagane.keystore
-          test -s android/app/hagane.keystore || { echo "::error::Keystore decoded from secret is empty!"; exit 1; }
-          ls -lh android/app/hagane.keystore
-        env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-
-      - name: Verify Keystore Present
-        run: |
-          if [ ! -f android/app/hagane.keystore ]; then
-            echo "::error::android/app/hagane.keystore was NOT found! Please verify that ANDROID_KEYSTORE_BASE64 secret is configured in repository settings."
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 --decode > android/app/hagane.keystore
+            test -s android/app/hagane.keystore || { echo "::error::Keystore decoded from secret is empty!"; exit 1; }
+            echo "Successfully restored android/app/hagane.keystore from secret."
+            ls -lh android/app/hagane.keystore
+          else
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret was NOT found in repository secrets!"
             exit 1
           fi
-          echo "Verified android/app/hagane.keystore exists and is ready for release signing."
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
       - name: Build Android Release APK
         run: |
