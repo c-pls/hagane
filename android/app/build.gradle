@@ -24,14 +24,18 @@ android {
             def keystorePath = System.getenv("RELEASE_KEYSTORE_PATH") ?: "hagane.keystore"
             def keystoreFile = file(keystorePath)
             if (keystoreFile.exists()) {
-                def storePass = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: System.getenv("RELEASE_STORE_PASSWORD")
-                def keyPass = System.getenv("RELEASE_KEY_PASSWORD")
-                def alias = System.getenv("RELEASE_KEY_ALIAS")
+                def storePass = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: System.getenv("RELEASE_STORE_PASSWORD") ?: "haganeappkeystore"
+                def keyPass = System.getenv("RELEASE_KEY_PASSWORD") ?: "haganeappkeystore"
+                def alias = System.getenv("RELEASE_KEY_ALIAS") ?: "hagane"
+
+                if (storePass.trim().isEmpty()) { storePass = "haganeappkeystore" }
+                if (keyPass.trim().isEmpty()) { keyPass = "haganeappkeystore" }
+                if (alias.trim().isEmpty()) { alias = "hagane" }
 
                 storeFile keystoreFile
-                storePassword (storePass && !storePass.trim().isEmpty()) ? storePass : "haganeappkeystore"
-                keyAlias (alias && !alias.trim().isEmpty()) ? alias : "hagane"
-                keyPassword (keyPass && !keyPass.trim().isEmpty()) ? keyPass : "haganeappkeystore"
+                storePassword storePass
+                keyAlias alias
+                keyPassword keyPass
             }
         }
     }
