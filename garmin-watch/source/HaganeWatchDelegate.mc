@@ -38,6 +38,16 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
         } else if (st == HaganeWorkoutState.STATE_PAUSE_MENU) {
             _state.executePauseMenuAction();
             return true;
+        } else if (st == HaganeWorkoutState.STATE_DISCARD_CONFIRM) {
+            if (_state.discardConfirmIdx == 0) {
+                // Cancel discard -> return back to pause menu
+                _state.screenState = HaganeWorkoutState.STATE_PAUSE_MENU;
+                WatchUi.requestUpdate();
+            } else {
+                // Confirm discard -> delete FIT recording and return to routine list
+                _state.discardWorkout();
+            }
+            return true;
         } else if (st == HaganeWorkoutState.STATE_SUMMARY) {
             _state.screenState = HaganeWorkoutState.STATE_ROUTINE_LIST;
             WatchUi.requestUpdate();
@@ -56,8 +66,13 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
             _state.openPauseMenu();
             return true;
         } else if (st == HaganeWorkoutState.STATE_PAUSE_MENU) {
-            // Resume workout on BACK (also restarts paused FIT session)
+            // Resume workout on BACK (also restarts paused FIT session if still recording)
             _state.resumeFromPauseMenu();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_DISCARD_CONFIRM) {
+            // Cancel discard and return to pause menu
+            _state.screenState = HaganeWorkoutState.STATE_PAUSE_MENU;
+            WatchUi.requestUpdate();
             return true;
         } else if (st == HaganeWorkoutState.STATE_SUMMARY) {
             _state.screenState = HaganeWorkoutState.STATE_ROUTINE_LIST;
@@ -81,8 +96,18 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
             _state.adjustRestTarget(15);
             return true;
         } else if (st == HaganeWorkoutState.STATE_PAUSE_MENU) {
-            var count = HaganeWorkoutState.PAUSE_MENU_ITEMS.size();
+            var count = _state.getPauseMenuItems().size();
             _state.pauseMenuIdx = (_state.pauseMenuIdx - 1 + count) % count;
+            WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_DISCARD_CONFIRM) {
+            _state.discardConfirmIdx = (_state.discardConfirmIdx == 0) ? 1 : 0;
+            WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_SUMMARY) {
+            var exGroups = _state.getExerciseSummaries();
+            var maxPages = 1 + exGroups.size();
+            _state.summaryPageIdx = (_state.summaryPageIdx - 1 + maxPages) % maxPages;
             WatchUi.requestUpdate();
             return true;
         }
@@ -103,8 +128,18 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
             _state.adjustRestTarget(-15);
             return true;
         } else if (st == HaganeWorkoutState.STATE_PAUSE_MENU) {
-            var count = HaganeWorkoutState.PAUSE_MENU_ITEMS.size();
+            var count = _state.getPauseMenuItems().size();
             _state.pauseMenuIdx = (_state.pauseMenuIdx + 1) % count;
+            WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_DISCARD_CONFIRM) {
+            _state.discardConfirmIdx = (_state.discardConfirmIdx == 0) ? 1 : 0;
+            WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_SUMMARY) {
+            var exGroups = _state.getExerciseSummaries();
+            var maxPages = 1 + exGroups.size();
+            _state.summaryPageIdx = (_state.summaryPageIdx + 1) % maxPages;
             WatchUi.requestUpdate();
             return true;
         }

@@ -7,6 +7,11 @@ import {
 } from '../i18n/translations';
 import { searchAndRankExercises } from '../utils/search';
 
+import {
+  EQUIPMENT_CHOICES,
+  ANATOMY_CHOICES,
+} from '../data/exerciseConstants';
+
 interface ExerciseWikiProps {
   exercises: Exercise[];
   lang: Language;
@@ -33,36 +38,10 @@ const MUSCLE_CATEGORIES = [
   'Forearms',
   'Core',
   'Calves',
+  'Cardio',
 ];
 
-const EQUIPMENT_CATEGORIES = [
-  'All',
-  'Barbell',
-  'Dumbbell',
-  'Machine',
-  'Cable',
-  'EZ-Bar',
-  'Kettlebell',
-  'Bodyweight',
-];
-
-const ANATOMY_CHOICES: { label: string; slug: string }[] = [
-  { label: 'Quads', slug: 'quadriceps' },
-  { label: 'Glutes', slug: 'gluteal' },
-  { label: 'Adductors', slug: 'adductors' },
-  { label: 'Hamstrings', slug: 'hamstring' },
-  { label: 'Calves', slug: 'calves' },
-  { label: 'Chest', slug: 'chest' },
-  { label: 'Lats', slug: 'upper-back' },
-  { label: 'Lower Back', slug: 'lower-back' },
-  { label: 'Traps', slug: 'trapezius' },
-  { label: 'Shoulders', slug: 'deltoids' },
-  { label: 'Biceps', slug: 'biceps' },
-  { label: 'Triceps', slug: 'triceps' },
-  { label: 'Forearms', slug: 'forearm' },
-  { label: 'Abs', slug: 'abs' },
-  { label: 'Obliques', slug: 'obliques' },
-];
+const EQUIPMENT_CATEGORIES = ['All', ...EQUIPMENT_CHOICES];
 
 export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
   exercises,
@@ -81,6 +60,7 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
 
   // Custom Exercise Form State
   const [customName, setCustomName] = useState('');
+  const [customNameVi, setCustomNameVi] = useState('');
   const [customEquipment, setCustomEquipment] = useState('Barbell');
   const [customVideoUrl, setCustomVideoUrl] = useState('');
   const [customPrimaryIdx, setCustomPrimaryIdx] = useState(0);
@@ -100,7 +80,10 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
 
   const handleCreateCustom = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customName.trim()) return;
+    const enName = customName.trim() || customNameVi.trim();
+    const viName = customNameVi.trim() || customName.trim();
+    if (!enName && !viName) return;
+
     const chosen = ANATOMY_CHOICES[customPrimaryIdx] || ANATOMY_CHOICES[0];
     const uniqueSuffix =
       typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -120,19 +103,27 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const stepsObj = {
-      prepare:
-        prepList.length > 0 ? prepList : ['Set up in starting position.'],
-      execution:
-        execList.length > 0
-          ? execList
-          : ['Execute movement with full range of motion.'],
-      breathing:
-        breathList.length > 0
-          ? breathList
-          : ['Inhale on eccentric, exhale on concentric.'],
+    const viPrepare = ['Chuẩn bị vào tư thế bắt đầu.'];
+    const viExecution = ['Thực hiện động tác với biên độ chuyển động hoàn chỉnh.'];
+    const viBreathing = ['Hít vào khi hạ/giãn cơ, thở ra khi phát lực co cơ.'];
+
+    const enPrepare = ['Set up in starting position.'];
+    const enExecution = ['Execute movement with full range of motion.'];
+    const enBreathing = ['Inhale on eccentric, exhale on concentric.'];
+
+    const stepsEn = {
+      prepare: lang === 'vi' ? enPrepare : (prepList.length > 0 ? prepList : enPrepare),
+      execution: lang === 'vi' ? enExecution : (execList.length > 0 ? execList : enExecution),
+      breathing: lang === 'vi' ? enBreathing : (breathList.length > 0 ? breathList : enBreathing),
     };
-    const asciiSlug = customName
+
+    const stepsVi = {
+      prepare: lang === 'vi' ? (prepList.length > 0 ? prepList : viPrepare) : viPrepare,
+      execution: lang === 'vi' ? (execList.length > 0 ? execList : viExecution) : viExecution,
+      breathing: lang === 'vi' ? (breathList.length > 0 ? breathList : viBreathing) : viBreathing,
+    };
+
+    const asciiSlug = (enName || viName)
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/đ/g, 'd')
@@ -151,8 +142,8 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
     const newEx: Exercise = {
       id: newId,
       slug: asciiSlug || `custom-${Date.now()}`,
-      name: customName.trim(),
-      nameVi: customName.trim(),
+      name: enName,
+      nameVi: viName,
       aliases: [],
       category: chosen.label,
       equipment: customEquipment,
@@ -161,12 +152,16 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
       secondaryMuscles: [],
       primarySlugs: [chosen.slug],
       secondarySlugs: [],
-      shortDescription: 'Custom user exercise',
-      steps: stepsObj,
-      stepsVi: stepsObj,
+      shortDescription:
+        lang === 'vi'
+          ? `Bài tập tự tạo: ${viName}`
+          : `Custom user exercise: ${enName}`,
+      steps: stepsEn,
+      stepsVi: stepsVi,
     };
     onAddCustomExercise(newEx);
     setCustomName('');
+    setCustomNameVi('');
     setCustomVideoUrl('');
     setCustomPrepare('');
     setCustomExecution('');
@@ -200,9 +195,9 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
               onClick={() => {
                 onSearchChange('');
               }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold text-xs flex items-center justify-center cursor-pointer transition"
-              title="Clear search"
-              aria-label="Clear search"
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 min-w-[44px] min-h-[44px] rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-200/80 font-bold text-xs flex items-center justify-center cursor-pointer transition"
+              title={lang === 'vi' ? 'Xóa tìm kiếm' : 'Clear search'}
+              aria-label={lang === 'vi' ? 'Xóa tìm kiếm' : 'Clear search'}
             >
               ✕
             </button>
@@ -242,9 +237,9 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
               <button
                 key={m}
                 onClick={() => onMuscleFilterChange(m)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition cursor-pointer ${
+                className={`px-3.5 py-1.5 min-h-[44px] flex items-center justify-center rounded-full text-xs font-semibold shrink-0 transition cursor-pointer ${
                   muscleFilter === m
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-blue-600 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
@@ -259,10 +254,10 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
               <button
                 key={eq}
                 onClick={() => onEquipmentFilterChange(eq)}
-                className={`px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 transition cursor-pointer ${
+                className={`px-3 py-1 min-h-[44px] flex items-center justify-center rounded-full text-xs font-medium shrink-0 transition cursor-pointer ${
                   equipmentFilter === eq
-                    ? 'bg-slate-800 text-white'
-                    : 'bg-slate-50 text-slate-500 hover:bg-slate-200 border border-slate-200/70'
+                    ? 'bg-slate-800 text-white shadow-xs'
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-200 border border-slate-200/70'
                 }`}
               >
                 {translateEquipment(eq, lang)}
@@ -281,15 +276,24 @@ export const ExerciseWiki: React.FC<ExerciseWikiProps> = ({
           <h3 className="font-bold text-sm text-slate-900">
             {t.addCustomExerciseTitle}
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input
               type="text"
-              required
+              required={!customNameVi.trim()}
               value={customName}
               onChange={(e) => setCustomName(e.target.value)}
-              placeholder={t.customNamePlaceholder}
+              placeholder="Exercise name (English)"
               className="rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-900 focus:outline-none"
             />
+            <input
+              type="text"
+              value={customNameVi}
+              onChange={(e) => setCustomNameVi(e.target.value)}
+              placeholder="Tên bài tập (Tiếng Việt - tuỳ chọn)"
+              className="rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-900 focus:outline-none"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <select
               value={customEquipment}
               onChange={(e) => setCustomEquipment(e.target.value)}

@@ -13,6 +13,7 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -250,6 +251,15 @@ public class GarminSyncPlugin extends Plugin {
         if (jsonStr == null || jsonStr.isEmpty()) return;
 
         try {
+            byte[] payloadBytes = jsonStr.getBytes(StandardCharsets.UTF_8);
+            if (payloadBytes.length > 8192) {
+                Log.w(TAG, "Payload size (" + payloadBytes.length + " bytes) exceeds recommended BLE limit (8KB).");
+                JSObject errEvent = new JSObject();
+                errEvent.put("error", "PAYLOAD_TOO_LARGE");
+                errEvent.put("bytes", payloadBytes.length);
+                notifyListeners("garminSyncError", errEvent);
+            }
+
             JSONObject payloadObj = new JSONObject(jsonStr);
             Map<String, Object> ciqMap = jsonObjectToMap(payloadObj);
             IQApp haganeWatchApp = new IQApp(HAGANE_WATCH_APP_ID);
@@ -265,6 +275,12 @@ public class GarminSyncPlugin extends Plugin {
                         IQApp app,
                         ConnectIQ.IQMessageStatus status
                     ) {
+                        JSObject statusEvent = new JSObject();
+                        statusEvent.put("device", device != null ? device.getFriendlyName() : "Unknown");
+                        statusEvent.put("status", status != null ? status.name() : "UNKNOWN");
+                        statusEvent.put("success", status == ConnectIQ.IQMessageStatus.SUCCESS);
+                        notifyListeners("garminMessageStatus", statusEvent);
+
                         if (status == ConnectIQ.IQMessageStatus.SUCCESS) {
                             Log.d(TAG, "Synced routines to " + device.getFriendlyName());
                         } else {
@@ -281,6 +297,10 @@ public class GarminSyncPlugin extends Plugin {
             );
         } catch (Exception e) {
             Log.w(TAG, "Failed to send cached payload to watch: " + e.getMessage());
+            JSObject errEvent = new JSObject();
+            errEvent.put("error", "SEND_EXCEPTION");
+            errEvent.put("message", e.getMessage());
+            notifyListeners("garminSyncError", errEvent);
         }
     }
 
@@ -308,6 +328,7 @@ public class GarminSyncPlugin extends Plugin {
         for (int i = 0; i < array.length(); i++) {
             Object value = array.get(i);
             if (value == JSONObject.NULL) {
+                list.add(null);
                 continue;
             }
             if (value instanceof JSONArray) {

@@ -137,6 +137,7 @@ interface RoutineDetailProps {
   allExercises: Exercise[];
   isEditMode?: boolean;
   scrollToIndex?: number;
+  onClearScrollToIndex?: () => void;
   onUpdateRoutine: (updated: Routine) => void;
   onOpenExerciseInfo: (exerciseId: string, routineExIndex: number) => void;
   onOpenPicker: (params: {
@@ -146,12 +147,61 @@ interface RoutineDetailProps {
   }) => void;
 }
 
+const CustomRestInput: React.FC<{
+  currentSec: number | undefined;
+  lang: Language;
+  onCommit: (sec: number) => void;
+}> = ({ currentSec, lang, onCommit }) => {
+  const [val, setVal] = useState<string>(
+    currentSec !== undefined ? String(currentSec) : ''
+  );
+
+  useEffect(() => {
+    setVal(currentSec !== undefined ? String(currentSec) : '');
+  }, [currentSec]);
+
+  const commit = () => {
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed)) {
+      const clamped = Math.max(15, Math.min(900, parsed));
+      onCommit(clamped);
+      setVal(String(clamped));
+    } else if (currentSec !== undefined) {
+      setVal(String(currentSec));
+    } else {
+      setVal('');
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1 ml-1 bg-white border border-slate-200 rounded-xl px-2 py-0.5">
+      <input
+        type="number"
+        min="15"
+        max="900"
+        placeholder={lang === 'vi' ? 'Giây' : 'Sec'}
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.currentTarget.blur();
+          }
+        }}
+        className="w-11 text-xs font-extrabold text-slate-800 text-center focus:outline-none"
+      />
+      <span className="text-[10px] text-slate-400 font-bold">s</span>
+    </div>
+  );
+};
+
 export const RoutineDetail: React.FC<RoutineDetailProps> = ({
   routine,
   lang,
   exercisesMap,
   isEditMode = false,
   scrollToIndex,
+  onClearScrollToIndex,
   onUpdateRoutine,
   onOpenExerciseInfo,
   onOpenPicker,
@@ -166,6 +216,11 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
 
   // When adding or swapping an exercise, automatically scroll to it and highlight it once
   useEffect(() => {
+    if (scrollToIndex === undefined) {
+      lastScrolledKeyRef.current = null;
+      return;
+    }
+
     const targetExId =
       scrollToIndex !== undefined
         ? routine.exercises[scrollToIndex]?.exerciseId
@@ -191,6 +246,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
         if (targetCard) {
           targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
+        onClearScrollToIndex?.();
       }, 120);
 
       const highlightTimer = setTimeout(() => {
@@ -202,7 +258,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
         clearTimeout(highlightTimer);
       };
     }
-  }, [scrollToIndex, routine.exercises]);
+  }, [scrollToIndex, routine.exercises, onClearScrollToIndex]);
 
   // Drag-and-drop state (supports both desktop drag & mobile touch)
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
@@ -471,6 +527,11 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
         nextType = last.type === 'drop' ? 'drop' : 'normal';
       }
 
+      const ex = exercisesMap[item.exerciseId];
+      const isBodyweight = (ex?.equipment || '').toLowerCase() === 'bodyweight';
+      const isCardio = (ex?.category || '').toLowerCase() === 'cardio';
+      const defaultWeight = isBodyweight || isCardio ? 0 : 20;
+
       const lastSet =
         item.sets.length > 0
           ? {
@@ -479,7 +540,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
               type: nextType,
             }
           : {
-              weight: item.isWarmup ? 20 : 60,
+              weight: defaultWeight,
               reps: item.isWarmup ? 15 : 10,
               type: item.isWarmup ? ('warmup' as const) : ('normal' as const),
             };
@@ -798,7 +859,8 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             {/* Drag Handle in Edit Mode */}
             {isEditMode && (
               <div
-                onTouchStart={() => {
+                onTouchStart={(e) => {
+                  e.stopPropagation();
                   setOpenMenuExIdx(null);
                   setDraggedIdx(exIdx);
                 }}
@@ -879,7 +941,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                           editingRestIdx === exIdx ? null : exIdx
                         )
                       }
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold transition cursor-pointer ${
+                      className={`inline-flex items-center gap-1 px-3 py-1.5 min-h-[44px] rounded-full text-[11px] font-bold transition cursor-pointer ${
                         editingRestIdx === exIdx
                           ? 'bg-blue-600 text-white shadow-2xs'
                           : 'bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200/80'
@@ -891,7 +953,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                     </button>
                   ) : (
                     <span
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500 select-none"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[36px] rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500 select-none"
                       title={t.restTimeLabel}
                     >
                       <span>⏱</span>
@@ -908,8 +970,12 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
             <button
               type="button"
               onClick={() => onOpenExerciseInfo(ex.id, exIdx)}
-              aria-label="View exercise details"
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-blue-600 text-slate-700 hover:text-white font-serif italic font-bold text-sm flex items-center justify-center transition cursor-pointer"
+              aria-label={
+                lang === 'vi'
+                  ? 'Xem chi tiết bài tập'
+                  : 'View exercise details'
+              }
+              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-slate-100 hover:bg-blue-600 text-slate-700 hover:text-white font-serif italic font-bold text-sm flex items-center justify-center transition cursor-pointer"
             >
               i
             </button>
@@ -919,8 +985,12 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 <button
                   type="button"
                   onClick={() => setOpenMenuExIdx(isMenuOpen ? null : exIdx)}
-                  aria-label="Exercise options"
-                  className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-base flex items-center justify-center transition cursor-pointer"
+                  aria-label={
+                    lang === 'vi'
+                      ? 'Tùy chọn bài tập'
+                      : 'Exercise options'
+                  }
+                  className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-base flex items-center justify-center transition cursor-pointer"
                 >
                   ⋮
                 </button>
@@ -1053,7 +1123,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                       key={presetSec}
                       type="button"
                       onClick={() => handleRestTimeChange(exIdx, presetSec)}
-                      className={`px-2.5 py-1 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+                      className={`px-3 py-2 min-h-[44px] flex items-center justify-center rounded-xl text-xs font-extrabold transition cursor-pointer ${
                         isActive
                           ? 'bg-blue-600 text-white shadow-2xs'
                           : 'bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-600 border border-slate-200'
@@ -1063,6 +1133,12 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                     </button>
                   );
                 })}
+
+                <CustomRestInput
+                  currentSec={item.restSeconds}
+                  lang={lang}
+                  onCommit={(val) => handleRestTimeChange(exIdx, val)}
+                />
               </div>
             </div>
           )}
@@ -1091,19 +1167,19 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                       onClick={() => handleToggleSetType(exIdx, setIdx)}
                       aria-label={
                         isWarmupSet
-                          ? `${t.warmupBadge} (Click to toggle drop set)`
+                          ? (lang === 'vi' ? 'Hiệp khởi động (Bấm để chuyển sang Drop set)' : 'Warmup set (Click to toggle drop set)')
                           : isDropSet
-                            ? 'Drop Set (Click to toggle working set)'
-                            : 'Working Set (Click to toggle warmup set)'
+                            ? (lang === 'vi' ? 'Drop set (Bấm để chuyển sang Hiệp chính)' : 'Drop set (Click to toggle working set)')
+                            : (lang === 'vi' ? 'Hiệp chính (Bấm để chuyển sang Khởi động)' : 'Working set (Click to toggle warmup set)')
                       }
                       title={
                         isWarmupSet
-                          ? `${t.warmupBadge} (Click to toggle drop set)`
+                          ? (lang === 'vi' ? 'Hiệp khởi động (Bấm để chuyển sang Drop set)' : 'Warmup set (Click to toggle drop set)')
                           : isDropSet
-                            ? 'Drop Set (Click to toggle working set)'
-                            : 'Working Set (Click to toggle warmup set)'
+                            ? (lang === 'vi' ? 'Drop set (Bấm để chuyển sang Hiệp chính)' : 'Drop set (Click to toggle working set)')
+                            : (lang === 'vi' ? 'Hiệp chính (Bấm để chuyển sang Khởi động)' : 'Working set (Click to toggle warmup set)')
                       }
-                      className={`w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center transition cursor-pointer shadow-xs ${
+                      className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full font-bold text-xs flex items-center justify-center transition cursor-pointer shadow-xs ${
                         isWarmupSet
                           ? 'bg-amber-500 hover:bg-amber-600 text-white ring-2 ring-amber-300'
                           : isDropSet
@@ -1245,7 +1321,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 <button
                   type="button"
                   onClick={() => handleRemoveLastSet(exIdx)}
-                  className="px-2.5 py-1 rounded-xl text-xs font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
+                  className="px-3 py-2 min-h-[44px] flex items-center justify-center rounded-xl text-xs font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
                 >
                   {t.minusSet}
                 </button>
@@ -1253,7 +1329,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
               <button
                 type="button"
                 onClick={() => handleAddSet(exIdx)}
-                className="px-3 py-1 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition cursor-pointer"
+                className="px-3.5 py-2 min-h-[44px] flex items-center justify-center rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition cursor-pointer"
               >
                 {t.addSet}
               </button>
@@ -1474,6 +1550,9 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
       {/* Safe In-App Remove Exercise Confirmation Modal */}
       {confirmRemoveExIdx !== null && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="remove-exercise-title"
           className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setConfirmRemoveExIdx(null)}
         >
@@ -1486,7 +1565,7 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 🗑️
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-base text-slate-900">
+                <h3 id="remove-exercise-title" className="font-bold text-base text-slate-900">
                   {t.removeExerciseConfirmTitle}
                 </h3>
                 <p className="text-xs font-semibold text-red-600 truncate">

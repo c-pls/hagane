@@ -1363,8 +1363,8 @@
   {
     "id": "0128",
     "slug": "battling-ropes",
-    "name": "Battling Ropes (Ropes)",
-    "nameVi": "Quật dây thừng thể lực",
+    "name": "Battling Ropes",
+    "nameVi": "Quật dây thừng (Battle Rope)",
     "aliases": [
       "Battling Ropes",
       "battle ropes",
@@ -1374,7 +1374,7 @@
       "battle rope exercise"
     ],
     "category": "Shoulders",
-    "equipment": "Bodyweight",
+    "equipment": "Cardio",
     "videoUrl": "/videos/battling-ropes-0128.mp4",
     "primaryMuscles": [
       "Delts"
@@ -3245,8 +3245,6 @@
       "seated DB press",
       "seated dumbbell overhead press",
       "shoulder press seated",
-      "Dumbbell Bench Seated Press",
-      "dumbbell bench press",
       "Seated Shoulder Press"
     ],
     "category": "Shoulders",
@@ -3680,28 +3678,29 @@
       "Dumbbell Deadlift",
       "DB deadlift",
       "dumbbell DL",
-      "dumbbell Romanian deadlift",
       "two-dumbbell deadlift",
       "dumbbell hip hinge",
       "dumbbells from the floor",
       "Deadlift"
     ],
-    "category": "Glutes",
+    "category": "Back",
     "equipment": "Dumbbell",
     "videoUrl": "/videos/dumbbell-deadlift-0300.mp4",
     "primaryMuscles": [
-      "Glutes"
-    ],
-    "secondaryMuscles": [
       "Hamstrings",
+      "Glutes",
       "Lower Back"
     ],
+    "secondaryMuscles": [
+      "Forearms"
+    ],
     "primarySlugs": [
-      "gluteal"
+      "hamstring",
+      "gluteal",
+      "lower-back"
     ],
     "secondarySlugs": [
-      "hamstring",
-      "lower-back"
+      "forearm"
     ],
     "shortDescription": "A hip-hinge lift with two dumbbells that trains the glutes, hamstrings, and lower back while lifting from standing to lockout.",
     "steps": {
@@ -6525,22 +6524,22 @@
       "single-leg squat",
       "one-leg squat"
     ],
-    "category": "Glutes",
+    "category": "Quads",
     "equipment": "Dumbbell",
     "videoUrl": "/videos/dumbbell-single-leg-squat-0411.mp4",
     "primaryMuscles": [
-      "Glutes"
+      "Quads"
     ],
     "secondaryMuscles": [
-      "Quads",
+      "Glutes",
       "Hamstrings",
       "Calves"
     ],
     "primarySlugs": [
-      "gluteal"
+      "quadriceps"
     ],
     "secondarySlugs": [
-      "quadriceps",
+      "gluteal",
       "hamstring",
       "calves"
     ],
@@ -6600,22 +6599,22 @@
       "squat with dumbbells",
       "Squat"
     ],
-    "category": "Glutes",
+    "category": "Quads",
     "equipment": "Dumbbell",
     "videoUrl": "/videos/dumbbell-squat-0413.mp4",
     "primaryMuscles": [
-      "Glutes"
+      "Quads"
     ],
     "secondaryMuscles": [
-      "Quads",
+      "Glutes",
       "Hamstrings",
       "Calves"
     ],
     "primarySlugs": [
-      "gluteal"
+      "quadriceps"
     ],
     "secondarySlugs": [
-      "quadriceps",
+      "gluteal",
       "hamstring",
       "calves"
     ],
@@ -6978,6 +6977,7 @@
       "abs"
     ],
     "secondarySlugs": [
+      "hip-flexors",
       "obliques",
       "forearm"
     ],
@@ -8463,7 +8463,7 @@
       "machine hip adduction",
       "lever seated hip adduction"
     ],
-    "category": "Quads",
+    "category": "Glutes",
     "equipment": "Machine",
     "videoUrl": "/videos/lever-seated-hip-adduction-0598.mp4",
     "primaryMuscles": [
@@ -9395,22 +9395,22 @@
       "supported sled squat",
       "sled hack squat"
     ],
-    "category": "Glutes",
+    "category": "Quads",
     "equipment": "Machine",
     "videoUrl": "/videos/sled-hack-squat-0743.mp4",
     "primaryMuscles": [
-      "Glutes"
+      "Quads"
     ],
     "secondaryMuscles": [
-      "Quads",
+      "Glutes",
       "Hamstrings",
       "Calves"
     ],
     "primarySlugs": [
-      "gluteal"
+      "quadriceps"
     ],
     "secondarySlugs": [
-      "quadriceps",
+      "gluteal",
       "hamstring",
       "calves"
     ],
@@ -9920,6 +9920,7 @@
       "abs"
     ],
     "secondarySlugs": [
+      "hip-flexors",
       "obliques"
     ],
     "shortDescription": "Staple lower-abs exercise performed on the captain's chair tower.",
@@ -11784,6 +11785,7 @@
       "abs"
     ],
     "secondarySlugs": [
+      "hip-flexors",
       "obliques",
       "forearm"
     ],
@@ -12268,24 +12270,24 @@
       "nhảy dây cardio",
       "thể lực"
     ],
-    "category": "Calves",
-    "equipment": "Bodyweight",
+    "category": "Cardio",
+    "equipment": "Cardio",
     "videoUrl": "/videos/jump-rope-2612.mp4",
     "primaryMuscles": [
-      "Calves"
+      "Cardio"
     ],
     "secondaryMuscles": [
+      "Calves",
       "Quads",
-      "Shoulders",
-      "Forearms"
+      "Shoulders"
     ],
     "primarySlugs": [
-      "calves"
+      "cardio"
     ],
     "secondarySlugs": [
+      "calves",
       "quadriceps",
-      "deltoids",
-      "forearm"
+      "deltoids"
     ],
     "shortDescription": "A cardio exercise where you turn a rope with your hands and perform repeated small jumps as it passes under your feet.",
     "steps": {
@@ -12819,7 +12821,6 @@
       "Machine Chest-Supported T-Bar Row",
       "t-bar row",
       "machine t-bar row",
-      "seal row",
       "landmine row",
       "Lever T-Bar Row",
       "chest supported row",
@@ -13257,24 +13258,24 @@
       "kettlebell conventional deadlift",
       "Deadlift"
     ],
-    "category": "Glutes",
+    "category": "Back",
     "equipment": "Kettlebell",
     "videoUrl": "/videos/kettlebell-deadlift-drv-kettlebell-deadlift.mp4",
     "primaryMuscles": [
-      "Glutes"
+      "Hamstrings",
+      "Glutes",
+      "Lower Back"
     ],
     "secondaryMuscles": [
-      "Hamstrings",
-      "Lower Back",
       "Quads",
       "Forearms"
     ],
     "primarySlugs": [
-      "gluteal"
+      "hamstring",
+      "gluteal",
+      "lower-back"
     ],
     "secondarySlugs": [
-      "hamstring",
-      "lower-back",
       "quadriceps",
       "forearm"
     ],

@@ -154,14 +154,18 @@ export function buildGarminPayload(
     const exercises: GarminExercisePayload[] = orderedItems.map((item, idx) => {
       const ex = exercisesMap[item.exerciseId];
       // Always use the English exercise name (`ex.name`), never `ex.nameVi`
-      const fallbackLabel = item.exerciseId
-        .replace(/^custom-[0-9a-fA-F-]+/, '')
-        .replace(/^custom-\d+-?/, '')
-        .replace(/^custom-/, '')
-        .replace(/[-_]/g, ' ')
-        .trim();
+      let fallbackLabel = 'Exercise';
+      if (item.exerciseId.startsWith('custom-')) {
+        const cleaned = item.exerciseId
+          .replace(/^custom-[0-9a-fA-F-]+/, '')
+          .replace(/^custom-\d+-?/, '')
+          .replace(/^custom-/, '')
+          .replace(/[-_]/g, ' ')
+          .trim();
+        fallbackLabel = cleaned || 'Custom Exercise';
+      }
       const englishName = toGarminEnglishText(
-        ex ? ex.name : fallbackLabel || 'Exercise',
+        ex ? ex.name : fallbackLabel,
         36
       );
 
@@ -269,30 +273,48 @@ export function buildGarminPayload(
     routines: payloadRoutines,
   };
 
-  // Enforce BLE / Storage payload budget (~10 KB)
-  let serialized = JSON.stringify(payload);
-  if (serialized.length > GARMIN_MAX_PAYLOAD_BYTES) {
+  function getPayloadUtf8Bytes(obj: unknown): number {
+    try {
+      const s = JSON.stringify(obj);
+      if (typeof TextEncoder !== 'undefined') {
+        return new TextEncoder().encode(s).length;
+      }
+      return unescape(encodeURIComponent(s)).length;
+    } catch {
+      return 0;
+    }
+  }
+
+  // Enforce BLE / Storage payload budget (~10 KB UTF-8)
+  let serializedBytes = getPayloadUtf8Bytes(payload);
+  if (serializedBytes > GARMIN_MAX_PAYLOAD_BYTES) {
     // Step 1: Strip per-exercise notes to save space
     for (const r of payload.routines) {
       for (const ex of r.e) {
         ex.nt = '';
       }
     }
-    serialized = JSON.stringify(payload);
+    serializedBytes = getPayloadUtf8Bytes(payload);
   }
 
   // Step 2: If still over budget, trim trailing routines until within GARMIN_MAX_PAYLOAD_BYTES
+  const originalRoutinesCount = payload.routines.length;
   while (
     payload.routines.length > 1 &&
-    JSON.stringify(payload).length > GARMIN_MAX_PAYLOAD_BYTES
+    getPayloadUtf8Bytes(payload) > GARMIN_MAX_PAYLOAD_BYTES
   ) {
     payload.routines.pop();
+  }
+  if (payload.routines.length < originalRoutinesCount) {
+    console.warn(
+      `[GarminSync] Trimming ${originalRoutinesCount - payload.routines.length} trailing routines to fit BLE limit.`
+    );
   }
 
   // Step 3: If a single giant routine still exceeds budget, trim trailing exercises/sets so it never overflows BLE
   if (
     payload.routines.length === 1 &&
-    JSON.stringify(payload).length > GARMIN_MAX_PAYLOAD_BYTES
+    getPayloadUtf8Bytes(payload) > GARMIN_MAX_PAYLOAD_BYTES
   ) {
     const firstRoutine = payload.routines[0];
     for (const ex of firstRoutine.e) {
@@ -302,13 +324,19 @@ export function buildGarminPayload(
     }
     while (
       firstRoutine.e.length > 1 &&
-      JSON.stringify(payload).length > GARMIN_MAX_PAYLOAD_BYTES
+      getPayloadUtf8Bytes(payload) > GARMIN_MAX_PAYLOAD_BYTES
     ) {
       firstRoutine.e.pop();
     }
   }
 
   return payload;
+}
+
+export type GarminSyncStatusHandler = (info: { success: boolean; message?: string }) => void;
+let garminSyncStatusHandler: GarminSyncStatusHandler | null = null;
+export function setGarminSyncStatusHandler(handler: GarminSyncStatusHandler | null) {
+  garminSyncStatusHandler = handler;
 }
 
 let garminDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -331,11 +359,21 @@ async function executeGarminCacheUpdate(
     const res = await GarminSyncNative.cacheRoutinesForWatch({ payload });
     if (res && res.success) {
       lastSentPayloadJson = jsonStr;
+      garminSyncStatusHandler?.({ success: true });
     } else {
       console.warn('[GarminSync] Cache/push returned non-success:', res);
+      garminSyncStatusHandler?.({
+        success: false,
+        message: res?.status || 'Watch sync returned non-success',
+      });
     }
-  } catch (err) {
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : 'Failed to update watch cache';
     console.warn('[GarminSync] Failed to update watch cache:', err);
+    garminSyncStatusHandler?.({
+      success: false,
+      message: errMsg,
+    });
   }
 }
 

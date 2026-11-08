@@ -1,0 +1,30 @@
+export const EQUIPMENT_CHOICES = [
+  'Barbell',
+  'Dumbbell',
+  'Machine',
+  'Cable',
+  'EZ-Bar',
+  'Kettlebell',
+  'Bodyweight',
+  'Cardio',
+  'Other',
+] as const;
+
+export const ANATOMY_CHOICES: { label: string; slug: string }[] = [
+  { label: 'Quads', slug: 'quadriceps' },
+  { label: 'Glutes', slug: 'gluteal' },
+  { label: 'Adductors', slug: 'adductors' },
+  { label: 'Hamstrings', slug: 'hamstring' },
+  { label: 'Calves', slug: 'calves' },
+  { label: 'Chest', slug: 'chest' },
+  { label: 'Lats', slug: 'upper-back' },
+  { label: 'Lower Back', slug: 'lower-back' },
+  { label: 'Traps', slug: 'trapezius' },
+  { label: 'Shoulders', slug: 'deltoids' },
+  { label: 'Biceps', slug: 'biceps' },
+  { label: 'Triceps', slug: 'triceps' },
+  { label: 'Forearms', slug: 'forearm' },
+  { label: 'Abs', slug: 'abs' },
+  { label: 'Obliques', slug: 'obliques' },
+  { label: 'Cardio', slug: 'cardio' },
+];

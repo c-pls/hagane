@@ -64,10 +64,10 @@ MUSCLE_MAP = {
     "gluteus minimus": ("Glutes", "gluteal", "Glutes"),
     "abductors": ("Glutes", "gluteal", "Glutes"),
     "hamstrings": ("Hamstrings", "hamstring", "Hamstrings"),
-    "adductors": ("Adductors", "adductors", "Quads"),
-    "adductor group": ("Adductors", "adductors", "Quads"),
-    "hip adductors": ("Adductors", "adductors", "Quads"),
-    "adductor muscles": ("Adductors", "adductors", "Quads"),
+    "adductors": ("Adductors", "adductors", "Glutes"),
+    "adductor group": ("Adductors", "adductors", "Glutes"),
+    "hip adductors": ("Adductors", "adductors", "Glutes"),
+    "adductor muscles": ("Adductors", "adductors", "Glutes"),
     "calves": ("Calves", "calves", "Calves"),
     "gastrocnemius": ("Calves", "calves", "Calves"),
     "soleus": ("Calves", "calves", "Calves"),
@@ -77,7 +77,7 @@ MUSCLE_MAP = {
     "chest": ("Chest", "chest", "Chest"),
     "upper chest": ("Upper Chest", "chest", "Chest"),
     "lower chest": ("Lower Chest", "chest", "Chest"),
-    "serratus anterior": ("Serratus", "obliques", "Chest"),
+    "serratus anterior": ("Serratus Anterior", "chest", "Chest"),
     "lats": ("Lats", "upper-back", "Back"),
     "latissimus dorsi": ("Lats", "upper-back", "Back"),
     "upper back": ("Upper Back", "upper-back", "Back"),
@@ -120,11 +120,11 @@ MUSCLE_MAP = {
     "transverse abdominis": ("Core", "abs", "Core"),
     "obliques": ("Obliques", "obliques", "Core"),
     "external obliques": ("Obliques", "obliques", "Core"),
-    "hip flexors": ("Hip Flexors", "abs", "Core"),
-    "iliopsoas": ("Hip Flexors", "abs", "Core"),
+    "hip flexors": ("Hip Flexors", "hip-flexors", "Core"),
+    "iliopsoas": ("Hip Flexors", "hip-flexors", "Core"),
     "ankle stabilizers": ("Tibialis", "tibialis", "Calves"),
     "ankles": ("Tibialis", "tibialis", "Calves"),
-    "cardiovascular system": ("Full Body", "deltoids", "Core"),
+    "cardiovascular system": ("Cardio", "cardio", "Cardio"),
     "anconeus": ("Triceps", "triceps", "Triceps"),
     "flexor carpi radialis": ("Forearms", "forearm", "Forearms"),
     "flexor carpi ulnaris": ("Forearms", "forearm", "Forearms"),
@@ -144,9 +144,6 @@ def map_muscle(raw_name: str):
     key = raw_name.strip().lower()
     if key in MUSCLE_MAP:
         return MUSCLE_MAP[key]
-    for k, val in MUSCLE_MAP.items():
-        if k in key or key in k:
-            return val
     raise ValueError(
         f"[Hagane] Unknown upstream muscle: '{raw_name}'. Please add it to MUSCLE_MAP explicitly."
     )
@@ -154,6 +151,8 @@ def map_muscle(raw_name: str):
 
 def normalize_equipment(eq: str) -> str:
     e = eq.strip().lower()
+    if "cardio" in e or "jump rope" in e or "battling rope" in e:
+        return "Cardio"
     if "barbell" in e and "ez" not in e:
         return "Barbell"
     if "ez" in e:
@@ -290,6 +289,19 @@ def main():
                 secondary_slugs.append(s_slug)
 
         name_l = display_name.lower()
+        if "squat" in name_l and "sumo" not in name_l:
+            category = "Quads"
+            if "Quads" not in primary_muscles:
+                if "Glutes" in primary_muscles:
+                    primary_muscles.remove("Glutes")
+                    if "gluteal" in primary_slugs:
+                        primary_slugs.remove("gluteal")
+                    if "Glutes" not in secondary_muscles:
+                        secondary_muscles.insert(0, "Glutes")
+                        secondary_slugs.insert(0, "gluteal")
+                primary_muscles.insert(0, "Quads")
+                primary_slugs.insert(0, "quadriceps")
+
         if "squat" in name_l and "barbell" in name_l:
             for extra_m, extra_s in [("Glutes", "gluteal"), ("Adductors", "adductors"), ("Lower Back", "lower-back")]:
                 if extra_m not in primary_muscles:
@@ -322,8 +334,9 @@ def main():
         aliases = list(ex.get("aliases", []))
         if raw_name != display_name and raw_name not in aliases:
             aliases.append(raw_name)
-        if "chest-supported" in display_name.lower():
-            aliases.extend(["chest supported row", "chest-supported row", "incline bench row"])
+
+        assert len(primary_muscles) == len(primary_slugs), f"Primary mismatch in {ex_id}"
+        assert len(secondary_muscles) == len(secondary_slugs), f"Secondary mismatch in {ex_id}"
 
         formatted_exercises.append({
             "id": ex_id,

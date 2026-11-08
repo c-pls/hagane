@@ -11,6 +11,14 @@ export interface HaganeDeviceBackup {
   timestamp: number;
   routines: Routine[];
   customExercises?: Exercise[];
+  isCorrupted?: boolean;
+}
+
+type DeviceBackupErrorHandler = (hasError: boolean) => void;
+let backupErrorHandler: DeviceBackupErrorHandler | null = null;
+
+export function setDeviceBackupErrorHandler(handler: DeviceBackupErrorHandler | null): void {
+  backupErrorHandler = handler;
 }
 
 /**
@@ -98,7 +106,13 @@ export function debouncedAutoSaveToDevice(
     pendingSaveArgs = null;
     isWriting = true;
     try {
-      await autoSaveToDevice(toSave.routines, toSave.customExercises);
+      const ok = await autoSaveToDevice(toSave.routines, toSave.customExercises);
+      if (!ok) {
+        console.error('[Hagane] Device backup failed to write to physical storage.');
+        if (backupErrorHandler) backupErrorHandler(true);
+      } else {
+        if (backupErrorHandler) backupErrorHandler(false);
+      }
     } finally {
       isWriting = false;
     }
@@ -124,7 +138,14 @@ export function flushPendingDeviceSave(): void {
   const toSave = pendingSaveArgs;
   pendingSaveArgs = null;
   isWriting = true;
-  autoSaveToDevice(toSave.routines, toSave.customExercises).finally(() => {
+  autoSaveToDevice(toSave.routines, toSave.customExercises).then((ok) => {
+    if (!ok) {
+      console.error('[Hagane] Flush device backup failed on app background.');
+      if (backupErrorHandler) backupErrorHandler(true);
+    } else {
+      if (backupErrorHandler) backupErrorHandler(false);
+    }
+  }).finally(() => {
     isWriting = false;
     if (pendingSaveArgs) {
       flushPendingDeviceSave();
@@ -172,6 +193,30 @@ export async function autoLoadFromDevice(): Promise<HaganeDeviceBackup | null> {
         }
       } catch (parseErr) {
         console.error('[Hagane] Backup file exists on device but is corrupted or malformed:', parseErr);
+        // Quarantine corrupt backup so raw data can still be examined (versioned with timestamp)
+        try {
+          const timestamp = Date.now();
+          await Filesystem.writeFile({
+            path: `${BACKUP_DIR}/hagane_backup_corrupt_${timestamp}.json`,
+            data: result.data,
+            directory: Directory.Documents,
+            encoding: Encoding.UTF8,
+          });
+          await Filesystem.writeFile({
+            path: `${BACKUP_DIR}/hagane_backup_corrupt.json`,
+            data: result.data,
+            directory: Directory.Documents,
+            encoding: Encoding.UTF8,
+          });
+        } catch {
+          // ignore
+        }
+        return {
+          version: 1,
+          timestamp: 0,
+          routines: [],
+          isCorrupted: true,
+        };
       }
     }
     return null;

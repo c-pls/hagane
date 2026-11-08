@@ -3,6 +3,7 @@ import Toybox.ActivityRecording;
 import Toybox.Application.Storage;
 import Toybox.Attention;
 import Toybox.Communications;
+import Toybox.FitContributor;
 import Toybox.Lang;
 import Toybox.Sensor;
 import Toybox.Timer;
@@ -27,11 +28,12 @@ class HaganeSyncConnectListener extends Communications.ConnectionListener {
 
 class HaganeWorkoutState {
     // Screens / States
-    public static const STATE_ROUTINE_LIST = 0;
-    public static const STATE_ACTIVE_SET   = 1;
-    public static const STATE_REST         = 2;
-    public static const STATE_PAUSE_MENU   = 3;
-    public static const STATE_SUMMARY      = 4;
+    public static const STATE_ROUTINE_LIST    = 0;
+    public static const STATE_ACTIVE_SET      = 1;
+    public static const STATE_REST            = 2;
+    public static const STATE_PAUSE_MENU      = 3;
+    public static const STATE_SUMMARY         = 4;
+    public static const STATE_DISCARD_CONFIRM = 5;
 
     public var screenState as Number = STATE_ROUTINE_LIST;
     public var previousWorkoutState as Number = STATE_ACTIVE_SET;
@@ -52,18 +54,80 @@ class HaganeWorkoutState {
     public var workoutTotalSec as Number = 0;
     public var completedSetsCount as Number = 0;
 
-    // Pause menu selection (0 = Resume, 1 = Next Step, 2 = Prev Step, 3 = Finish & Save, 4 = Discard)
+    // Pause menu & completion state
     public var pauseMenuIdx as Number = 0;
+    public var isWorkoutComplete as Boolean = false;
+    public var discardConfirmIdx as Number = 0;
+
     public static const PAUSE_MENU_ITEMS = [
-        "Resume Workout",
-        "Skip Current Set",
-        "Previous Set",
-        "Finish & Save",
-        "Discard Workout"
+        "Resume",
+        "Save Workout",
+        "Discard",
+        "Skip Set",
+        "Previous Set"
     ];
 
-    // Live Heart Rate & FIT Activity Recording Session
+    public static const COMPLETE_MENU_ITEMS = [
+        "Save Workout",
+        "Discard",
+        "Resume Workout"
+    ];
+
+    public function getPauseMenuItems() as Array {
+        if (isWorkoutComplete) {
+            return COMPLETE_MENU_ITEMS;
+        }
+        return PAUSE_MENU_ITEMS;
+    }
+
+    // FIT Contributor Field IDs (must match resources/fitfields.xml)
+    public static const FIT_FIELD_LAP_EXERCISE     = 0;
+    public static const FIT_FIELD_LAP_SET          = 1;
+    public static const FIT_FIELD_LAP_WEIGHT       = 2;
+    public static const FIT_FIELD_LAP_REPS         = 3;
+    public static const FIT_FIELD_LAP_VOLUME       = 4;
+    public static const FIT_FIELD_LAP_WORK_TIME    = 5;
+    public static const FIT_FIELD_LAP_REST_TIME    = 6;
+    public static const FIT_FIELD_SESSION_VOLUME   = 7;
+    public static const FIT_FIELD_SESSION_REPS     = 8;
+    public static const FIT_FIELD_SESSION_SETS     = 9;
+    public static const FIT_FIELD_SESSION_WORK_TIME = 10;
+    public static const FIT_FIELD_SESSION_REST_TIME = 11;
+    public static const FIT_FIELD_RECORD_WEIGHT    = 12;
+
+    // FIT Contributor Field handles
+    private var _fitLapExercise as FitContributor.Field?;
+    private var _fitLapSet as FitContributor.Field?;
+    private var _fitLapWeight as FitContributor.Field?;
+    private var _fitLapReps as FitContributor.Field?;
+    private var _fitLapVolume as FitContributor.Field?;
+    private var _fitLapWorkTime as FitContributor.Field?;
+    private var _fitLapRestTime as FitContributor.Field?;
+
+    private var _fitSessionVolume as FitContributor.Field?;
+    private var _fitSessionReps as FitContributor.Field?;
+    private var _fitSessionSets as FitContributor.Field?;
+    private var _fitSessionWorkTime as FitContributor.Field?;
+    private var _fitSessionRestTime as FitContributor.Field?;
+
+    private var _fitRecordWeight as FitContributor.Field?;
+
+    // Running workout metrics
+    public var totalWorkoutVolume as Float = 0.0f;
+    public var totalWorkoutReps as Number = 0;
+    public var totalWorkSec as Number = 0;
+    public var totalRestSec as Number = 0;
+    public var lastRestElapsedSec as Number = 0;
+
+    // Completed sets log for Watch Summary breakdown and detail review
+    public var completedLog as Array = [];
+    public var summaryPageIdx as Number = 0;
+
+    // Live Heart Rate, Calories & FIT Activity Recording Session
     public var heartRate as Number = 0;
+    public var avgHeartRate as Number = 0;
+    public var maxHeartRate as Number = 0;
+    public var calories as Number = 0;
     public var syncStatusText as String = "";
     private var _session as ActivityRecording.Session?;
     private var _timer as Timer.Timer?;
@@ -210,6 +274,224 @@ class HaganeWorkoutState {
             } catch (ex) {}
             _session = null;
         }
+        clearFitFieldReferences();
+    }
+
+    public static function parseWeightToFloat(val as Object?) as Float {
+        if (val == null) {
+            return 0.0f;
+        }
+        if (val instanceof Number) {
+            return (val as Number).toFloat();
+        }
+        if (val instanceof Float || val instanceof Double) {
+            return (val as Float or Double).toFloat();
+        }
+        return 0.0f;
+    }
+
+    public static function truncateString(str as String?, maxLen as Number) as String {
+        if (str == null) {
+            return "";
+        }
+        if (str.length() <= maxLen) {
+            return str;
+        }
+        return str.substring(0, maxLen);
+    }
+
+    private function clearFitFieldReferences() as Void {
+        _fitLapExercise = null;
+        _fitLapSet = null;
+        _fitLapWeight = null;
+        _fitLapReps = null;
+        _fitLapVolume = null;
+        _fitLapWorkTime = null;
+        _fitLapRestTime = null;
+        _fitSessionVolume = null;
+        _fitSessionReps = null;
+        _fitSessionSets = null;
+        _fitSessionWorkTime = null;
+        _fitSessionRestTime = null;
+        _fitRecordWeight = null;
+    }
+
+    private function initFitContributorFields() as Void {
+        if (_session == null) {
+            return;
+        }
+        if (!(_session has :createField)) {
+            return;
+        }
+
+        try {
+            _fitLapExercise = _session.createField(
+                "exercise",
+                FIT_FIELD_LAP_EXERCISE,
+                FitContributor.DATA_TYPE_STRING,
+                { :mesgType => FitContributor.MESG_TYPE_LAP, :count => 32, :units => "" }
+            );
+        } catch (ex) { _fitLapExercise = null; }
+
+        try {
+            _fitLapSet = _session.createField(
+                "set",
+                FIT_FIELD_LAP_SET,
+                FitContributor.DATA_TYPE_STRING,
+                { :mesgType => FitContributor.MESG_TYPE_LAP, :count => 16, :units => "" }
+            );
+        } catch (ex) { _fitLapSet = null; }
+
+        try {
+            _fitLapWeight = _session.createField(
+                "weight",
+                FIT_FIELD_LAP_WEIGHT,
+                FitContributor.DATA_TYPE_FLOAT,
+                { :mesgType => FitContributor.MESG_TYPE_LAP, :units => "kg" }
+            );
+        } catch (ex) { _fitLapWeight = null; }
+
+        try {
+            _fitLapReps = _session.createField(
+                "reps",
+                FIT_FIELD_LAP_REPS,
+                FitContributor.DATA_TYPE_UINT16,
+                { :mesgType => FitContributor.MESG_TYPE_LAP, :units => "reps" }
+            );
+        } catch (ex) { _fitLapReps = null; }
+
+        try {
+            _fitLapVolume = _session.createField(
+                "volume",
+                FIT_FIELD_LAP_VOLUME,
+                FitContributor.DATA_TYPE_FLOAT,
+                { :mesgType => FitContributor.MESG_TYPE_LAP, :units => "kg" }
+            );
+        } catch (ex) { _fitLapVolume = null; }
+
+        try {
+            _fitLapWorkTime = _session.createField(
+                "work_time",
+                FIT_FIELD_LAP_WORK_TIME,
+                FitContributor.DATA_TYPE_UINT16,
+                { :mesgType => FitContributor.MESG_TYPE_LAP, :units => "s" }
+            );
+        } catch (ex) { _fitLapWorkTime = null; }
+
+        try {
+            _fitLapRestTime = _session.createField(
+                "rest_time",
+                FIT_FIELD_LAP_REST_TIME,
+                FitContributor.DATA_TYPE_UINT16,
+                { :mesgType => FitContributor.MESG_TYPE_LAP, :units => "s" }
+            );
+        } catch (ex) { _fitLapRestTime = null; }
+
+        try {
+            _fitSessionVolume = _session.createField(
+                "total_volume",
+                FIT_FIELD_SESSION_VOLUME,
+                FitContributor.DATA_TYPE_FLOAT,
+                { :mesgType => FitContributor.MESG_TYPE_SESSION, :units => "kg" }
+            );
+        } catch (ex) { _fitSessionVolume = null; }
+
+        try {
+            _fitSessionReps = _session.createField(
+                "total_reps",
+                FIT_FIELD_SESSION_REPS,
+                FitContributor.DATA_TYPE_UINT16,
+                { :mesgType => FitContributor.MESG_TYPE_SESSION, :units => "reps" }
+            );
+        } catch (ex) { _fitSessionReps = null; }
+
+        try {
+            _fitSessionSets = _session.createField(
+                "total_sets",
+                FIT_FIELD_SESSION_SETS,
+                FitContributor.DATA_TYPE_UINT16,
+                { :mesgType => FitContributor.MESG_TYPE_SESSION, :units => "sets" }
+            );
+        } catch (ex) { _fitSessionSets = null; }
+
+        try {
+            _fitSessionWorkTime = _session.createField(
+                "total_work_time",
+                FIT_FIELD_SESSION_WORK_TIME,
+                FitContributor.DATA_TYPE_UINT16,
+                { :mesgType => FitContributor.MESG_TYPE_SESSION, :units => "s" }
+            );
+        } catch (ex) { _fitSessionWorkTime = null; }
+
+        try {
+            _fitSessionRestTime = _session.createField(
+                "total_rest_time",
+                FIT_FIELD_SESSION_REST_TIME,
+                FitContributor.DATA_TYPE_UINT16,
+                { :mesgType => FitContributor.MESG_TYPE_SESSION, :units => "s" }
+            );
+        } catch (ex) { _fitSessionRestTime = null; }
+
+        try {
+            _fitRecordWeight = _session.createField(
+                "active_weight",
+                FIT_FIELD_RECORD_WEIGHT,
+                FitContributor.DATA_TYPE_FLOAT,
+                { :mesgType => FitContributor.MESG_TYPE_RECORD, :units => "kg" }
+            );
+        } catch (ex) { _fitRecordWeight = null; }
+    }
+
+    private function updateSessionFitFields() as Void {
+        try {
+            if (_fitSessionVolume != null) {
+                _fitSessionVolume.setData(totalWorkoutVolume);
+            }
+            if (_fitSessionReps != null) {
+                _fitSessionReps.setData(totalWorkoutReps);
+            }
+            if (_fitSessionSets != null) {
+                _fitSessionSets.setData(completedSetsCount);
+            }
+            if (_fitSessionWorkTime != null) {
+                _fitSessionWorkTime.setData(totalWorkSec);
+            }
+            if (_fitSessionRestTime != null) {
+                _fitSessionRestTime.setData(totalRestSec);
+            }
+        } catch (ex) {}
+    }
+
+    // Returns array of exercise summary objects for multi-page review:
+    // [ { "name" => "Bench Press", "sets" => [ setObj, ... ], "totalVol" => 2400.0f } ]
+    public function getExerciseSummaries() as Array {
+        var groups = [] as Array;
+        if (completedLog.size() == 0) {
+            return groups;
+        }
+
+        var currentGroup = null as Dictionary?;
+        for (var i = 0; i < completedLog.size(); i += 1) {
+            var s = completedLog[i] as Dictionary;
+            var exName = s.get("name") as String;
+            var setVol = s.get("vol") as Float;
+
+            if (currentGroup == null || !(currentGroup.get("name") as String).equals(exName)) {
+                currentGroup = {
+                    "name"     => exName,
+                    "label"    => s.get("label"),
+                    "sets"     => [s] as Array,
+                    "totalVol" => setVol
+                };
+                groups.add(currentGroup);
+            } else {
+                var sList = currentGroup.get("sets") as Array;
+                sList.add(s);
+                var prevVol = currentGroup.get("totalVol") as Float;
+                currentGroup.put("totalVol", prevVol + setVol);
+            }
+        }
+        return groups;
     }
 
     function onTick() as Void {
@@ -221,10 +503,19 @@ class HaganeWorkoutState {
         if (screenState == STATE_ACTIVE_SET) {
             setElapsedSec += 1;
             workoutTotalSec += 1;
+            totalWorkSec += 1;
+            if (_fitRecordWeight != null && currentStepIdx < steps.size()) {
+                var step = steps[currentStepIdx] as Dictionary;
+                _fitRecordWeight.setData(parseWeightToFloat(step.get("weight")));
+            }
             WatchUi.requestUpdate();
         } else if (screenState == STATE_REST) {
             restElapsedSec += 1;
             workoutTotalSec += 1;
+            totalRestSec += 1;
+            if (_fitRecordWeight != null) {
+                _fitRecordWeight.setData(0.0f);
+            }
 
             // Fire rest-complete vibration once when elapsed >= target (safe against +/-15s adjustments)
             if (!hasVibratedForRest && restTargetSec > 0 && restElapsedSec >= restTargetSec) {
@@ -346,6 +637,18 @@ class HaganeWorkoutState {
         hasVibratedForRest = false;
         workoutTotalSec = 0;
         completedSetsCount = 0;
+        totalWorkoutVolume = 0.0f;
+        totalWorkoutReps = 0;
+        totalWorkSec = 0;
+        totalRestSec = 0;
+        lastRestElapsedSec = 0;
+        completedLog = [];
+        summaryPageIdx = 0;
+        avgHeartRate = 0;
+        maxHeartRate = 0;
+        calories = 0;
+        isWorkoutComplete = false;
+        discardConfirmIdx = 0;
         screenState = STATE_ACTIVE_SET;
 
         // Start Garmin FIT Strength Training Recording Session
@@ -358,6 +661,7 @@ class HaganeWorkoutState {
                     :sport => Activity.SPORT_TRAINING,
                     :subSport => Activity.SUB_SPORT_STRENGTH_TRAINING
                 });
+                initFitContributorFields();
                 _session.start();
             }
         } catch (ex) {
@@ -373,25 +677,95 @@ class HaganeWorkoutState {
     // Called when user presses START while performing an active set
     function completeCurrentSet() as Void {
         if (currentStepIdx >= steps.size()) {
-            finishAndSaveWorkout();
-            return;
-        }
-
-        completedSetsCount += 1;
-        // Record 1 FIT lap per completed set
-        if (_session != null && _session.isRecording()) {
-            try {
-                _session.addLap();
-            } catch (ex) {}
-        }
-
-        // If this was the very last set of the entire routine, go straight to summary/finish
-        if (currentStepIdx + 1 >= steps.size()) {
-            finishAndSaveWorkout();
+            onWorkoutComplete();
             return;
         }
 
         var step = steps[currentStepIdx] as Dictionary;
+        var exName = (step.get("name") instanceof String) ? (step.get("name") as String) : "Exercise";
+        var exLabel = (step.get("label") instanceof String) ? (step.get("label") as String) : "";
+        var setNum = (step.get("setNum") instanceof Number) ? (step.get("setNum") as Number) : 1;
+        var setTotal = (step.get("setTotal") instanceof Number) ? (step.get("setTotal") as Number) : 1;
+        var repsVal = (step.get("reps") instanceof Number) ? (step.get("reps") as Number) : 0;
+        var isWarmup = (step.get("isWarmup") == true);
+        var isWarmupSet = (step.get("isWarmupSet") == true);
+        var weightFloat = parseWeightToFloat(step.get("weight"));
+        var setVol = weightFloat * repsVal.toFloat();
+        var workSec = setElapsedSec;
+        var restSecTaken = lastRestElapsedSec;
+
+        // Build set label e.g. "1/3", "3A • 2/3", or "Warmup 1"
+        var setLabelStr = "";
+        if (isWarmup || isWarmupSet) {
+            setLabelStr = "Warmup " + setNum;
+        } else if (exLabel.length() >= 2) {
+            setLabelStr = exLabel + " • " + setNum + "/" + setTotal;
+        } else {
+            setLabelStr = setNum + "/" + setTotal;
+        }
+
+        // 1. Populate FIT Lap Developer Fields
+        try {
+            if (_fitLapExercise != null) {
+                _fitLapExercise.setData(truncateString(exName, 31));
+            }
+            if (_fitLapSet != null) {
+                _fitLapSet.setData(truncateString(setLabelStr, 15));
+            }
+            if (_fitLapWeight != null) {
+                _fitLapWeight.setData(weightFloat);
+            }
+            if (_fitLapReps != null) {
+                _fitLapReps.setData(repsVal);
+            }
+            if (_fitLapVolume != null) {
+                _fitLapVolume.setData(setVol);
+            }
+            if (_fitLapWorkTime != null) {
+                _fitLapWorkTime.setData(workSec);
+            }
+            if (_fitLapRestTime != null) {
+                _fitLapRestTime.setData(restSecTaken);
+            }
+        } catch (ex) {}
+
+        // 2. Accumulate totals
+        completedSetsCount += 1;
+        totalWorkoutVolume += setVol;
+        totalWorkoutReps += repsVal;
+
+        // 3. Update Session summary FIT fields
+        updateSessionFitFields();
+
+        // 4. Record to completedLog for Watch Summary pages
+        completedLog.add({
+            "name"     => exName,
+            "label"    => exLabel,
+            "setNum"   => setNum,
+            "setTotal" => setTotal,
+            "weight"   => weightFloat,
+            "reps"     => repsVal,
+            "vol"      => setVol,
+            "workSec"  => workSec,
+            "restSec"  => restSecTaken
+        });
+
+        // 5. Commit lap to FIT file (if not the last set; on the last set, session.stop() finalizes it)
+        var isLastSet = (currentStepIdx + 1 >= steps.size());
+        if (!isLastSet) {
+            if (_session != null && _session.isRecording()) {
+                try {
+                    _session.addLap();
+                } catch (ex) {}
+            }
+        }
+
+        // If this was the very last set of the entire routine, prompt Save / Discard (like running!)
+        if (isLastSet) {
+            onWorkoutComplete();
+            return;
+        }
+
         var restSec = step.get("restSeconds") as Number;
 
         // Advance pointer to the upcoming set
@@ -401,6 +775,7 @@ class HaganeWorkoutState {
         // If restSeconds == 0 (e.g. Superset 3A -> 3B), jump directly to 3B Active Set!
         if (restSec <= 0) {
             vibrateShort();
+            lastRestElapsedSec = 0;
             screenState = STATE_ACTIVE_SET;
         } else {
             vibrateShort();
@@ -415,6 +790,7 @@ class HaganeWorkoutState {
     // Called when user presses START during Rest Timer (either early before 00:00, or during +00:xx overtime)
     function startNextSetFromRest() as Void {
         vibrateShort();
+        lastRestElapsedSec = restElapsedSec;
         setElapsedSec = 0;
         screenState = STATE_ACTIVE_SET;
         WatchUi.requestUpdate();
@@ -436,9 +812,24 @@ class HaganeWorkoutState {
         WatchUi.requestUpdate();
     }
 
+    function onWorkoutComplete() as Void {
+        isWorkoutComplete = true;
+        pauseMenuIdx = 0; // "Save Workout" is pre-selected
+        screenState = STATE_PAUSE_MENU;
+        stopTimer();
+        if (_session != null && _session.isRecording()) {
+            try {
+                _session.stop();
+            } catch (ex) {}
+        }
+        vibrateWorkoutComplete();
+        WatchUi.requestUpdate();
+    }
+
     function openPauseMenu() as Void {
         previousWorkoutState = screenState;
-        pauseMenuIdx = 0;
+        isWorkoutComplete = false;
+        pauseMenuIdx = 0; // "Resume" is pre-selected
         screenState = STATE_PAUSE_MENU;
         // Pause the underlying FIT recording session while in Pause Menu
         if (_session != null && _session.isRecording()) {
@@ -449,28 +840,70 @@ class HaganeWorkoutState {
         WatchUi.requestUpdate();
     }
 
+    function openDiscardConfirm() as Void {
+        discardConfirmIdx = 0; // 0 = Cancel (safe default), 1 = Discard Workout
+        screenState = STATE_DISCARD_CONFIRM;
+        WatchUi.requestUpdate();
+    }
+
     function resumeFromPauseMenu() as Void {
         if (_session != null && !_session.isRecording()) {
             try {
                 _session.start();
             } catch (ex) {}
         }
+        startTimer();
         screenState = previousWorkoutState;
         WatchUi.requestUpdate();
     }
 
     function executePauseMenuAction() as Void {
+        if (isWorkoutComplete) {
+            if (pauseMenuIdx == 0) {
+                // Save Workout
+                finishAndSaveWorkout();
+                return;
+            } else if (pauseMenuIdx == 1) {
+                // Discard Workout
+                openDiscardConfirm();
+                return;
+            } else if (pauseMenuIdx == 2) {
+                // Resume Workout (review or continue)
+                isWorkoutComplete = false;
+                if (_session != null && !_session.isRecording()) {
+                    try {
+                        _session.start();
+                    } catch (ex) {}
+                }
+                startTimer();
+                screenState = STATE_ACTIVE_SET;
+                WatchUi.requestUpdate();
+                return;
+            }
+            return;
+        }
+
+        // Mid-workout paused actions
         if (pauseMenuIdx == 0) {
             // Resume Workout
             resumeFromPauseMenu();
             return;
         } else if (pauseMenuIdx == 1) {
+            // Save Workout (ends activity early and saves FIT)
+            finishAndSaveWorkout();
+            return;
+        } else if (pauseMenuIdx == 2) {
+            // Discard Workout (show confirmation)
+            openDiscardConfirm();
+            return;
+        } else if (pauseMenuIdx == 3) {
             // Skip Current Set
             if (_session != null && !_session.isRecording()) {
                 try {
                     _session.start();
                 } catch (ex) {}
             }
+            startTimer();
             if (previousWorkoutState == STATE_REST) {
                 setElapsedSec = 0;
                 screenState = STATE_ACTIVE_SET;
@@ -479,35 +912,52 @@ class HaganeWorkoutState {
                 setElapsedSec = 0;
                 screenState = STATE_ACTIVE_SET;
             } else {
-                finishAndSaveWorkout();
+                onWorkoutComplete();
                 return;
             }
-        } else if (pauseMenuIdx == 2) {
+        } else if (pauseMenuIdx == 4) {
             // Previous Set
             if (_session != null && !_session.isRecording()) {
                 try {
                     _session.start();
                 } catch (ex) {}
             }
+            startTimer();
             if (currentStepIdx > 0) {
                 currentStepIdx -= 1;
+                if (completedSetsCount > 0) {
+                    completedSetsCount -= 1;
+                }
             }
             setElapsedSec = 0;
             screenState = STATE_ACTIVE_SET;
-        } else if (pauseMenuIdx == 3) {
-            // Finish & Save
-            finishAndSaveWorkout();
-            return;
-        } else if (pauseMenuIdx == 4) {
-            // Discard Workout
-            discardWorkout();
-            return;
         }
         WatchUi.requestUpdate();
     }
 
     function finishAndSaveWorkout() as Void {
         stopTimer();
+        // Capture telemetry before saving FIT session
+        try {
+            var info = Activity.getActivityInfo();
+            if (info != null) {
+                if (info.averageHeartRate != null) {
+                    avgHeartRate = info.averageHeartRate as Number;
+                } else if (heartRate > 0) {
+                    avgHeartRate = heartRate;
+                }
+                if (info.maxHeartRate != null) {
+                    maxHeartRate = info.maxHeartRate as Number;
+                }
+                if (info.calories != null) {
+                    calories = info.calories as Number;
+                }
+            }
+        } catch (ex) {}
+
+        // Ensure session developer fields have final totals
+        updateSessionFitFields();
+
         if (_session != null) {
             try {
                 if (_session.isRecording()) {
@@ -517,8 +967,30 @@ class HaganeWorkoutState {
             } catch (ex) {}
             _session = null;
         }
+        clearFitFieldReferences();
+
+        // Transmit workout completion log to companion phone app if connected
+        try {
+            Communications.transmit(
+                {
+                    "cmd"      => "WORKOUT_COMPLETED",
+                    "routine"  => (selectedRoutineIdx < routines.size()) ? (routines[selectedRoutineIdx] as Dictionary).get("id") : "",
+                    "totalSec" => workoutTotalSec,
+                    "volume"   => totalWorkoutVolume,
+                    "reps"     => totalWorkoutReps,
+                    "sets"     => completedSetsCount,
+                    "workSec"  => totalWorkSec,
+                    "restSec"  => totalRestSec
+                },
+                null,
+                new HaganeSyncConnectListener(self)
+            );
+        } catch (ex) {}
+
         vibrateWorkoutSaved();
+        syncStatusText = "Workout Saved!";
         screenState = STATE_SUMMARY;
+        summaryPageIdx = 0;
         WatchUi.requestUpdate();
     }
 
@@ -533,6 +1005,9 @@ class HaganeWorkoutState {
             } catch (ex) {}
             _session = null;
         }
+        clearFitFieldReferences();
+        vibrateShort();
+        syncStatusText = "Workout Discarded";
         screenState = STATE_ROUTINE_LIST;
         WatchUi.requestUpdate();
     }
@@ -579,6 +1054,26 @@ class HaganeWorkoutState {
         if (Attention has :playTone) {
             try {
                 Attention.playTone(Attention.TONE_SUCCESS);
+            } catch (ex) {}
+        }
+    }
+
+    function vibrateWorkoutComplete() as Void {
+        if (Attention has :vibrate) {
+            try {
+                var pulses = [
+                    new Attention.VibeProfile(100, 200),
+                    new Attention.VibeProfile(0, 100),
+                    new Attention.VibeProfile(100, 200),
+                    new Attention.VibeProfile(0, 100),
+                    new Attention.VibeProfile(100, 500)
+                ];
+                Attention.vibrate(pulses);
+            } catch (ex) {}
+        }
+        if (Attention has :playTone) {
+            try {
+                Attention.playTone(Attention.TONE_TIME_ALERT);
             } catch (ex) {}
         }
     }

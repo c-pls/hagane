@@ -52,9 +52,16 @@ echo "🔧 Using compiler: $MONKEYC"
 KEY_DER="developer_key.der"
 KEY_PEM="developer_key.pem"
 if [ ! -f "$KEY_DER" ]; then
-  echo "🔑 Generating 4096-bit RSA Garmin developer key ($KEY_DER)..."
-  openssl genrsa -out "$KEY_PEM" 4096 2>/dev/null
-  openssl pkcs8 -topk8 -inform PEM -outform DER -in "$KEY_PEM" -out "$KEY_DER" -nocrypt
+  if [ -f "$KEY_PEM" ]; then
+    echo "🔑 Converting existing $KEY_PEM to $KEY_DER..."
+    openssl pkcs8 -topk8 -inform PEM -outform DER -in "$KEY_PEM" -out "$KEY_DER" -nocrypt
+  else
+    echo "🔑 Generating 4096-bit RSA Garmin developer key ($KEY_DER)..."
+    openssl genrsa -out "$KEY_PEM" 4096 2>/dev/null
+    chmod 600 "$KEY_PEM" 2>/dev/null || true
+    openssl pkcs8 -topk8 -inform PEM -outform DER -in "$KEY_PEM" -out "$KEY_DER" -nocrypt
+  fi
+  chmod 600 "$KEY_DER" 2>/dev/null || true
   echo "ℹ️  Keep garmin-watch/$KEY_DER backed up so future watch updates share the same key."
 fi
 

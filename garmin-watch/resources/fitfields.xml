@@ -1,0 +1,97 @@
+<resources xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <fitContributions>
+        <!-- LAP FIELDS (Per-Set Breakdown in Laps Tab) -->
+        <fitField id="0"
+                  displayInActivityLaps="true"
+                  sortOrder="0"
+                  dataLabel="@Strings.fit_lap_exercise_label"
+                  unitLabel="@Strings.fit_unit_none" />
+
+        <fitField id="1"
+                  displayInActivityLaps="true"
+                  sortOrder="1"
+                  dataLabel="@Strings.fit_lap_set_label"
+                  unitLabel="@Strings.fit_unit_none" />
+
+        <fitField id="2"
+                  displayInActivityLaps="true"
+                  sortOrder="2"
+                  precision="1"
+                  dataLabel="@Strings.fit_lap_weight_label"
+                  unitLabel="@Strings.fit_unit_kg" />
+
+        <fitField id="3"
+                  displayInActivityLaps="true"
+                  sortOrder="3"
+                  precision="0"
+                  dataLabel="@Strings.fit_lap_reps_label"
+                  unitLabel="@Strings.fit_unit_reps" />
+
+        <fitField id="4"
+                  displayInActivityLaps="true"
+                  sortOrder="4"
+                  precision="1"
+                  dataLabel="@Strings.fit_lap_volume_label"
+                  unitLabel="@Strings.fit_unit_kg" />
+
+        <fitField id="5"
+                  displayInActivityLaps="true"
+                  sortOrder="5"
+                  precision="0"
+                  dataLabel="@Strings.fit_lap_work_time_label"
+                  unitLabel="@Strings.fit_unit_sec" />
+
+        <fitField id="6"
+                  displayInActivityLaps="true"
+                  sortOrder="6"
+                  precision="0"
+                  dataLabel="@Strings.fit_lap_rest_time_label"
+                  unitLabel="@Strings.fit_unit_sec" />
+
+        <!-- SESSION SUMMARY FIELDS (Overall Workout Totals in Summary Tab) -->
+        <fitField id="7"
+                  displayInActivitySummary="true"
+                  sortOrder="7"
+                  precision="1"
+                  dataLabel="@Strings.fit_session_volume_label"
+                  unitLabel="@Strings.fit_unit_kg" />
+
+        <fitField id="8"
+                  displayInActivitySummary="true"
+                  sortOrder="8"
+                  precision="0"
+                  dataLabel="@Strings.fit_session_reps_label"
+                  unitLabel="@Strings.fit_unit_reps" />
+
+        <fitField id="9"
+                  displayInActivitySummary="true"
+                  sortOrder="9"
+                  precision="0"
+                  dataLabel="@Strings.fit_session_sets_label"
+                  unitLabel="@Strings.fit_unit_sets" />
+
+        <fitField id="10"
+                  displayInActivitySummary="true"
+                  sortOrder="10"
+                  precision="0"
+                  dataLabel="@Strings.fit_session_work_time_label"
+                  unitLabel="@Strings.fit_unit_sec" />
+
+        <fitField id="11"
+                  displayInActivitySummary="true"
+                  sortOrder="11"
+                  precision="0"
+                  dataLabel="@Strings.fit_session_rest_time_label"
+                  unitLabel="@Strings.fit_unit_sec" />
+
+        <!-- RECORD FIELD (Continuous Timeline in Charts Tab) -->
+        <fitField id="12"
+                  displayInChart="true"
+                  sortOrder="12"
+                  precision="1"
+                  chartTitle="@Strings.fit_record_weight_chart"
+                  dataLabel="@Strings.fit_record_weight_label"
+                  unitLabel="@Strings.fit_unit_kg"
+                  fillColor="#00AAFF" />
+    </fitContributions>
+</resources>

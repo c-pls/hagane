@@ -1,3 +1,30 @@
 <strings>
     <string id="AppName">Hagane</string>
+
+    <!-- Fit Contributor Units -->
+    <string id="fit_unit_none">-</string>
+    <string id="fit_unit_kg">kg</string>
+    <string id="fit_unit_reps">reps</string>
+    <string id="fit_unit_sets">sets</string>
+    <string id="fit_unit_sec">s</string>
+
+    <!-- Fit Contributor Lap Labels (Per Set) -->
+    <string id="fit_lap_exercise_label">Exercise</string>
+    <string id="fit_lap_set_label">Set</string>
+    <string id="fit_lap_weight_label">Weight</string>
+    <string id="fit_lap_reps_label">Reps</string>
+    <string id="fit_lap_volume_label">Set Volume</string>
+    <string id="fit_lap_work_time_label">Work Time</string>
+    <string id="fit_lap_rest_time_label">Rest Time</string>
+
+    <!-- Fit Contributor Session Labels (Overall Summary) -->
+    <string id="fit_session_volume_label">Total Volume</string>
+    <string id="fit_session_reps_label">Total Reps</string>
+    <string id="fit_session_sets_label">Completed Sets</string>
+    <string id="fit_session_work_time_label">Total Work Time</string>
+    <string id="fit_session_rest_time_label">Total Rest Time</string>
+
+    <!-- Fit Contributor Record Chart -->
+    <string id="fit_record_weight_label">Weight</string>
+    <string id="fit_record_weight_chart">Active Weight</string>
 </strings>

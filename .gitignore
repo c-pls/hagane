@@ -49,6 +49,18 @@ android/app/src/main/assets/capacitor.plugins.json
 .env.local
 .env.*.local
 
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Android Keystores & signing keys (never commit!)
+*.keystore
+*.jks
+*.p12
+android/app/*.keystore
+android/app/*.jks
+
 # Garmin Connect IQ build outputs & private developer signing keys (local only, never commit)
 garmin-watch/dist/
 garmin-watch/*.der
@@ -60,3 +72,4 @@ garmin-watch/*.prg.debug.xml
 *.iq
 *.prg.debug.xml
 developer_key.*
+*.bak

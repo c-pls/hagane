@@ -19,7 +19,6 @@ const BLACK_EXTREMITIES = new Set([
   'hair',
   'hands',
   'feet',
-  'ankles',
   'knees',
 ]);
 

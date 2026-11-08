@@ -7,8 +7,8 @@ android {
         applicationId "com.hagane.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 9
-        versionName "1.3.0"
+        versionCode (System.getenv("GITHUB_RUN_NUMBER") ? Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER")) + 9 : 9)
+        versionName (System.getenv("GITHUB_RUN_NUMBER") ? "1.3.${System.getenv('GITHUB_RUN_NUMBER')}" : "1.3.0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -18,16 +18,17 @@ android {
     }
     signingConfigs {
         debug {
-            storeFile file('hagane.keystore')
-            storePassword 'haganeappkeystore'
-            keyAlias 'hagane'
-            keyPassword 'haganeappkeystore'
+            // Default Android debug keystore
         }
         release {
-            storeFile file('hagane.keystore')
-            storePassword 'haganeappkeystore'
-            keyAlias 'hagane'
-            keyPassword 'haganeappkeystore'
+            def keystorePath = System.getenv("RELEASE_KEYSTORE_PATH") ?: "hagane.keystore"
+            def keystoreFile = file(keystorePath)
+            if (keystoreFile.exists()) {
+                storeFile keystoreFile
+                storePassword System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: System.getenv("RELEASE_STORE_PASSWORD") ?: "haganeappkeystore"
+                keyAlias System.getenv("RELEASE_KEY_ALIAS") ?: "hagane"
+                keyPassword System.getenv("RELEASE_KEY_PASSWORD") ?: "haganeappkeystore"
+            }
         }
     }
     buildTypes {
@@ -35,7 +36,12 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            signingConfig signingConfigs.release
+            def keystorePath = System.getenv("RELEASE_KEYSTORE_PATH") ?: "hagane.keystore"
+            if (file(keystorePath).exists()) {
+                signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

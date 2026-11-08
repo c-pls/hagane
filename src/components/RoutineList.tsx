@@ -426,8 +426,12 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                         onClick={() =>
                           setOpenMenuRoutineId(isMenuOpen ? null : routine.id)
                         }
-                        aria-label="Routine options"
-                        className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-base flex items-center justify-center transition cursor-pointer"
+                        aria-label={
+                          lang === 'vi'
+                            ? 'Tùy chọn buổi tập'
+                            : 'Routine options'
+                        }
+                        className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-base flex items-center justify-center transition cursor-pointer"
                       >
                         ⋮
                       </button>
@@ -441,7 +445,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                                 onReorderRoutines(idx, idx - 1);
                                 setOpenMenuRoutineId(null);
                               }}
-                              className="w-full px-3.5 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
+                              className="w-full px-3.5 py-2.5 min-h-[44px] text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
                             >
                               <span className="text-slate-400">↑</span>
                               <span>{t.moveUpBtn}</span>
@@ -454,7 +458,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                                 onReorderRoutines(idx, idx + 1);
                                 setOpenMenuRoutineId(null);
                               }}
-                              className="w-full px-3.5 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
+                              className="w-full px-3.5 py-2.5 min-h-[44px] text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
                             >
                               <span className="text-slate-400">↓</span>
                               <span>{t.moveDownBtn}</span>
@@ -463,7 +467,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                           <button
                             type="button"
                             onClick={() => handleStartEditMeta(routine)}
-                            className="w-full px-3.5 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
+                            className="w-full px-3.5 py-2.5 min-h-[44px] text-left hover:bg-slate-100 flex items-center gap-2.5 cursor-pointer"
                           >
                             <span>✏️</span>
                             <span>{t.editRoutineInfoBtn}</span>
@@ -475,7 +479,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                               setConfirmDeleteRoutine(routine);
                               setOpenMenuRoutineId(null);
                             }}
-                            className="w-full px-3.5 py-2.5 text-left text-red-600 hover:bg-red-50 flex items-center gap-2.5 font-bold cursor-pointer"
+                            className="w-full px-3.5 py-2.5 min-h-[44px] text-left text-red-600 hover:bg-red-50 flex items-center gap-2.5 font-bold cursor-pointer"
                           >
                             <span>🗑️</span>
                             <span>{t.deleteRoutineBtn}</span>
@@ -531,6 +535,9 @@ export const RoutineList: React.FC<RoutineListProps> = ({
       {/* Edit Routine Name & Category Modal */}
       {editingRoutine && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-routine-title"
           className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setEditingRoutine(null)}
         >
@@ -539,7 +546,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-[24px] p-5 w-full max-w-sm shadow-xl space-y-3.5 border border-slate-100"
           >
-            <h3 className="font-bold text-base text-slate-900">
+            <h3 id="edit-routine-title" className="font-bold text-base text-slate-900">
               {t.editRoutineInfoBtn}
             </h3>
             <div className="space-y-3">
@@ -579,6 +586,9 @@ export const RoutineList: React.FC<RoutineListProps> = ({
       {/* Safe In-App Delete Routine Confirmation Modal */}
       {confirmDeleteRoutine && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-routine-title"
           className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setConfirmDeleteRoutine(null)}
         >
@@ -591,7 +601,7 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                 🗑️
               </div>
               <div>
-                <h3 className="font-bold text-base text-slate-900">
+                <h3 id="delete-routine-title" className="font-bold text-base text-slate-900">
                   {t.deleteRoutineConfirmTitle}
                 </h3>
                 <p className="text-xs font-semibold text-red-600">

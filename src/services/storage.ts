@@ -15,9 +15,14 @@ const LEGACY_EXERCISE_ID_MAP: Record<string, string> = {
 };
 
 let storageCorruptionLocked = false;
+let customCorruptionLocked = false;
 
 export function isStorageCorruptionLocked(): boolean {
   return storageCorruptionLocked;
+}
+
+export function isCustomCorruptionLocked(): boolean {
+  return customCorruptionLocked;
 }
 
 export function clearStorageCorruptionLock(deleteBackup = false): void {
@@ -25,6 +30,17 @@ export function clearStorageCorruptionLock(deleteBackup = false): void {
   if (deleteBackup) {
     try {
       localStorage.removeItem(ROUTINES_KEY + '_corrupt_bak');
+    } catch {
+      // ignore
+    }
+  }
+}
+
+export function clearCustomCorruptionLock(deleteBackup = false): void {
+  customCorruptionLocked = false;
+  if (deleteBackup) {
+    try {
+      localStorage.removeItem(CUSTOM_EXERCISES_KEY + '_corrupt_bak');
     } catch {
       // ignore
     }
@@ -39,7 +55,21 @@ export function getCorruptBackupRaw(): string | null {
   }
 }
 
+export function getCorruptCustomBackupRaw(): string | null {
+  try {
+    return localStorage.getItem(CUSTOM_EXERCISES_KEY + '_corrupt_bak');
+  } catch {
+    return null;
+  }
+}
+
 export function deduplicateRoutineExercises(
+  exercises: RoutineExerciseItem[]
+): RoutineExerciseItem[] {
+  return sanitizeRoutineExercises(exercises);
+}
+
+export function sanitizeRoutineExercises(
   exercises: RoutineExerciseItem[]
 ): RoutineExerciseItem[] {
   // Defensive validation: filter out completely invalid items
@@ -52,16 +82,34 @@ export function deduplicateRoutineExercises(
     );
   });
 
+  // Deduplicate by exerciseId: keep first occurrence, merge sets from duplicates
+  const seenMap = new Map<string, RoutineExerciseItem>();
+  const dedupedItems: RoutineExerciseItem[] = [];
+
+  for (const item of validItems) {
+    const existing = seenMap.get(item.exerciseId);
+    if (!existing) {
+      const copy = { ...item, sets: [...item.sets] };
+      seenMap.set(item.exerciseId, copy);
+      dedupedItems.push(copy);
+    } else {
+      // Merge sets from duplicate exercise item so user's recorded sets are not lost
+      if (Array.isArray(item.sets) && item.sets.length > 0) {
+        existing.sets.push(...item.sets);
+      }
+    }
+  }
+
   // Clean up any orphaned superset groups with fewer than 2 exercises within the same section
   const supersetCounts: Record<string, number> = {};
-  validItems.forEach((item) => {
+  dedupedItems.forEach((item) => {
     if (item.supersetId) {
       const sectionKey = `${item.isWarmup ? 'W' : 'M'}:${item.supersetId}`;
       supersetCounts[sectionKey] = (supersetCounts[sectionKey] || 0) + 1;
     }
   });
 
-  return validItems.map((item) => {
+  return dedupedItems.map((item) => {
     if (item.supersetId) {
       const sectionKey = `${item.isWarmup ? 'W' : 'M'}:${item.supersetId}`;
       if ((supersetCounts[sectionKey] || 0) < 2) {
@@ -205,7 +253,7 @@ export function sanitizeRoutines(
 
       if (validSets.length === 0) {
         validSets.push({
-          weight: isWarmup ? 20 : 20,
+          weight: 0,
           reps: isWarmup ? 15 : 10,
           type: isWarmup ? 'warmup' : 'normal',
         });
@@ -214,7 +262,7 @@ export function sanitizeRoutines(
       const restNum = Number(exObj.restSeconds);
       const restSeconds =
         Number.isFinite(restNum) && restNum > 0
-          ? Math.round(restNum)
+          ? Math.max(15, Math.min(900, Math.round(restNum)))
           : undefined;
 
       const supersetId =
@@ -257,7 +305,35 @@ export function sanitizeCustomExercises(rawCustom: unknown): Exercise[] {
   for (const item of rawCustom) {
     if (!item || typeof item !== 'object') continue;
     const obj = item as Record<string, unknown>;
-    if (typeof obj.id !== 'string' || typeof obj.name !== 'string') continue;
+
+    // Strict validation: reject malformed custom exercises without required fields
+    if (
+      typeof obj.id !== 'string' ||
+      !obj.id.trim() ||
+      typeof obj.name !== 'string' ||
+      !obj.name.trim() ||
+      typeof obj.category !== 'string' ||
+      !obj.category.trim() ||
+      typeof obj.equipment !== 'string' ||
+      !obj.equipment.trim()
+    ) {
+      console.warn('[Hagane] Dropping malformed custom exercise:', obj.id || 'unknown');
+      continue;
+    }
+
+    const toStrArr = (val: unknown, fallback: string[] = []): string[] =>
+      Array.isArray(val)
+        ? val.filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+        : fallback;
+
+    let primaryMuscles = toStrArr(obj.primaryMuscles);
+    if (primaryMuscles.length === 0 && typeof obj.category === 'string' && obj.category.trim()) {
+      primaryMuscles = [obj.category.trim()];
+    }
+    if (primaryMuscles.length === 0) {
+      console.warn('[Hagane] Dropping custom exercise with empty primaryMuscles:', obj.id);
+      continue;
+    }
 
     const stepsRaw =
       obj.steps && typeof obj.steps === 'object'
@@ -268,19 +344,10 @@ export function sanitizeCustomExercises(rawCustom: unknown): Exercise[] {
         ? (obj.stepsVi as Record<string, unknown>)
         : stepsRaw;
 
-    const toStrArr = (val: unknown, fallback: string[]): string[] =>
-      Array.isArray(val)
-        ? val.filter((v): v is string => typeof v === 'string')
-        : fallback;
-
     const steps = {
-      prepare: toStrArr(stepsRaw.prepare, ['Set up in starting position.']),
-      execution: toStrArr(stepsRaw.execution, [
-        'Execute movement with full range of motion.',
-      ]),
-      breathing: toStrArr(stepsRaw.breathing, [
-        'Inhale on eccentric, exhale on concentric.',
-      ]),
+      prepare: toStrArr(stepsRaw.prepare),
+      execution: toStrArr(stepsRaw.execution),
+      breathing: toStrArr(stepsRaw.breathing),
     };
 
     const stepsVi = {
@@ -290,22 +357,22 @@ export function sanitizeCustomExercises(rawCustom: unknown): Exercise[] {
     };
 
     valid.push({
-      id: obj.id,
-      slug: typeof obj.slug === 'string' ? obj.slug : obj.id,
-      name: obj.name,
-      nameVi: typeof obj.nameVi === 'string' ? obj.nameVi : obj.name,
-      aliases: toStrArr(obj.aliases, []),
-      category: typeof obj.category === 'string' && obj.category ? obj.category : 'Other',
-      equipment: typeof obj.equipment === 'string' && obj.equipment ? obj.equipment : 'Other',
-      videoUrl: typeof obj.videoUrl === 'string' ? obj.videoUrl : '',
-      primaryMuscles: toStrArr(obj.primaryMuscles, typeof obj.category === 'string' && obj.category ? [obj.category] : ['Full Body']),
-      secondaryMuscles: toStrArr(obj.secondaryMuscles, []),
-      primarySlugs: toStrArr(obj.primarySlugs, []),
-      secondarySlugs: toStrArr(obj.secondarySlugs, []),
+      id: obj.id.trim(),
+      slug: typeof obj.slug === 'string' && obj.slug.trim() ? obj.slug.trim() : obj.id.trim(),
+      name: obj.name.trim(),
+      nameVi: typeof obj.nameVi === 'string' && obj.nameVi.trim() ? obj.nameVi.trim() : obj.name.trim(),
+      aliases: toStrArr(obj.aliases),
+      category: obj.category.trim(),
+      equipment: obj.equipment.trim(),
+      videoUrl: typeof obj.videoUrl === 'string' ? obj.videoUrl.trim() : '',
+      primaryMuscles,
+      secondaryMuscles: toStrArr(obj.secondaryMuscles),
+      primarySlugs: toStrArr(obj.primarySlugs),
+      secondarySlugs: toStrArr(obj.secondarySlugs),
       shortDescription:
-        typeof obj.shortDescription === 'string'
-          ? obj.shortDescription
-          : 'Custom user exercise',
+        typeof obj.shortDescription === 'string' && obj.shortDescription.trim()
+          ? obj.shortDescription.trim()
+          : `Custom exercise: ${obj.name.trim()}`,
       steps,
       stepsVi,
     });
@@ -409,6 +476,7 @@ export function loadCustomExercises(): Exercise[] {
     try {
       if (raw) {
         localStorage.setItem(CUSTOM_EXERCISES_KEY + '_corrupt_bak', raw);
+        customCorruptionLocked = true;
       }
     } catch {
       // ignore
@@ -418,6 +486,12 @@ export function loadCustomExercises(): Exercise[] {
 }
 
 export function saveCustomExercises(custom: Exercise[]): boolean {
+  if (customCorruptionLocked) {
+    console.warn(
+      '[Hagane] Blocked saveCustomExercises while corrupt custom exercises quarantine awaits decision.'
+    );
+    return false;
+  }
   try {
     localStorage.setItem(CUSTOM_EXERCISES_KEY, JSON.stringify(custom));
     return true;

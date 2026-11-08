@@ -88,6 +88,16 @@ class AppErrorBoundary extends React.Component<
                       localStorage.setItem('hagane_routines_v1_corrupt_bak', raw);
                     }
                     localStorage.removeItem('hagane_routines_v1');
+
+                    const rawCustom = localStorage.getItem('hagane_custom_exercises_v1');
+                    const existingCustomBak = localStorage.getItem('hagane_custom_exercises_v1_corrupt_bak');
+                    if (existingCustomBak && rawCustom) {
+                      localStorage.setItem(`hagane_custom_exercises_v1_corrupt_bak_${Date.now()}`, existingCustomBak);
+                    }
+                    if (rawCustom) {
+                      localStorage.setItem('hagane_custom_exercises_v1_corrupt_bak', rawCustom);
+                    }
+                    localStorage.removeItem('hagane_custom_exercises_v1');
                   } catch {
                     // ignore
                   }

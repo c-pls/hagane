@@ -3,11 +3,44 @@ import { Exercise, Language } from '../types/gym';
 export function normalizeSearchString(s: string): string {
   return s
     .toLowerCase()
+    .replace(/đ/g, 'd')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // remove Vietnamese diacritics for flexible search
     .replace(/[-_/(),.]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+const searchBlobCache = new WeakMap<
+  Exercise,
+  { blob: string; rawBlob: string }
+>();
+
+function getExerciseSearchBlobs(ex: Exercise): {
+  blob: string;
+  rawBlob: string;
+} {
+  let cached = searchBlobCache.get(ex);
+  if (!cached) {
+    const rawBlob = [
+      ex.name,
+      ex.nameVi || '',
+      ex.equipment,
+      ex.category,
+      ...ex.primaryMuscles,
+      ...ex.secondaryMuscles,
+      ...ex.aliases,
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    cached = {
+      rawBlob,
+      blob: normalizeSearchString(rawBlob),
+    };
+    searchBlobCache.set(ex, cached);
+  }
+  return cached;
 }
 
 export function searchAndRankExercises(
@@ -24,11 +57,21 @@ export function searchAndRankExercises(
   const matches = exercises.filter((ex) => {
     // Muscle filter
     if (muscleFilter !== 'All') {
-      const matchCat =
-        ex.category.toLowerCase() === muscleFilter.toLowerCase();
-      const matchMuscle = ex.primaryMuscles.some((m) =>
-        m.toLowerCase().includes(muscleFilter.toLowerCase())
-      );
+      const filterLower = muscleFilter.toLowerCase();
+      const matchCat = ex.category.toLowerCase() === filterLower;
+      const matchMuscle = ex.primaryMuscles.some((m) => {
+        const mLower = m.toLowerCase();
+        if (filterLower === 'back') {
+          return (
+            mLower === 'back' ||
+            mLower === 'upper back' ||
+            mLower === 'lower back' ||
+            mLower === 'lats' ||
+            mLower === 'traps'
+          );
+        }
+        return mLower === filterLower;
+      });
       if (!matchCat && !matchMuscle) return false;
     }
 
@@ -41,30 +84,8 @@ export function searchAndRankExercises(
 
     if (tokens.length === 0) return true;
 
-    // Searchable text blob (includes both English and Vietnamese names, aliases, equipment, muscles)
-    const blob = normalizeSearchString(
-      [
-        ex.name,
-        ex.nameVi || '',
-        ex.equipment,
-        ex.category,
-        ...ex.primaryMuscles,
-        ...ex.secondaryMuscles,
-        ...ex.aliases,
-      ].join(' ')
-    );
-
-    // Also check raw string without diacritic removal for exact accents
-    const rawBlob = [
-      ex.name,
-      ex.nameVi || '',
-      ex.equipment,
-      ex.category,
-      ...ex.primaryMuscles,
-      ...ex.aliases,
-    ]
-      .join(' ')
-      .toLowerCase();
+    // Searchable text blobs (cached per exercise to prevent reallocations)
+    const { blob, rawBlob } = getExerciseSearchBlobs(ex);
 
     return (
       tokens.every((tok) => blob.includes(tok)) ||

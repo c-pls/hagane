@@ -60,6 +60,7 @@ const MUSCLE_QUICK_FILTERS = [
   'Hamstrings',
   'Glutes',
   'Core',
+  'Cardio',
 ];
 
 const EQUIPMENT_QUICK_FILTERS = [
@@ -71,6 +72,7 @@ const EQUIPMENT_QUICK_FILTERS = [
   'EZ-Bar',
   'Kettlebell',
   'Bodyweight',
+  'Cardio',
 ];
 
 export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
@@ -208,7 +210,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
               onClick={() => {
                 setSearch('');
               }}
-              className="w-7 h-7 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold text-xs flex items-center justify-center cursor-pointer transition shrink-0"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-200/80 font-bold text-xs flex items-center justify-center cursor-pointer transition shrink-0"
               title={lang === 'vi' ? 'Xóa tìm kiếm' : 'Clear search'}
               aria-label={lang === 'vi' ? 'Xóa tìm kiếm' : 'Clear search'}
             >
@@ -229,7 +231,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
               setMuscleFilter('All');
               setEquipmentFilter('All');
             }}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shrink-0 cursor-pointer shadow-2xs ${
+            className={`px-3.5 py-1.5 min-h-[44px] flex items-center justify-center rounded-full text-xs font-bold transition shrink-0 cursor-pointer shadow-2xs ${
               activeTab === 'most_used' &&
               muscleFilter === 'All' &&
               equipmentFilter === 'All' &&
@@ -249,7 +251,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
               setMuscleFilter('All');
               setEquipmentFilter('All');
             }}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition shrink-0 cursor-pointer shadow-2xs ${
+            className={`px-3.5 py-1.5 min-h-[44px] flex items-center justify-center rounded-full text-xs font-bold transition shrink-0 cursor-pointer shadow-2xs ${
               activeTab === 'all' &&
               muscleFilter === 'All' &&
               equipmentFilter === 'All' &&
@@ -271,7 +273,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                 onClick={() => {
                   setMuscleFilter(isSelected ? 'All' : m);
                 }}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition shrink-0 cursor-pointer ${
+                className={`px-3 py-1.5 min-h-[44px] flex items-center justify-center rounded-full text-xs font-semibold transition shrink-0 cursor-pointer ${
                   isSelected
                     ? 'bg-blue-600 text-white font-bold shadow-xs'
                     : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/70'
@@ -294,7 +296,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                 onClick={() => {
                   setEquipmentFilter(isSelected && eq !== 'All' ? 'All' : eq);
                 }}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium shrink-0 transition cursor-pointer ${
+                className={`px-2.5 py-1 min-h-[44px] flex items-center justify-center rounded-full text-xs font-medium shrink-0 transition cursor-pointer ${
                   isSelected
                     ? 'bg-slate-800 text-white font-semibold'
                     : 'bg-white/80 text-slate-500 hover:bg-slate-200 border border-slate-200/70'
@@ -349,10 +351,19 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                 return (
                   <div
                     key={`swap-alt-${altEx.id}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${t.changeExerciseBtn}: ${displayName} - ${reasonText}`}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectExercise(altEx.id);
+                      }
+                    }}
                     onClick={() => {
                       onSelectExercise(altEx.id);
                     }}
-                    className="p-3 rounded-2xl bg-white hover:bg-blue-50/80 active:scale-[0.98] border border-blue-100 hover:border-blue-300 shadow-xs transition cursor-pointer flex items-center justify-between gap-2.5 group"
+                    className="p-3 rounded-2xl bg-white hover:bg-blue-50/80 active:scale-[0.98] border border-blue-100 hover:border-blue-300 shadow-xs transition cursor-pointer flex items-center justify-between gap-2.5 group focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <div className="min-w-0 flex-1">
                       <h4 className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-600 transition truncate">
@@ -366,6 +377,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                     </div>
                     <button
                       type="button"
+                      tabIndex={-1}
                       className="px-2.5 py-1.5 rounded-xl bg-blue-600 group-hover:bg-blue-700 text-white font-bold text-xs shrink-0 transition"
                     >
                       {t.changeExerciseBtn}
@@ -448,7 +460,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                   e.stopPropagation();
                   onOpenWiki(ex.id, search, muscleFilter, equipmentFilter);
                 }}
-                className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition shrink-0 -mr-1 cursor-pointer"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition shrink-0 -mr-1 cursor-pointer"
                 title={t.viewWikiAndVideo}
                 aria-label={t.viewWikiAndVideo}
               >
