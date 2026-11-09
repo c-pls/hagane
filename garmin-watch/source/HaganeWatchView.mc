@@ -161,7 +161,7 @@ class HaganeWatchView extends WatchUi.View {
                 !lastCh.equals("6") && !lastCh.equals("7") && !lastCh.equals("8") &&
                 !lastCh.equals("9")) {
                 topColor = Graphics.COLOR_PURPLE;
-                topText = "SUPERSET " + label + " • SET " + setNum + "/" + setTotal;
+                topText = "SUPER " + label + " • SET " + setNum + "/" + setTotal;
             }
         }
 
@@ -395,7 +395,8 @@ class HaganeWatchView extends WatchUi.View {
         if (isComplete) {
             dc.drawText(cx, h - 34, Graphics.FONT_XTINY, "START: Select", Graphics.TEXT_JUSTIFY_CENTER);
         } else {
-            dc.drawText(cx, h - 34, Graphics.FONT_XTINY, "START: Select  •  BACK: Resume", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, h - 40, Graphics.FONT_XTINY, "START: Select", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, h - 24, Graphics.FONT_XTINY, "BACK: Resume", Graphics.TEXT_JUSTIFY_CENTER);
         }
     }
 
@@ -408,43 +409,43 @@ class HaganeWatchView extends WatchUi.View {
         var cx = w / 2;
 
         dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 22, Graphics.FONT_SMALL, "DISCARD WORKOUT?", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, 22, Graphics.FONT_XTINY, "DISCARD WORKOUT?", Graphics.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 54, Graphics.FONT_XTINY, "All recorded session", Graphics.TEXT_JUSTIFY_CENTER);
-        dc.drawText(cx, 70, Graphics.FONT_XTINY, "data will be deleted.", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, 48, Graphics.FONT_XTINY, "All session data", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, 66, Graphics.FONT_XTINY, "will be deleted.", Graphics.TEXT_JUSTIFY_CENTER);
 
         var sel = _state.discardConfirmIdx;
 
-        // Button 0: Cancel / Keep (y = 104)
+        // Button 0: Cancel / Keep (y = 98)
         if (sel == 0) {
             dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_DK_BLUE);
-            dc.fillRoundedRectangle(26, 104, w - 52, 34, 10);
+            dc.fillRoundedRectangle(28, 98, w - 56, 34, 10);
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 112, Graphics.FONT_XTINY, "Cancel (Keep)", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 106, Graphics.FONT_XTINY, "Cancel (Keep)", Graphics.TEXT_JUSTIFY_CENTER);
         } else {
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_LT_GRAY);
-            dc.drawRoundedRectangle(26, 104, w - 52, 34, 10);
+            dc.drawRoundedRectangle(28, 98, w - 56, 34, 10);
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 112, Graphics.FONT_XTINY, "Cancel (Keep)", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 106, Graphics.FONT_XTINY, "Cancel (Keep)", Graphics.TEXT_JUSTIFY_CENTER);
         }
 
-        // Button 1: Discard Workout (y = 148)
+        // Button 1: Discard Workout (y = 142)
         if (sel == 1) {
             dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_DK_RED);
-            dc.fillRoundedRectangle(26, 148, w - 52, 34, 10);
+            dc.fillRoundedRectangle(28, 142, w - 56, 34, 10);
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 156, Graphics.FONT_XTINY, "Discard Workout", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 150, Graphics.FONT_XTINY, "Discard Workout", Graphics.TEXT_JUSTIFY_CENTER);
         } else {
             dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_DK_RED);
-            dc.drawRoundedRectangle(26, 148, w - 52, 34, 10);
+            dc.drawRoundedRectangle(28, 142, w - 56, 34, 10);
             dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 156, Graphics.FONT_XTINY, "Discard Workout", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 150, Graphics.FONT_XTINY, "Discard Workout", Graphics.TEXT_JUSTIFY_CENTER);
         }
 
         // Prompt
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h - 38, Graphics.FONT_XTINY, "START to Confirm", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, h - 36, Graphics.FONT_XTINY, "START to Confirm", Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // -------------------------------------------------------------------------
@@ -520,7 +521,7 @@ class HaganeWatchView extends WatchUi.View {
         if (exGroups.size() > 0) {
             dc.drawText(cx, h - 38, Graphics.FONT_XTINY, "DOWN: Details (" + exGroups.size() + " Ex)", Graphics.TEXT_JUSTIFY_CENTER);
         } else {
-            dc.drawText(cx, h - 38, Graphics.FONT_XTINY, "START or BACK: Finish", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, h - 38, Graphics.FONT_XTINY, "START: Finish", Graphics.TEXT_JUSTIFY_CENTER);
         }
     }
 
@@ -575,7 +576,8 @@ class HaganeWatchView extends WatchUi.View {
 
         // Footer prompt
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h - 38, Graphics.FONT_XTINY, "UP/DN: Page • START: Exit", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, h - 40, Graphics.FONT_XTINY, "UP/DN: Page", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, h - 24, Graphics.FONT_XTINY, "START: Exit", Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // -------------------------------------------------------------------------
