@@ -95,8 +95,8 @@ jobs:
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.3.${{ github.run_number }}
-          name: "Hagane v1.3.${{ github.run_number }}"
+          tag_name: "1.4"
+          name: "Hagane 1.4"
           make_latest: true
           generate_release_notes: true
           body: |
@@ -104,10 +104,10 @@ jobs:
             > *"Forge your steel"*
 
             Download and install the APK directly on your Samsung Galaxy or Android phone:
-            👉 **[Download hagane.apk](https://github.com/${{ github.repository }}/releases/download/v1.3.${{ github.run_number }}/hagane.apk)**
+            👉 **[Download hagane.apk](https://github.com/${{ github.repository }}/releases/download/1.4/hagane.apk)**
 
             ---
-            ### ✨ What's new in Hagane v1.3:
+            ### ✨ What's new in Hagane 1.4:
             - **New Identity & Twin Katana Logo**: Rebranded to **Hagane** with sleek Katana Barbell branding across Android and Garmin.
             - **⌚ Garmin Forerunner 255 Watch Integration**: Custom English-only strength workout companion app (`type="watch-app"`) with live Heart Rate, set tracking, and native `.FIT` recording.
             - **⏱ Per-Exercise Rest Timers**: Custom rest countdowns (`2:30` compound, `1:30` isolation, `1:00` warm-up) with 360° watch progress ring and overtime tracking.
