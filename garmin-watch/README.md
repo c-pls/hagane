@@ -7,9 +7,9 @@ Custom English-only **Monkey C** strength-training watch app (`type="watch-app"`
 ## ✨ Key Features
 
 - **Appears in Activities List**: Press **START** on your Forerunner 255 Music -> scroll to **Hagane** right alongside *Run*, *Jump Rope*, and *Bike*.
-- **Watch-Initiated Sync (No Button Needed in Hagane Phone App)**:
-  - The Hagane Android app passively caches your latest routines in the background whenever you edit them.
-  - Whenever you open **Hagane** on your watch (or **hold `UP`** on the watch's routine list, or sync via **Garmin Connect**), the watch pulls the latest routines from your phone automatically and saves them offline on your wrist.
+- **Watch-Initiated Sync (Phone App in Background or Open)**:
+  - The Hagane Android app passively caches your latest routines and listens for sync requests whenever the app is running or open in the background.
+  - Whenever you open **Hagane** on your watch (or **hold `UP`** on the watch's routine list), the watch asks your paired phone to transmit the cached routines and saves them offline on your wrist. If the phone app has been force-closed or killed by Android battery optimization, simply launch Hagane on your phone once to reconnect the BLE listener.
 - **Strictly English-Only UI**: All watch screens and synced exercise/routine payloads use clean English/ASCII text for crisp rendering on the Forerunner 255 Music MIP display.
 - **Per-Exercise Custom Rest Timer + Overtime**:
   - Each exercise has its own rest time (e.g., `2:30` for heavy compounds, `1:30` for isolation, `1:00` for warm-ups).

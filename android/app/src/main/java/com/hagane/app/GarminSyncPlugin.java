@@ -177,7 +177,7 @@ public class GarminSyncPlugin extends Plugin {
                     }
                 );
 
-                // 2. Listen for watch-initiated pull requests ("SYNC_ROUTINES")
+                // 2. Listen for watch-initiated pull requests ("SYNC_ROUTINES") and workout events
                 connectIQ.registerForAppEvents(
                     device,
                     haganeWatchApp,
@@ -189,12 +189,44 @@ public class GarminSyncPlugin extends Plugin {
                             List<Object> messageData,
                             ConnectIQ.IQMessageStatus status
                         ) {
-                            if (status == ConnectIQ.IQMessageStatus.SUCCESS) {
-                                Log.d(TAG, "Received sync pull request from " + iqDevice.getFriendlyName());
-                                sendCachedPayloadToDevice(iqDevice);
-                            } else {
+                            if (status != ConnectIQ.IQMessageStatus.SUCCESS) {
                                 Log.w(TAG, "Watch message received with status: " + status);
+                                return;
                             }
+
+                            // Inspect incoming payload
+                            String cmd = null;
+                            Map<?, ?> mapPayload = null;
+                            if (messageData != null && !messageData.isEmpty()) {
+                                Object first = messageData.get(0);
+                                if (first instanceof Map) {
+                                    mapPayload = (Map<?, ?>) first;
+                                    Object cmdObj = mapPayload.get("cmd");
+                                    if (cmdObj != null) {
+                                        cmd = cmdObj.toString();
+                                    }
+                                } else if (first instanceof String) {
+                                    cmd = (String) first;
+                                }
+                            }
+
+                            if ("WORKOUT_COMPLETED".equals(cmd)) {
+                                Log.i(TAG, "Received WORKOUT_COMPLETED from " + iqDevice.getFriendlyName());
+                                JSObject completedEvent = new JSObject();
+                                if (mapPayload != null) {
+                                    for (Map.Entry<?, ?> entry : mapPayload.entrySet()) {
+                                        if (entry.getKey() != null && entry.getValue() != null) {
+                                            completedEvent.put(entry.getKey().toString(), entry.getValue());
+                                        }
+                                    }
+                                }
+                                notifyListeners("garminWorkoutCompleted", completedEvent);
+                                // IMPORTANT: Do NOT send cached routines back on workout completion!
+                                return;
+                            }
+
+                            Log.d(TAG, "Received sync pull request from " + iqDevice.getFriendlyName());
+                            sendCachedPayloadToDevice(iqDevice);
                         }
                     }
                 );
@@ -253,11 +285,12 @@ public class GarminSyncPlugin extends Plugin {
         try {
             byte[] payloadBytes = jsonStr.getBytes(StandardCharsets.UTF_8);
             if (payloadBytes.length > 8192) {
-                Log.w(TAG, "Payload size (" + payloadBytes.length + " bytes) exceeds recommended BLE limit (8KB).");
+                Log.w(TAG, "Payload size (" + payloadBytes.length + " bytes) exceeds recommended BLE limit (8KB). Refusing send.");
                 JSObject errEvent = new JSObject();
                 errEvent.put("error", "PAYLOAD_TOO_LARGE");
                 errEvent.put("bytes", payloadBytes.length);
                 notifyListeners("garminSyncError", errEvent);
+                return;
             }
 
             JSONObject payloadObj = new JSONObject(jsonStr);

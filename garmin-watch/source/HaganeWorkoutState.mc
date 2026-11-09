@@ -467,32 +467,36 @@ class HaganeWorkoutState {
     }
 
     // Returns array of exercise summary objects for multi-page review:
-    // [ { "name" => "Bench Press", "sets" => [ setObj, ... ], "totalVol" => 2400.0f } ]
+    // Groups by exercise label+name across all sets (including interleaved superset rounds)
     public function getExerciseSummaries() as Array {
         var groups = [] as Array;
         if (completedLog.size() == 0) {
             return groups;
         }
 
-        var currentGroup = null as Dictionary?;
+        var map = {} as Dictionary;
         for (var i = 0; i < completedLog.size(); i += 1) {
             var s = completedLog[i] as Dictionary;
             var exName = s.get("name") as String;
+            var exLabel = s.get("label") as String;
             var setVol = s.get("vol") as Float;
+            var key = exLabel + "_" + exName;
 
-            if (currentGroup == null || !(currentGroup.get("name") as String).equals(exName)) {
-                currentGroup = {
+            if (!map.hasKey(key)) {
+                var newGrp = {
                     "name"     => exName,
-                    "label"    => s.get("label"),
+                    "label"    => exLabel,
                     "sets"     => [s] as Array,
                     "totalVol" => setVol
                 };
-                groups.add(currentGroup);
+                map.put(key, newGrp);
+                groups.add(newGrp);
             } else {
-                var sList = currentGroup.get("sets") as Array;
+                var existingGrp = map.get(key) as Dictionary;
+                var sList = existingGrp.get("sets") as Array;
                 sList.add(s);
-                var prevVol = currentGroup.get("totalVol") as Float;
-                currentGroup.put("totalVol", prevVol + setVol);
+                var prevVol = existingGrp.get("totalVol") as Float;
+                existingGrp.put("totalVol", prevVol + setVol);
             }
         }
         return groups;
@@ -688,6 +692,8 @@ class HaganeWorkoutState {
         }
         if (foundIdx < 0) {
             foundIdx = target.get("firstStepIdx") as Number;
+            // Lifter jumped to an already-completed exercise to redo it -> uncomplete it cleanly
+            uncompleteStep(foundIdx);
         }
 
         if (_session != null && !_session.isRecording()) {
@@ -833,7 +839,8 @@ class HaganeWorkoutState {
             "reps"     => repsVal,
             "vol"      => setVol,
             "workSec"  => workSec,
-            "restSec"  => restSecTaken
+            "restSec"  => restSecTaken,
+            "stepIdx"  => currentStepIdx
         });
 
         // 5. Mark current step as completed
@@ -898,6 +905,10 @@ class HaganeWorkoutState {
 
     // Adjust rest timer target on the fly with UP (+15s) or DOWN (-15s)
     function adjustRestTarget(deltaSec as Number) as Void {
+        if (restTargetSec <= 0) {
+            // In 0s "GET READY" / equipment setup mode, ignore timer adjustments
+            return;
+        }
         restTargetSec += deltaSec;
         if (restTargetSec < 15) {
             restTargetSec = 15;
@@ -1020,6 +1031,62 @@ class HaganeWorkoutState {
         WatchUi.requestUpdate();
     }
 
+    // Reverts completion of a step and deducts volume/reps/log entry to prevent double-counting
+    function uncompleteStep(stepIdx as Number) as Void {
+        if (stepIdx < 0 || stepIdx >= steps.size()) {
+            return;
+        }
+        var step = steps[stepIdx] as Dictionary;
+        if (step.get("completed") != true) {
+            return;
+        }
+        step.put("completed", false);
+        if (completedSetsCount > 0) {
+            completedSetsCount -= 1;
+        }
+
+        // Find and remove the matching entry from completedLog (searching backwards)
+        var removed = false;
+        for (var i = completedLog.size() - 1; i >= 0; i -= 1) {
+            var entry = completedLog[i] as Dictionary;
+            if (entry.hasKey("stepIdx") && entry.get("stepIdx") == stepIdx) {
+                var vol = entry.get("vol") as Float;
+                var reps = entry.get("reps") as Number;
+                totalWorkoutVolume -= vol;
+                if (totalWorkoutVolume < 0.0f) {
+                    totalWorkoutVolume = 0.0f;
+                }
+                totalWorkoutReps -= reps;
+                if (totalWorkoutReps < 0) {
+                    totalWorkoutReps = 0;
+                }
+                completedLog.remove(entry);
+                removed = true;
+                break;
+            }
+        }
+
+        if (!removed && completedLog.size() > 0) {
+            var lastEntry = completedLog[completedLog.size() - 1] as Dictionary;
+            var exName = step.get("name") as String;
+            if ((lastEntry.get("name") as String).equals(exName)) {
+                var vol = lastEntry.get("vol") as Float;
+                var reps = lastEntry.get("reps") as Number;
+                totalWorkoutVolume -= vol;
+                if (totalWorkoutVolume < 0.0f) {
+                    totalWorkoutVolume = 0.0f;
+                }
+                totalWorkoutReps -= reps;
+                if (totalWorkoutReps < 0) {
+                    totalWorkoutReps = 0;
+                }
+                completedLog.remove(lastEntry);
+            }
+        }
+
+        updateSessionFitFields();
+    }
+
     function goToPreviousSet() as Void {
         if (_session != null && !_session.isRecording()) {
             try {
@@ -1029,11 +1096,7 @@ class HaganeWorkoutState {
         startTimer();
         if (currentStepIdx > 0) {
             currentStepIdx -= 1;
-            var prevStep = steps[currentStepIdx] as Dictionary;
-            prevStep.put("completed", false);
-            if (completedSetsCount > 0) {
-                completedSetsCount -= 1;
-            }
+            uncompleteStep(currentStepIdx);
         }
         setElapsedSec = 0;
         screenState = STATE_ACTIVE_SET;
@@ -1048,6 +1111,13 @@ class HaganeWorkoutState {
         var action = items[pauseMenuIdx] as String;
 
         if (action.equals("Resume") || action.equals("Resume Workout")) {
+            if (isWorkoutComplete) {
+                isWorkoutComplete = false;
+                // If entire workout was marked complete and lifter resumes, open the Exercise Picker
+                // so they can choose which exercise to do extra sets for
+                openExercisePicker();
+                return;
+            }
             resumeFromPauseMenu();
             return;
         } else if (action.equals("Select Exercise")) {

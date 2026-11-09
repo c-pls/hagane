@@ -1,4 +1,4 @@
-import { Capacitor, registerPlugin } from '@capacitor/core';
+import { Capacitor, registerPlugin, PluginListenerHandle } from '@capacitor/core';
 import { Exercise, Routine } from '../types/gym';
 import { getDefaultRestSeconds, sortRoutineExercisesBySection } from './storage';
 
@@ -9,19 +9,53 @@ export interface GarminCacheResult {
   status?: string;
 }
 
+export interface GarminSyncErrorEvent {
+  error: string;
+  bytes?: number;
+  message?: string;
+}
+
+export interface GarminMessageStatusEvent {
+  device: string;
+  status: string;
+  success: boolean;
+}
+
+export interface GarminWorkoutCompletedEvent {
+  routine?: string;
+  totalSec?: number;
+  volume?: number;
+  reps?: number;
+  sets?: number;
+  workSec?: number;
+  restSec?: number;
+}
+
 export interface GarminSyncPluginInterface {
   cacheRoutinesForWatch(options: {
     payload: GarminSyncPayload;
   }): Promise<GarminCacheResult>;
+  addListener(
+    eventName: 'garminSyncError',
+    listenerFunc: (event: GarminSyncErrorEvent) => void
+  ): Promise<PluginListenerHandle>;
+  addListener(
+    eventName: 'garminMessageStatus',
+    listenerFunc: (event: GarminMessageStatusEvent) => void
+  ): Promise<PluginListenerHandle>;
+  addListener(
+    eventName: 'garminWorkoutCompleted',
+    listenerFunc: (event: GarminWorkoutCompletedEvent) => void
+  ): Promise<PluginListenerHandle>;
 }
 
 const GarminSyncNative = registerPlugin<GarminSyncPluginInterface>('GarminSync');
 
 /**
- * Maximum safe JSON byte budget for a single Connect IQ BLE message (~10 KB).
- * Stay comfortably under Garmin's ~16 KB mailbox/object-store ceiling.
+ * Maximum safe JSON byte budget for a single Connect IQ BLE message (8 KB).
+ * Aligned with Android BLE transmitter limits to prevent packet fragmentation failures.
  */
-export const GARMIN_MAX_PAYLOAD_BYTES = 10240;
+export const GARMIN_MAX_PAYLOAD_BYTES = 8192;
 
 /**
  * Compact English-only payload served to the Garmin Forerunner 255 Music watch app
@@ -471,4 +505,25 @@ export function flushGarminWatchCache(): void {
   const args = pendingGarminArgs;
   pendingGarminArgs = null;
   void executeGarminCacheUpdate(args.routines, args.exercisesMap);
+}
+
+export function addGarminSyncErrorListener(
+  cb: (event: GarminSyncErrorEvent) => void
+): Promise<PluginListenerHandle> | null {
+  if (!Capacitor.isNativePlatform()) return null;
+  return GarminSyncNative.addListener('garminSyncError', cb);
+}
+
+export function addGarminMessageStatusListener(
+  cb: (event: GarminMessageStatusEvent) => void
+): Promise<PluginListenerHandle> | null {
+  if (!Capacitor.isNativePlatform()) return null;
+  return GarminSyncNative.addListener('garminMessageStatus', cb);
+}
+
+export function addGarminWorkoutCompletedListener(
+  cb: (event: GarminWorkoutCompletedEvent) => void
+): Promise<PluginListenerHandle> | null {
+  if (!Capacitor.isNativePlatform()) return null;
+  return GarminSyncNative.addListener('garminWorkoutCompleted', cb);
 }

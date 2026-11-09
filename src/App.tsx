@@ -42,15 +42,18 @@ import {
   autoLoadFromDevice,
   autoSaveToDevice,
   debouncedAutoSaveToDevice,
-  ensureStoragePermissions,
+  requestStoragePermissions,
   flushPendingDeviceSave,
   setDeviceBackupErrorHandler,
+  DeviceBackupStatus,
   HaganeDeviceBackup,
 } from './services/deviceStorage';
 import {
   debouncedUpdateGarminWatchCache,
   flushGarminWatchCache,
   setGarminSyncStatusHandler,
+  addGarminSyncErrorListener,
+  addGarminWorkoutCompletedListener,
 } from './services/garminSync';
 
 export const App: React.FC = () => {
@@ -81,14 +84,14 @@ export const App: React.FC = () => {
   const [wikiEquipmentFilter, setWikiEquipmentFilter] = useState<string>('All');
   const wikiScrollPosRef = useRef<number>(0);
   const [route, setRoute] = useState<ScreenRoute>({ name: 'routineList' });
-  const [deviceBackupError, setDeviceBackupError] = useState(false);
+  const [deviceBackupStatus, setDeviceBackupStatus] = useState<DeviceBackupStatus | null>(null);
   const [routineVersion, setRoutineVersion] = useState(0);
   const isRestoringRef = useRef(false);
   const hasDiscardedDraftRef = useRef(false);
 
   useEffect(() => {
-    setDeviceBackupErrorHandler((hasError) => {
-      setDeviceBackupError(hasError);
+    setDeviceBackupErrorHandler((status) => {
+      setDeviceBackupStatus(status.hasError ? status : null);
     });
     return () => setDeviceBackupErrorHandler(null);
   }, []);
@@ -96,7 +99,7 @@ export const App: React.FC = () => {
   // Request storage permissions on app start on native Android/iOS
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
-      ensureStoragePermissions().catch((err) => {
+      requestStoragePermissions().catch((err) => {
         console.warn('[Hagane] Storage permission check error on startup:', err);
       });
     }
@@ -555,6 +558,39 @@ export const App: React.FC = () => {
     isRestoringRef.current = false;
     hasDiscardedDraftRef.current = false;
   }, [routineVersion, lang]);
+
+  // Listen for native Garmin events
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const errorSubPromise = addGarminSyncErrorListener((event) => {
+      console.warn('[Hagane] Garmin sync error:', event);
+      if (event.error === 'PAYLOAD_TOO_LARGE') {
+        showToast(
+          lang === 'vi'
+            ? '⚠️ Dữ liệu bài tập vượt quá giới hạn Bluetooth của đồng hồ'
+            : '⚠️ Watch payload exceeded Bluetooth limits',
+          4000
+        );
+      }
+    });
+
+    const completedSubPromise = addGarminWorkoutCompletedListener((event) => {
+      console.info('[Hagane] Received workout completed from watch:', event);
+      const setsStr = event.sets ? `${event.sets} sets` : 'workout';
+      showToast(
+        lang === 'vi'
+          ? `🎉 Đã đồng bộ kết quả buổi tập (${setsStr}) từ đồng hồ Garmin!`
+          : `🎉 Synced completed ${setsStr} from Garmin watch!`,
+        4500
+      );
+    });
+
+    return () => {
+      errorSubPromise?.then((h) => h.remove());
+      completedSubPromise?.then((h) => h.remove());
+    };
+  }, [lang]);
 
   const allExercises = useMemo(() => getAllExercises(), []);
 
@@ -1222,29 +1258,39 @@ export const App: React.FC = () => {
         )}
 
         {/* Physical Device Backup Write Failure Banner */}
-        {deviceBackupError && (
+        {deviceBackupStatus?.hasError && (
           <div className="bg-amber-50 border border-amber-300 rounded-[24px] p-4 shadow-xs flex items-center justify-between gap-3">
             <div className="space-y-0.5 min-w-0 flex-1">
               <h3 className="font-bold text-sm text-amber-950">
-                ⚠️ {lang === 'vi' ? 'Không thể lưu bản sao lưu thiết bị' : 'Device Backup Write Failed'}
+                {deviceBackupStatus.isInternalOnly
+                  ? (lang === 'vi' ? '⚠️ Chưa bật sao lưu an toàn khi cài lại máy' : '⚠️ Reinstall-Safe Backup Not Active')
+                  : (lang === 'vi' ? '⚠️ Không thể lưu bản sao lưu thiết bị' : '⚠️ Device Backup Failed')}
               </h3>
               <p className="text-xs text-amber-800 leading-relaxed">
-                {lang === 'vi'
-                  ? 'Ứng dụng không thể ghi tệp sao lưu vào bộ nhớ Documents của máy. Hãy kiểm tra quyền truy cập bộ nhớ.'
-                  : 'Unable to write backup to device Documents storage. Please check storage permissions.'}
+                {deviceBackupStatus.isInternalOnly
+                  ? (lang === 'vi'
+                      ? 'Bản sao lưu hiện chỉ lưu tạm trong bộ nhớ riêng của ứng dụng và SẼ BỊ MẤT nếu gỡ ứng dụng. Hãy cấp quyền bộ nhớ Documents để bảo vệ dữ liệu khi cài lại máy.'
+                      : 'Backup is currently stored in app-internal memory only and will NOT survive app uninstallation. Please grant storage permission so your routines survive reinstallation.')
+                  : (lang === 'vi'
+                      ? 'Ứng dụng không thể ghi tệp sao lưu vào bộ nhớ máy. Vui lòng kiểm tra dung lượng trống hoặc quyền truy cập.'
+                      : 'Unable to write backup to device storage. Please check storage permissions or free space.')}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={async () => {
-                  const granted = await ensureStoragePermissions();
+                  const granted = await requestStoragePermissions();
                   if (granted) {
-                    setDeviceBackupError(false);
-                    const ok = await autoSaveToDevice(routinesRef.current);
-                    if (ok) {
-                      showToast(lang === 'vi' ? 'Đã lưu bản sao lưu thiết bị' : 'Device backup saved');
+                    const res = await autoSaveToDevice(routinesRef.current);
+                    if (res.isReinstallSafe) {
+                      setDeviceBackupStatus(null);
+                      showToast(lang === 'vi' ? 'Đã lưu bản sao lưu an toàn vào Documents!' : 'Device backup saved to Documents (reinstall-safe)!');
+                    } else {
+                      showToast(lang === 'vi' ? 'Chưa ghi được vào Documents' : 'Could not write to Documents');
                     }
+                  } else {
+                    showToast(lang === 'vi' ? 'Chưa được cấp quyền bộ nhớ' : 'Storage permission not granted');
                   }
                 }}
                 className="px-3.5 py-2 min-h-[44px] flex items-center justify-center rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition cursor-pointer shadow-xs"
@@ -1253,7 +1299,7 @@ export const App: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setDeviceBackupError(false)}
+                onClick={() => setDeviceBackupStatus(null)}
                 aria-label={lang === 'vi' ? 'Đóng thông báo' : 'Dismiss'}
                 className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center bg-amber-100 hover:bg-amber-200 text-amber-900 text-sm font-bold cursor-pointer shrink-0"
               >
