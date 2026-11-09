@@ -128,7 +128,7 @@ class HaganeWorkoutState {
     public var avgHeartRate as Number = 0;
     public var maxHeartRate as Number = 0;
     public var calories as Number = 0;
-    public var syncStatusText as String = "";
+    public var syncStatusText as String = "Forge your steel!";
     private var _session as ActivityRecording.Session?;
     private var _timer as Timer.Timer?;
 
@@ -208,7 +208,7 @@ class HaganeWorkoutState {
 
     function onSyncReceived(newRoutines as Array) as Void {
         setRoutines(newRoutines);
-        syncStatusText = "Synced " + routines.size() + " Routines!";
+        syncStatusText = "Forge your steel!";
         WatchUi.requestUpdate();
     }
 

@@ -53,7 +53,7 @@ class HaganeWatchView extends WatchUi.View {
             dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, 78, Graphics.FONT_SMALL, "No Routines Yet", Graphics.TEXT_JUSTIFY_CENTER);
 
-            if (_state.syncStatusText.length() > 0) {
+            if (_state.syncStatusText.length() > 0 && !_state.syncStatusText.equals("Forge your steel!")) {
                 dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
                 dc.drawText(cx, 114, Graphics.FONT_XTINY, _state.syncStatusText, Graphics.TEXT_JUSTIFY_CENTER);
             } else {
@@ -76,9 +76,10 @@ class HaganeWatchView extends WatchUi.View {
             var prevName = (prevNmObj instanceof String) ? (prevNmObj as String) : "Workout";
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, 54, Graphics.FONT_XTINY, truncateText(prevName, 22), Graphics.TEXT_JUSTIFY_CENTER);
-        } else if (_state.syncStatusText.length() > 0) {
+        } else {
+            var bannerText = (_state.syncStatusText.length() > 0) ? _state.syncStatusText : "Forge your steel!";
             dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 54, Graphics.FONT_XTINY, _state.syncStatusText, Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 54, Graphics.FONT_XTINY, bannerText, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
         // Selected item card in center
