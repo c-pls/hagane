@@ -195,6 +195,7 @@ MUSCLE_MAP = {
     "transverse abdominis": ("Abs", "abs", "Core"),
     "obliques": ("Obliques", "obliques", "Core"),
     "external obliques": ("Obliques", "obliques", "Core"),
+    "obliquus externus abdominis": ("Obliques", "obliques", "Core"),
     "hip flexors": ("Hip Flexors", "hip-flexors", "Core"),
     "iliopsoas": ("Hip Flexors", "hip-flexors", "Core"),
     "ankle stabilizers": ("Tibialis", "tibialis", "Calves"),

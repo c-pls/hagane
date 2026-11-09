@@ -696,10 +696,12 @@ class HaganeWorkoutState {
                 }
             }
         }
+        var isRedo = false;
         if (foundIdx < 0) {
             foundIdx = target.get("firstStepIdx") as Number;
             // Lifter jumped to an already-completed/skipped exercise to redo it -> uncomplete it cleanly
             uncompleteStep(foundIdx);
+            isRedo = true;
         }
 
         if (_session != null && !_session.isRecording()) {
@@ -709,8 +711,17 @@ class HaganeWorkoutState {
         }
         startTimer();
 
+        // Only clear rest elapsed if redoing a completed step or jumping to a different step.
+        // If exiting from a rest in progress (and not redoing), capture the rest elapsed for the upcoming set.
+        if (!isRedo && previousWorkoutState == STATE_REST) {
+            lastRestElapsedSec = restElapsedSec;
+            setElapsedSec = 0;
+        } else if (isRedo || foundIdx != currentStepIdx) {
+            lastRestElapsedSec = 0;
+            setElapsedSec = 0;
+        }
+
         currentStepIdx = foundIdx;
-        setElapsedSec = 0;
         restElapsedSec = 0;
         screenState = STATE_ACTIVE_SET;
         vibrateShort();
@@ -798,6 +809,7 @@ class HaganeWorkoutState {
         var setVol = weightFloat * repsVal.toFloat();
         var workSec = setElapsedSec;
         var restSecTaken = lastRestElapsedSec;
+        lastRestElapsedSec = 0;
 
         // Build set label e.g. "1/3", "3A • 2/3", or "Warmup 1"
         var setLabelStr = "";
@@ -1049,6 +1061,7 @@ class HaganeWorkoutState {
         }
         startTimer();
         if (previousWorkoutState == STATE_REST) {
+            lastRestElapsedSec = restElapsedSec;
             setElapsedSec = 0;
             screenState = STATE_ACTIVE_SET;
         } else {
@@ -1080,6 +1093,7 @@ class HaganeWorkoutState {
             }
             currentStepIdx = nextIdx;
             setElapsedSec = 0;
+            lastRestElapsedSec = 0;
             screenState = STATE_ACTIVE_SET;
         }
         WatchUi.requestUpdate();
@@ -1149,6 +1163,7 @@ class HaganeWorkoutState {
             uncompleteStep(0);
         }
         setElapsedSec = 0;
+        lastRestElapsedSec = 0;
         screenState = STATE_ACTIVE_SET;
         WatchUi.requestUpdate();
     }

@@ -1458,7 +1458,8 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 if (e.key === 'Enter') {
                   handleSaveExerciseNote(exIdx, noteDraft);
                 } else if (e.key === 'Escape') {
-                  handleSaveExerciseNote(exIdx, noteDraft);
+                  setEditingNoteIdx(null);
+                  setNoteDraft('');
                 }
               }}
               aria-label={t.commentPlaceholder}

@@ -77,9 +77,12 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   const onSaveCommentRef = useRef(onSaveComment);
   onSaveCommentRef.current = onSaveComment;
 
+  const isDiscardingRef = useRef(false);
+
   // Persist any un-blurred note change strictly on unmount (preventing infinite update loops)
   useEffect(() => {
     return () => {
+      if (isDiscardingRef.current) return;
       const trimmed = noteRef.current.trim();
       if (trimmed !== lastSavedNoteRef.current) {
         lastSavedNoteRef.current = trimmed;
@@ -89,17 +92,31 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   }, []);
 
   const handleSaveNote = (text: string) => {
+    if (isDiscardingRef.current) return;
     const trimmed = text.trim();
     if (trimmed === lastSavedNoteRef.current) return;
     lastSavedNoteRef.current = trimmed;
     onSaveCommentRef.current(trimmed);
   };
 
+  const handleCancelNote = (textarea?: HTMLTextAreaElement | null) => {
+    isDiscardingRef.current = true;
+    setNoteText(comment);
+    noteRef.current = comment;
+    lastSavedNoteRef.current = comment.trim();
+    textarea?.blur();
+    setTimeout(() => {
+      isDiscardingRef.current = false;
+    }, 0);
+  };
+
   const handleSelectSimilar = (targetExId: string) => {
-    const trimmed = noteRef.current.trim();
-    if (trimmed !== lastSavedNoteRef.current) {
-      lastSavedNoteRef.current = trimmed;
-      onSaveCommentRef.current(trimmed);
+    if (!isDiscardingRef.current) {
+      const trimmed = noteRef.current.trim();
+      if (trimmed !== lastSavedNoteRef.current) {
+        lastSavedNoteRef.current = trimmed;
+        onSaveCommentRef.current(trimmed);
+      }
     }
     onSelectExercise?.(targetExId);
   };
@@ -230,6 +247,12 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
                 value={noteText}
                 onChange={(e) => setNoteText(e.target.value)}
                 onBlur={() => handleSaveNote(noteText)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    handleCancelNote(e.currentTarget);
+                  }
+                }}
                 aria-label={t.commentPlaceholder}
                 placeholder={t.commentPlaceholder}
                 className="w-full text-sm text-slate-800 bg-transparent focus:outline-none resize-none placeholder:text-slate-400"

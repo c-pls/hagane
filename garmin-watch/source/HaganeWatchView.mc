@@ -756,8 +756,11 @@ class HaganeWatchView extends WatchUi.View {
     }
 
     private function formatVolume(val as Float) as String {
-        var n = val.toNumber();
-        return n.toString();
+        var i = val.toNumber();
+        if ((val - i.toFloat()).abs() < 0.05f) {
+            return i.toString();
+        }
+        return val.format("%.1f");
     }
 
     private function formatWeight(val as Object?) as String {
