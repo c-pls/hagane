@@ -60,6 +60,7 @@ __pycache__/
 *.p12
 android/app/*.keystore
 android/app/*.jks
+android/keystore.properties
 
 # Garmin Connect IQ build outputs & private developer signing keys (local only, never commit)
 garmin-watch/dist/

@@ -1,5 +1,27 @@
 apply plugin: 'com.android.application'
 
+// Release signing inputs come from environment variables (CI) or android/keystore.properties
+// (local, git-ignored). There are intentionally no default passwords in this file.
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file("keystore.properties")
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+def signingValue = { String envName, String propName ->
+    def v = System.getenv(envName) ?: keystoreProps.getProperty(propName)
+    return (v != null && !v.trim().isEmpty()) ? v : null
+}
+def releaseKeystoreFile = file(signingValue("RELEASE_KEYSTORE_PATH", "storeFile") ?: "hagane.keystore")
+def releaseStorePassword = signingValue("RELEASE_KEYSTORE_PASSWORD", "storePassword") ?: System.getenv("RELEASE_STORE_PASSWORD")
+def releaseKeyPassword = signingValue("RELEASE_KEY_PASSWORD", "keyPassword")
+def releaseKeyAlias = signingValue("RELEASE_KEY_ALIAS", "keyAlias")
+def releaseSigningMissing = []
+if (!releaseKeystoreFile.exists()) releaseSigningMissing.add("keystore file (" + releaseKeystoreFile.absolutePath + ")")
+if (!releaseStorePassword) releaseSigningMissing.add("RELEASE_KEYSTORE_PASSWORD")
+if (!releaseKeyPassword) releaseSigningMissing.add("RELEASE_KEY_PASSWORD")
+if (!releaseKeyAlias) releaseSigningMissing.add("RELEASE_KEY_ALIAS")
+def releaseSigningReady = releaseSigningMissing.isEmpty()
+
 android {
     namespace = "com.hagane.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -21,21 +43,11 @@ android {
             // Default Android debug keystore
         }
         release {
-            def keystorePath = System.getenv("RELEASE_KEYSTORE_PATH") ?: "hagane.keystore"
-            def keystoreFile = file(keystorePath)
-            if (keystoreFile.exists()) {
-                def storePass = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: System.getenv("RELEASE_STORE_PASSWORD") ?: "haganeappkeystore"
-                def keyPass = System.getenv("RELEASE_KEY_PASSWORD") ?: "haganeappkeystore"
-                def alias = System.getenv("RELEASE_KEY_ALIAS") ?: "hagane"
-
-                if (storePass.trim().isEmpty()) { storePass = "haganeappkeystore" }
-                if (keyPass.trim().isEmpty()) { keyPass = "haganeappkeystore" }
-                if (alias.trim().isEmpty()) { alias = "hagane" }
-
-                storeFile keystoreFile
-                storePassword storePass
-                keyAlias alias
-                keyPassword keyPass
+            if (releaseSigningReady) {
+                storeFile releaseKeystoreFile
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
             }
         }
     }
@@ -44,16 +56,25 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            def keystorePath = System.getenv("RELEASE_KEYSTORE_PATH") ?: "hagane.keystore"
-            def keystoreFile = file(keystorePath)
-            if (keystoreFile.exists()) {
+            if (releaseSigningReady) {
                 signingConfig signingConfigs.release
-            } else {
-                throw new GradleException("Release keystore not found at: " + keystoreFile.absolutePath + ". Cannot build release APK without a valid keystore!")
             }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+}
+
+// Fail only when a release artifact is actually requested, so debug builds and `cap sync`
+// keep working without release credentials.
+gradle.taskGraph.whenReady { graph ->
+    if (!releaseSigningReady && graph.allTasks.any { it.name.toLowerCase().contains("release") }) {
+        throw new GradleException(
+            "Release signing is not configured. Missing: " + releaseSigningMissing.join(", ") + ". " +
+            "Set the RELEASE_KEYSTORE_PASSWORD, RELEASE_KEY_PASSWORD and RELEASE_KEY_ALIAS environment variables " +
+            "(or add them to android/keystore.properties as storePassword, keyPassword, keyAlias), " +
+            "and provide the keystore file (default android/app/hagane.keystore, override with RELEASE_KEYSTORE_PATH)."
+        )
     }
 }
 

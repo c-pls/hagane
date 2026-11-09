@@ -44,6 +44,11 @@ class HaganeWorkoutState {
     // Synced routines array
     public var routines as Array = [];
     public var selectedRoutineIdx as Number = 0;
+    // Routine id captured when a workout starts, so a phone sync that reorders or shrinks the
+    // list mid-workout can never change which routine the completion report refers to.
+    public var activeRoutineId as String = "";
+    // Routines received from the phone while a workout was running; applied once it ends.
+    public var pendingRoutines as Array? = null;
 
     // Flattened execution steps for the active routine
     public var steps as Array = [];
@@ -210,10 +215,29 @@ class HaganeWorkoutState {
         }
     }
 
+    // True while a workout is in progress (any screen between starting a routine and the summary).
+    public function isWorkoutActive() as Boolean {
+        return screenState != STATE_ROUTINE_LIST && screenState != STATE_SUMMARY;
+    }
+
     function onSyncReceived(newRoutines as Array) as Void {
+        if (isWorkoutActive()) {
+            // Never swap routines under a running workout; apply them when it ends.
+            pendingRoutines = newRoutines;
+            return;
+        }
         setRoutines(newRoutines);
         syncStatusText = "Forge your steel!";
         WatchUi.requestUpdate();
+    }
+
+    function applyPendingRoutines() as Void {
+        if (pendingRoutines != null) {
+            var queued = pendingRoutines as Array;
+            pendingRoutines = null;
+            setRoutines(queued);
+            syncStatusText = "Forge your steel!";
+        }
     }
 
     function onSyncRequestFailed() as Void {
@@ -739,6 +763,8 @@ class HaganeWorkoutState {
             WatchUi.requestUpdate();
             return false;
         }
+        var startIdObj = routine.get("id");
+        activeRoutineId = (startIdObj instanceof String) ? (startIdObj as String) : "";
 
         currentStepIdx = 0;
         setElapsedSec = 0;
@@ -1242,7 +1268,7 @@ class HaganeWorkoutState {
             Communications.transmit(
                 {
                     "cmd"      => "WORKOUT_COMPLETED",
-                    "routine"  => (selectedRoutineIdx < routines.size()) ? (routines[selectedRoutineIdx] as Dictionary).get("id") : "",
+                    "routine"  => activeRoutineId,
                     "totalSec" => workoutTotalSec,
                     "volume"   => totalWorkoutVolume,
                     "reps"     => totalWorkoutReps,
@@ -1259,6 +1285,8 @@ class HaganeWorkoutState {
         syncStatusText = "Workout Saved!";
         screenState = STATE_SUMMARY;
         summaryPageIdx = 0;
+        applyPendingRoutines();
+        syncStatusText = "Workout Saved!";
         WatchUi.requestUpdate();
     }
 
@@ -1275,8 +1303,9 @@ class HaganeWorkoutState {
         }
         clearFitFieldReferences();
         vibrateShort();
-        syncStatusText = "Workout Discarded";
         screenState = STATE_ROUTINE_LIST;
+        applyPendingRoutines();
+        syncStatusText = "Workout Discarded";
         WatchUi.requestUpdate();
     }
 

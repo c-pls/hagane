@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { quarantineRoutinesRaw } from './services/storage';
 import './index.css';
 
 // Prevent browser/Android system context menu & selection toolbar on long-press (except in inputs & textareas)
@@ -80,10 +81,10 @@ class AppErrorBoundary extends React.Component<
                 onClick={() => {
                   try {
                     const raw = localStorage.getItem('hagane_routines_v1');
-                    if (raw) {
-                      localStorage.setItem('hagane_routines_v1_corrupt_bak', raw);
+                    // Only remove the original once a copy has been preserved.
+                    if (!raw || quarantineRoutinesRaw(raw)) {
+                      localStorage.removeItem('hagane_routines_v1');
                     }
-                    localStorage.removeItem('hagane_routines_v1');
                   } catch {
                     // ignore
                   }
