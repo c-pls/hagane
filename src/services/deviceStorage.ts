@@ -92,6 +92,7 @@ export async function autoSaveToDevice(routines: Routine[]): Promise<boolean> {
       encoding: Encoding.UTF8,
     });
     console.info('[Hagane] Backup saved to internal app data fallback.');
+    return true;
   } catch (fallbackErr) {
     console.warn('[Hagane] Fallback write to internal app data failed:', fallbackErr);
   }
