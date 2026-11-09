@@ -104,7 +104,7 @@ class HaganeWatchView extends WatchUi.View {
 
         // Routine Name
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 112, Graphics.FONT_SMALL, truncateText(currName, 19), Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, 112, Graphics.FONT_SMALL, truncateText(currName, 15), Graphics.TEXT_JUSTIFY_CENTER);
 
         // Exercise Count
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
@@ -153,7 +153,7 @@ class HaganeWatchView extends WatchUi.View {
         var topText = "EX " + label + "  •  SET " + setNum + "/" + setTotal;
         if (isWarmup || isWarmupSet) {
             topColor = Graphics.COLOR_ORANGE;
-            topText = "WARMUP " + label + " • SET " + setNum + "/" + setTotal;
+            topText = "WARM " + label + " • SET " + setNum + "/" + setTotal;
         } else if (label.length() >= 2) {
             var lastCh = label.substring(label.length() - 1, label.length());
             if (!lastCh.equals("0") && !lastCh.equals("1") && !lastCh.equals("2") &&
@@ -166,11 +166,11 @@ class HaganeWatchView extends WatchUi.View {
         }
 
         dc.setColor(topColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 18, Graphics.FONT_XTINY, topText, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, 20, Graphics.FONT_XTINY, topText, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Exercise Name (split into up to 2 lines if long)
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        var lines = splitTwoLines(name, 19);
+        var lines = splitTwoLines(name, 16);
         if (lines.size() == 1) {
             dc.drawText(cx, 54, Graphics.FONT_SMALL, lines[0] as String, Graphics.TEXT_JUSTIFY_CENTER);
         } else {
@@ -330,23 +330,23 @@ class HaganeWatchView extends WatchUi.View {
         // Top Status Header
         if (isComplete) {
             dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 14, Graphics.FONT_XTINY, "WORKOUT COMPLETE!", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 18, Graphics.FONT_XTINY, "WORKOUT COMPLETE!", Graphics.TEXT_JUSTIFY_CENTER);
 
             dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
             var durStr = formatMmSs(_state.workoutTotalSec);
-            dc.drawText(cx, 32, Graphics.FONT_XTINY, _state.completedSetsCount + " Sets  •  " + durStr, Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 34, Graphics.FONT_XTINY, _state.completedSetsCount + " Sets  •  " + durStr, Graphics.TEXT_JUSTIFY_CENTER);
         } else {
             dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 14, Graphics.FONT_XTINY, "WORKOUT PAUSED", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 18, Graphics.FONT_XTINY, "WORKOUT PAUSED", Graphics.TEXT_JUSTIFY_CENTER);
 
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
             var durStr = formatMmSs(_state.workoutTotalSec);
-            dc.drawText(cx, 32, Graphics.FONT_XTINY, durStr + "  •  " + _state.completedSetsCount + " Sets", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 34, Graphics.FONT_XTINY, durStr + "  •  " + _state.completedSetsCount + " Sets", Graphics.TEXT_JUSTIFY_CENTER);
         }
 
         // Thin divider
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawLine(40, 50, w - 40, 50);
+        dc.drawLine(44, 50, w - 44, 50);
 
         var items = _state.getPauseMenuItems();
         var sel = _state.pauseMenuIdx;
@@ -465,14 +465,14 @@ class HaganeWatchView extends WatchUi.View {
         var cx = w / 2;
 
         dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 12, Graphics.FONT_XTINY, "WORKOUT SAVED!", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, 16, Graphics.FONT_XTINY, "WORKOUT SAVED!", Graphics.TEXT_JUSTIFY_CENTER);
 
         // Routine Name
         if (_state.selectedRoutineIdx < _state.routines.size()) {
             var r = _state.routines[_state.selectedRoutineIdx] as Dictionary;
             var rName = (r.get("n") instanceof String) ? (r.get("n") as String) : "Workout";
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 30, Graphics.FONT_XTINY, truncateText(rName, 22), Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 34, Graphics.FONT_XTINY, truncateText(rName, 18), Graphics.TEXT_JUSTIFY_CENTER);
         }
 
         // Center card with stats
@@ -542,8 +542,8 @@ class HaganeWatchView extends WatchUi.View {
 
         // Header: [1/4] Exercise Name
         dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-        var pageHeader = "[" + (exIdxZeroBased + 1) + "/" + exGroups.size() + "] " + truncateText(exName, 17);
-        dc.drawText(cx, 14, Graphics.FONT_XTINY, pageHeader, Graphics.TEXT_JUSTIFY_CENTER);
+        var pageHeader = "[" + (exIdxZeroBased + 1) + "/" + exGroups.size() + "] " + truncateText(exName, 13);
+        dc.drawText(cx, 18, Graphics.FONT_XTINY, pageHeader, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Sets card container
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_LT_GRAY);
