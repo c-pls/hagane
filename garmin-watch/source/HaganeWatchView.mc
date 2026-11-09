@@ -209,22 +209,18 @@ class HaganeWatchView extends WatchUi.View {
             }
         }
 
-        // Bottom Bar: Live HR + Clock Time + Active Set Elapsed Time
+        // Bottom Bar: Live HR + Active Set Elapsed Time
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawLine(44, 184, w - 44, 184);
 
         var hrStr = _state.heartRate > 0 ? (_state.heartRate.toString() + " bpm") : "-- bpm";
         var durStr = formatMmSs(_state.setElapsedSec);
-        var clockStr = getFormattedClockTime();
 
         dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 58, 192, Graphics.FONT_XTINY, "HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
-
-        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 192, Graphics.FONT_XTINY, clockStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 42, 192, Graphics.FONT_XTINY, "HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 58, 192, Graphics.FONT_XTINY, durStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 46, 192, Graphics.FONT_XTINY, durStr, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Action Prompt at bottom
         dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
@@ -301,14 +297,13 @@ class HaganeWatchView extends WatchUi.View {
         }
         dc.drawText(cx, 50, Graphics.FONT_NUMBER_HOT, timerStr, Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Live Clock Time & HR sub-row
+        // UP/DOWN +/-15s & HR sub-row
         var hrStr = _state.heartRate > 0 ? (_state.heartRate.toString() + " bpm") : "-- bpm";
-        var clockStr = getFormattedClockTime();
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
         if (isZeroRest) {
-            dc.drawText(cx, 126, Graphics.FONT_XTINY, clockStr + "  •  HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 126, Graphics.FONT_XTINY, "HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
         } else {
-            dc.drawText(cx, 126, Graphics.FONT_XTINY, clockStr + "  •  HR " + hrStr + "  •  +/-15s", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 126, Graphics.FONT_XTINY, "UP/DN +/-15s  •  HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
         // Divider
