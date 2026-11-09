@@ -52,6 +52,13 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
             _state.screenState = HaganeWorkoutState.STATE_ROUTINE_LIST;
             WatchUi.requestUpdate();
             return true;
+        } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
+            _state.jumpToExercise(_state.exercisePickerIdx);
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_CLOCK_GLANCE) {
+            // In Clock Glance, pressing START completes the set just like in Active Set
+            _state.completeCurrentSet();
+            return true;
         }
         return false;
     }
@@ -64,6 +71,16 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
             return false;
         } else if (st == HaganeWorkoutState.STATE_ACTIVE_SET || st == HaganeWorkoutState.STATE_REST) {
             _state.openPauseMenu();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_CLOCK_GLANCE) {
+            // Return back to active set
+            _state.screenState = HaganeWorkoutState.STATE_ACTIVE_SET;
+            WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
+            // Return back to pause menu
+            _state.screenState = HaganeWorkoutState.STATE_PAUSE_MENU;
+            WatchUi.requestUpdate();
             return true;
         } else if (st == HaganeWorkoutState.STATE_PAUSE_MENU) {
             // Resume workout on BACK (also restarts paused FIT session if still recording)
@@ -88,6 +105,23 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
         if (st == HaganeWorkoutState.STATE_ROUTINE_LIST) {
             if (_state.routines.size() > 0) {
                 _state.selectedRoutineIdx = (_state.selectedRoutineIdx - 1 + _state.routines.size()) % _state.routines.size();
+                WatchUi.requestUpdate();
+            }
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_ACTIVE_SET) {
+            // Pressing UP during active set toggles Clock / Session Glance screen (like Running data pages)
+            _state.screenState = HaganeWorkoutState.STATE_CLOCK_GLANCE;
+            WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_CLOCK_GLANCE) {
+            // Return back to active set
+            _state.screenState = HaganeWorkoutState.STATE_ACTIVE_SET;
+            WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
+            var count = _state.getActiveExerciseList().size();
+            if (count > 0) {
+                _state.exercisePickerIdx = (_state.exercisePickerIdx - 1 + count) % count;
                 WatchUi.requestUpdate();
             }
             return true;
@@ -120,6 +154,23 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
         if (st == HaganeWorkoutState.STATE_ROUTINE_LIST) {
             if (_state.routines.size() > 0) {
                 _state.selectedRoutineIdx = (_state.selectedRoutineIdx + 1) % _state.routines.size();
+                WatchUi.requestUpdate();
+            }
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_ACTIVE_SET) {
+            // Pressing DOWN during active set toggles Clock / Session Glance screen (like Running data pages)
+            _state.screenState = HaganeWorkoutState.STATE_CLOCK_GLANCE;
+            WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_CLOCK_GLANCE) {
+            // Return back to active set
+            _state.screenState = HaganeWorkoutState.STATE_ACTIVE_SET;
+            WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
+            var count = _state.getActiveExerciseList().size();
+            if (count > 0) {
+                _state.exercisePickerIdx = (_state.exercisePickerIdx + 1) % count;
                 WatchUi.requestUpdate();
             }
             return true;

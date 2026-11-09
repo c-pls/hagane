@@ -33,6 +33,10 @@ class HaganeWatchView extends WatchUi.View {
             drawDiscardConfirm(dc);
         } else if (st == HaganeWorkoutState.STATE_SUMMARY) {
             drawSummary(dc);
+        } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
+            drawExercisePicker(dc);
+        } else if (st == HaganeWorkoutState.STATE_CLOCK_GLANCE) {
+            drawClockGlance(dc);
         }
     }
 
@@ -205,18 +209,22 @@ class HaganeWatchView extends WatchUi.View {
             }
         }
 
-        // Bottom Bar: Live HR + Active Set Elapsed Time
+        // Bottom Bar: Live HR + Clock Time + Active Set Elapsed Time
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawLine(44, 184, w - 44, 184);
 
         var hrStr = _state.heartRate > 0 ? (_state.heartRate.toString() + " bpm") : "-- bpm";
         var durStr = formatMmSs(_state.setElapsedSec);
+        var clockStr = getFormattedClockTime();
 
         dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 42, 192, Graphics.FONT_XTINY, "HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 58, 192, Graphics.FONT_XTINY, "HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
+
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 192, Graphics.FONT_XTINY, clockStr, Graphics.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 46, 192, Graphics.FONT_XTINY, durStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 58, 192, Graphics.FONT_XTINY, durStr, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Action Prompt at bottom
         dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
@@ -234,14 +242,18 @@ class HaganeWatchView extends WatchUi.View {
 
         var target = _state.restTargetSec;
         var elapsed = _state.restElapsedSec;
-        var isOvertime = (elapsed >= target);
+        var isZeroRest = (target <= 0);
+        var isOvertime = (!isZeroRest && elapsed >= target);
 
         // Draw 360-degree circular progress gauge around the 260x260 bezel
         dc.setPenWidth(8);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawCircle(cx, cy, cx - 6);
 
-        if (!isOvertime && target > 0) {
+        if (isZeroRest) {
+            dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
+            dc.drawCircle(cx, cy, cx - 6);
+        } else if (!isOvertime && target > 0) {
             var remainingRatio = (target - elapsed).toFloat() / target.toFloat();
             var sweepDeg = (remainingRatio * 360.0).toNumber();
             if (sweepDeg >= 360) {
@@ -264,7 +276,10 @@ class HaganeWatchView extends WatchUi.View {
         dc.setPenWidth(1);
 
         // Header
-        if (!isOvertime) {
+        if (isZeroRest) {
+            dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, 22, Graphics.FONT_XTINY, "GET READY", Graphics.TEXT_JUSTIFY_CENTER);
+        } else if (!isOvertime) {
             dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, 22, Graphics.FONT_XTINY, "REST TIMER", Graphics.TEXT_JUSTIFY_CENTER);
         } else {
@@ -272,9 +287,12 @@ class HaganeWatchView extends WatchUi.View {
             dc.drawText(cx, 22, Graphics.FONT_XTINY, "REST COMPLETE!", Graphics.TEXT_JUSTIFY_CENTER);
         }
 
-        // Huge Timer Number in Center
+        // Center Timer / Setup display
         var timerStr = "";
-        if (!isOvertime) {
+        if (isZeroRest) {
+            timerStr = formatMmSs(elapsed);
+            dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
+        } else if (!isOvertime) {
             timerStr = formatMmSs(target - elapsed);
             dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
         } else {
@@ -283,10 +301,15 @@ class HaganeWatchView extends WatchUi.View {
         }
         dc.drawText(cx, 50, Graphics.FONT_NUMBER_HOT, timerStr, Graphics.TEXT_JUSTIFY_CENTER);
 
-        // UP/DOWN +/-15s & HR sub-row
+        // Live Clock Time & HR sub-row
         var hrStr = _state.heartRate > 0 ? (_state.heartRate.toString() + " bpm") : "-- bpm";
+        var clockStr = getFormattedClockTime();
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 126, Graphics.FONT_XTINY, "UP/DN +/-15s  •  HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
+        if (isZeroRest) {
+            dc.drawText(cx, 126, Graphics.FONT_XTINY, clockStr + "  •  HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
+        } else {
+            dc.drawText(cx, 126, Graphics.FONT_XTINY, clockStr + "  •  HR " + hrStr + "  •  +/-15s", Graphics.TEXT_JUSTIFY_CENTER);
+        }
 
         // Divider
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
@@ -353,9 +376,9 @@ class HaganeWatchView extends WatchUi.View {
         var count = items.size();
 
         // Calculate card layout based on item count
-        var itemH = isComplete ? 34 : 26;
-        var startY = isComplete ? 64 : 58;
-        var spacingY = isComplete ? 40 : 30;
+        var itemH = isComplete ? 34 : 22;
+        var startY = isComplete ? 64 : 54;
+        var spacingY = isComplete ? 40 : 25;
 
         for (var i = 0; i < count; i += 1) {
             var y = startY + (i * spacingY);
@@ -370,6 +393,8 @@ class HaganeWatchView extends WatchUi.View {
                     bgColor = Graphics.COLOR_DK_GREEN;
                 } else if (itemText.equals("Discard")) {
                     bgColor = Graphics.COLOR_DK_RED;
+                } else if (itemText.equals("Select Exercise")) {
+                    bgColor = Graphics.COLOR_DK_BLUE;
                 } else {
                     bgColor = Graphics.COLOR_DK_GRAY;
                 }
@@ -384,6 +409,8 @@ class HaganeWatchView extends WatchUi.View {
                     textColor = Graphics.COLOR_DK_GREEN;
                 } else if (itemText.equals("Discard")) {
                     textColor = Graphics.COLOR_DK_RED;
+                } else if (itemText.equals("Select Exercise")) {
+                    textColor = Graphics.COLOR_DK_BLUE;
                 }
                 dc.setColor(textColor, Graphics.COLOR_TRANSPARENT);
                 dc.drawText(cx, y + (itemH / 2) - 10, Graphics.FONT_XTINY, itemText, Graphics.TEXT_JUSTIFY_CENTER);
@@ -540,20 +567,30 @@ class HaganeWatchView extends WatchUi.View {
         var sets = grp.get("sets") as Array;
         var totalVol = grp.get("totalVol") as Float;
 
-        // Header: [1/4] Exercise Name
+        // Top line 1: Badge [3/6] EXERCISE
         dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-        var pageHeader = "[" + (exIdxZeroBased + 1) + "/" + exGroups.size() + "] " + truncateText(exName, 13);
-        dc.drawText(cx, 18, Graphics.FONT_XTINY, pageHeader, Graphics.TEXT_JUSTIFY_CENTER);
+        var pageHeader = "[" + (exIdxZeroBased + 1) + "/" + exGroups.size() + "] EXERCISE";
+        dc.drawText(cx, 16, Graphics.FONT_XTINY, pageHeader, Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Sets card container
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_LT_GRAY);
-        dc.fillRoundedRectangle(20, 36, w - 40, 148, 10);
-        dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-        dc.drawRoundedRectangle(20, 36, w - 40, 148, 10);
+        // Top line 2: Full Exercise Name
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 32, Graphics.FONT_XTINY, truncateText(exName, 22), Graphics.TEXT_JUSTIFY_CENTER);
 
-        // List up to 5 sets
-        var startY = 44;
-        var maxShow = sets.size() > 5 ? 5 : sets.size();
+        // Top line 3: Sets count & Exercise Volume
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        var volStr = sets.size() + " " + (sets.size() == 1 ? "Set" : "Sets") + "  •  Vol: " + formatVolume(totalVol) + " kg";
+        dc.drawText(cx, 48, Graphics.FONT_XTINY, volStr, Graphics.TEXT_JUSTIFY_CENTER);
+
+        // Thin divider
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawLine(36, 64, w - 36, 64);
+
+        // Dynamic Sets container: clean rows with alternating pills (no huge empty gray space!)
+        var numSets = sets.size();
+        var maxShow = numSets > 5 ? 5 : numSets;
+        var startY = 70;
+        var rowH = 22;
+
         for (var s = 0; s < maxShow; s += 1) {
             var setItem = sets[s] as Dictionary;
             var sNum = setItem.get("setNum") as Number;
@@ -561,23 +598,158 @@ class HaganeWatchView extends WatchUi.View {
             var reps = setItem.get("reps") as Number;
             var workSec = setItem.get("workSec") as Number;
 
+            var rowY = startY + (s * rowH);
+
+            if (s % 2 == 0) {
+                dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_LT_GRAY);
+                dc.fillRoundedRectangle(22, rowY - 2, w - 44, 20, 6);
+            }
+
             var lineStr = "Set " + sNum + ": " + wKg + "kg x " + reps + " (" + formatMmSs(workSec) + ")";
             dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, startY + (s * 20), Graphics.FONT_XTINY, lineStr, Graphics.TEXT_JUSTIFY_CENTER);
-        }
-        if (sets.size() > 5) {
-            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, startY + 104, Graphics.FONT_XTINY, "+" + (sets.size() - 5) + " more sets", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, rowY, Graphics.FONT_XTINY, lineStr, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
-        // Exercise Volume
-        dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 160, Graphics.FONT_XTINY, "Ex Volume: " + formatVolume(totalVol) + " kg", Graphics.TEXT_JUSTIFY_CENTER);
+        if (numSets > 5) {
+            dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, startY + (maxShow * rowH) + 2, Graphics.FONT_XTINY, "+" + (numSets - 5) + " more sets", Graphics.TEXT_JUSTIFY_CENTER);
+        }
 
         // Footer prompt
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h - 40, Graphics.FONT_XTINY, "UP/DN: Page", Graphics.TEXT_JUSTIFY_CENTER);
-        dc.drawText(cx, h - 24, Graphics.FONT_XTINY, "START: Exit", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, h - 38, Graphics.FONT_XTINY, "UP/DN: Page  •  START: Exit", Graphics.TEXT_JUSTIFY_CENTER);
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. EXERCISE PICKER SCREEN (Jump to any exercise mid-workout)
+    // -------------------------------------------------------------------------
+    private function drawExercisePicker(dc as Graphics.Dc) as Void {
+        var w = dc.getWidth();
+        var h = dc.getHeight();
+        var cx = w / 2;
+
+        dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 16, Graphics.FONT_XTINY, "SELECT EXERCISE", Graphics.TEXT_JUSTIFY_CENTER);
+
+        var exList = _state.getActiveExerciseList();
+        var total = exList.size();
+        if (total == 0) {
+            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, 110, Graphics.FONT_XTINY, "No Exercises", Graphics.TEXT_JUSTIFY_CENTER);
+            return;
+        }
+
+        var sel = _state.exercisePickerIdx;
+        if (sel < 0) { sel = 0; }
+        if (sel >= total) { sel = total - 1; }
+
+        var windowSize = 3;
+        var startIdx = sel - 1;
+        if (startIdx < 0) {
+            startIdx = 0;
+        } else if (startIdx + windowSize > total) {
+            startIdx = total - windowSize;
+            if (startIdx < 0) { startIdx = 0; }
+        }
+
+        var startY = 46;
+        var itemH = 46;
+        var spacingY = 52;
+
+        for (var i = 0; i < windowSize && (startIdx + i) < total; i += 1) {
+            var idx = startIdx + i;
+            var ex = exList[idx] as Dictionary;
+            var label = ex.get("label") as String;
+            var name = ex.get("name") as String;
+            var cSets = ex.get("completedSets") as Number;
+            var tSets = ex.get("totalSets") as Number;
+            var isDone = (ex.get("isDone") == true);
+            var isSelected = (idx == sel);
+
+            var y = startY + (i * spacingY);
+
+            if (isSelected) {
+                dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_DK_BLUE);
+                dc.fillRoundedRectangle(20, y, w - 40, itemH, 10);
+
+                dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+                dc.drawText(cx, y + 4, Graphics.FONT_XTINY, "[" + label + "] " + truncateText(name, 17), Graphics.TEXT_JUSTIFY_CENTER);
+
+                var statusStr = isDone ? "Done (" + cSets + "/" + tSets + ")" : (cSets + "/" + tSets + " Sets Completed");
+                dc.setColor(isDone ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+                dc.drawText(cx, y + 24, Graphics.FONT_XTINY, statusStr, Graphics.TEXT_JUSTIFY_CENTER);
+            } else {
+                dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_LT_GRAY);
+                dc.drawRoundedRectangle(20, y, w - 40, itemH, 10);
+
+                dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+                dc.drawText(cx, y + 4, Graphics.FONT_XTINY, "[" + label + "] " + truncateText(name, 17), Graphics.TEXT_JUSTIFY_CENTER);
+
+                var statusStr = isDone ? "Done (" + cSets + "/" + tSets + ")" : (cSets + "/" + tSets + " Sets");
+                dc.setColor(isDone ? Graphics.COLOR_DK_GREEN : Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+                dc.drawText(cx, y + 24, Graphics.FONT_XTINY, statusStr, Graphics.TEXT_JUSTIFY_CENTER);
+            }
+        }
+
+        // Bottom guide
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, h - 36, Graphics.FONT_XTINY, "UP/DN: Scroll  •  START: Pick", Graphics.TEXT_JUSTIFY_CENTER);
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. CLOCK & SESSION GLANCE SCREEN (Press UP/DOWN in Active Set)
+    // -------------------------------------------------------------------------
+    private function drawClockGlance(dc as Graphics.Dc) as Void {
+        var w = dc.getWidth();
+        var h = dc.getHeight();
+        var cx = w / 2;
+
+        // Top Header
+        dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 16, Graphics.FONT_XTINY, "CURRENT TIME", Graphics.TEXT_JUSTIFY_CENTER);
+
+        // Huge Time of Day in Center
+        var clock = System.getClockTime();
+        var timeStr = Lang.format("$1$:$2$", [clock.hour.format("%02d"), clock.min.format("%02d")]);
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 38, Graphics.FONT_NUMBER_HOT, timeStr, Graphics.TEXT_JUSTIFY_CENTER);
+
+        // Seconds indicator
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 114, Graphics.FONT_XTINY, ":" + clock.sec.format("%02d") + " sec", Graphics.TEXT_JUSTIFY_CENTER);
+
+        // Divider
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawLine(36, 134, w - 36, 134);
+
+        // Active Session Context
+        var hrStr = _state.heartRate > 0 ? (_state.heartRate.toString() + " bpm") : "-- bpm";
+        var totalDurStr = formatMmSs(_state.workoutTotalSec);
+
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 142, Graphics.FONT_XTINY, "Workout Total: " + totalDurStr, Graphics.TEXT_JUSTIFY_CENTER);
+
+        dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 162, Graphics.FONT_XTINY, "HR " + hrStr + "  •  " + _state.completedSetsCount + " Sets", Graphics.TEXT_JUSTIFY_CENTER);
+
+        if (_state.currentStepIdx < _state.steps.size()) {
+            var step = _state.steps[_state.currentStepIdx] as Dictionary;
+            var lbl = step.get("label") as String;
+            var nm = step.get("name") as String;
+            var sNum = step.get("setNum") as Number;
+            var sTot = step.get("setTotal") as Number;
+            dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, 182, Graphics.FONT_XTINY, "[" + lbl + "] " + truncateText(nm, 14) + " (" + sNum + "/" + sTot + ")", Graphics.TEXT_JUSTIFY_CENTER);
+        }
+
+        // Bottom guide
+        dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, h - 36, Graphics.FONT_XTINY, "UP/DN: Back  •  START: Done", Graphics.TEXT_JUSTIFY_CENTER);
+    }
+
+    private function getFormattedClockTime() as String {
+        var clock = System.getClockTime();
+        return Lang.format("$1$:$2$", [clock.hour.format("%02d"), clock.min.format("%02d")]);
     }
 
     // -------------------------------------------------------------------------

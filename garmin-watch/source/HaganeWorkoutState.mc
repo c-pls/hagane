@@ -28,15 +28,18 @@ class HaganeSyncConnectListener extends Communications.ConnectionListener {
 
 class HaganeWorkoutState {
     // Screens / States
-    public static const STATE_ROUTINE_LIST    = 0;
-    public static const STATE_ACTIVE_SET      = 1;
-    public static const STATE_REST            = 2;
-    public static const STATE_PAUSE_MENU      = 3;
-    public static const STATE_SUMMARY         = 4;
-    public static const STATE_DISCARD_CONFIRM = 5;
+    public static const STATE_ROUTINE_LIST     = 0;
+    public static const STATE_ACTIVE_SET       = 1;
+    public static const STATE_REST             = 2;
+    public static const STATE_PAUSE_MENU       = 3;
+    public static const STATE_SUMMARY          = 4;
+    public static const STATE_DISCARD_CONFIRM  = 5;
+    public static const STATE_EXERCISE_PICKER  = 6;
+    public static const STATE_CLOCK_GLANCE     = 7;
 
     public var screenState as Number = STATE_ROUTINE_LIST;
     public var previousWorkoutState as Number = STATE_ACTIVE_SET;
+    public var exercisePickerIdx as Number = 0;
 
     // Synced routines array
     public var routines as Array = [];
@@ -61,10 +64,11 @@ class HaganeWorkoutState {
 
     public static const PAUSE_MENU_ITEMS = [
         "Resume",
-        "Save Workout",
-        "Discard",
+        "Select Exercise",
         "Skip Set",
-        "Previous Set"
+        "Previous Set",
+        "Save Workout",
+        "Discard"
     ];
 
     public static const COMPLETE_MENU_ITEMS = [
@@ -253,7 +257,7 @@ class HaganeWorkoutState {
     }
 
     function ensureTimerIfActive() as Void {
-        if (screenState == STATE_ACTIVE_SET || screenState == STATE_REST) {
+        if (screenState == STATE_ACTIVE_SET || screenState == STATE_REST || screenState == STATE_CLOCK_GLANCE) {
             startTimer();
         }
     }
@@ -500,7 +504,7 @@ class HaganeWorkoutState {
             heartRate = info.currentHeartRate as Number;
         }
 
-        if (screenState == STATE_ACTIVE_SET) {
+        if (screenState == STATE_ACTIVE_SET || screenState == STATE_CLOCK_GLANCE) {
             setElapsedSec += 1;
             workoutTotalSec += 1;
             totalWorkSec += 1;
@@ -607,7 +611,8 @@ class HaganeWorkoutState {
                                 "reps"        => repsVal,
                                 "isWarmupSet" => isWarmupSet,
                                 "restSeconds" => restSec,
-                                "note"        => (ntObj instanceof String) ? (ntObj as String) : ""
+                                "note"        => (ntObj instanceof String) ? (ntObj as String) : "",
+                                "completed"   => false
                             };
                             result.add(step);
                         }
@@ -617,6 +622,87 @@ class HaganeWorkoutState {
             i += 1;
         }
         return result;
+    }
+
+    // Returns array of unique exercises in the active routine with their set status
+    function getActiveExerciseList() as Array {
+        var list = [] as Array;
+        var seen = {} as Dictionary;
+        for (var i = 0; i < steps.size(); i += 1) {
+            var step = steps[i] as Dictionary;
+            var name = step.get("name") as String;
+            var label = step.get("label") as String;
+            var key = label + "_" + name;
+            var isCompleted = (step.get("completed") == true);
+
+            if (!seen.hasKey(key)) {
+                var item = {
+                    "label"         => label,
+                    "name"          => name,
+                    "firstStepIdx"  => i,
+                    "totalSets"     => 0,
+                    "completedSets" => 0,
+                    "isDone"        => false
+                };
+                seen.put(key, item);
+                list.add(item);
+            }
+
+            var entry = seen.get(key) as Dictionary;
+            entry.put("totalSets", (entry.get("totalSets") as Number) + 1);
+            if (isCompleted) {
+                entry.put("completedSets", (entry.get("completedSets") as Number) + 1);
+            }
+        }
+
+        for (var j = 0; j < list.size(); j += 1) {
+            var e = list[j] as Dictionary;
+            var cSets = e.get("completedSets") as Number;
+            var tSets = e.get("totalSets") as Number;
+            e.put("isDone", (cSets >= tSets));
+        }
+
+        return list;
+    }
+
+    function jumpToExercise(targetExIdx as Number) as Void {
+        var exList = getActiveExerciseList();
+        if (targetExIdx < 0 || targetExIdx >= exList.size()) {
+            return;
+        }
+        var target = exList[targetExIdx] as Dictionary;
+        var targetLabel = target.get("label") as String;
+        var targetName = target.get("name") as String;
+
+        // Find the first uncompleted step for this exercise
+        var foundIdx = -1;
+        for (var i = 0; i < steps.size(); i += 1) {
+            var step = steps[i] as Dictionary;
+            if ((step.get("label") as String).equals(targetLabel) &&
+                (step.get("name") as String).equals(targetName)) {
+                if (step.get("completed") != true) {
+                    foundIdx = i;
+                    break;
+                }
+            }
+        }
+        if (foundIdx < 0) {
+            foundIdx = target.get("firstStepIdx") as Number;
+        }
+
+        if (_session != null && !_session.isRecording()) {
+            try {
+                _session.start();
+            } catch (ex) {}
+        }
+        startTimer();
+
+        currentStepIdx = foundIdx;
+        setElapsedSec = 0;
+        restElapsedSec = 0;
+        screenState = STATE_ACTIVE_SET;
+        vibrateShort();
+        WatchUi.requestUpdate();
     }
 
     function startSelectedRoutine() as Boolean {
@@ -750,40 +836,54 @@ class HaganeWorkoutState {
             "restSec"  => restSecTaken
         });
 
-        // 5. Commit lap to FIT file (if not the last set; on the last set, session.stop() finalizes it)
-        var isLastSet = (currentStepIdx + 1 >= steps.size());
-        if (!isLastSet) {
-            if (_session != null && _session.isRecording()) {
-                try {
-                    _session.addLap();
-                } catch (ex) {}
+        // 5. Mark current step as completed
+        if (currentStepIdx < steps.size()) {
+            var currStep = steps[currentStepIdx] as Dictionary;
+            currStep.put("completed", true);
+        }
+
+        // 6. Commit lap to FIT file (if not the last set; on the last set, session.stop() finalizes it)
+        if (_session != null && _session.isRecording()) {
+            try {
+                _session.addLap();
+            } catch (ex) {}
+        }
+
+        // 7. Find next uncompleted step (prefer forward, then wrap around for skipped exercises)
+        var nextIdx = -1;
+        for (var i = currentStepIdx + 1; i < steps.size(); i += 1) {
+            var stp = steps[i] as Dictionary;
+            if (stp.get("completed") != true) {
+                nextIdx = i;
+                break;
+            }
+        }
+        if (nextIdx < 0) {
+            for (var j = 0; j < currentStepIdx; j += 1) {
+                var stp = steps[j] as Dictionary;
+                if (stp.get("completed") != true) {
+                    nextIdx = j;
+                    break;
+                }
             }
         }
 
-        // If this was the very last set of the entire routine, prompt Save / Discard (like running!)
-        if (isLastSet) {
+        // If all steps in the entire workout are completed, prompt Save / Discard!
+        if (nextIdx < 0) {
             onWorkoutComplete();
             return;
         }
 
-        var restSec = step.get("restSeconds") as Number;
-
-        // Advance pointer to the upcoming set
-        currentStepIdx += 1;
+        currentStepIdx = nextIdx;
         setElapsedSec = 0;
 
-        // If restSeconds == 0 (e.g. Superset 3A -> 3B), jump directly to 3B Active Set!
-        if (restSec <= 0) {
-            vibrateShort();
-            lastRestElapsedSec = 0;
-            screenState = STATE_ACTIVE_SET;
-        } else {
-            vibrateShort();
-            restTargetSec = restSec;
-            restElapsedSec = 0;
-            hasVibratedForRest = false;
-            screenState = STATE_REST;
-        }
+        // ALWAYS enter rest/prep state! Moving to next set is ALWAYS manual!
+        var restSec = step.get("restSeconds") as Number;
+        vibrateShort();
+        restTargetSec = (restSec != null && restSec > 0) ? restSec : 0;
+        restElapsedSec = 0;
+        hasVibratedForRest = false;
+        screenState = STATE_REST;
         WatchUi.requestUpdate();
     }
 
@@ -857,82 +957,115 @@ class HaganeWorkoutState {
         WatchUi.requestUpdate();
     }
 
-    function executePauseMenuAction() as Void {
-        if (isWorkoutComplete) {
-            if (pauseMenuIdx == 0) {
-                // Save Workout
-                finishAndSaveWorkout();
-                return;
-            } else if (pauseMenuIdx == 1) {
-                // Discard Workout
-                openDiscardConfirm();
-                return;
-            } else if (pauseMenuIdx == 2) {
-                // Resume Workout (review or continue)
-                isWorkoutComplete = false;
-                if (_session != null && !_session.isRecording()) {
-                    try {
-                        _session.start();
-                    } catch (ex) {}
+    function openExercisePicker() as Void {
+        var exList = getActiveExerciseList();
+        exercisePickerIdx = 0;
+        if (currentStepIdx < steps.size()) {
+            var currStep = steps[currentStepIdx] as Dictionary;
+            var currLabel = currStep.get("label") as String;
+            var currName = currStep.get("name") as String;
+            for (var i = 0; i < exList.size(); i += 1) {
+                var item = exList[i] as Dictionary;
+                if ((item.get("label") as String).equals(currLabel) &&
+                    (item.get("name") as String).equals(currName)) {
+                    exercisePickerIdx = i;
+                    break;
                 }
-                startTimer();
-                screenState = STATE_ACTIVE_SET;
-                WatchUi.requestUpdate();
-                return;
             }
-            return;
         }
+        screenState = STATE_EXERCISE_PICKER;
+        WatchUi.requestUpdate();
+    }
 
-        // Mid-workout paused actions
-        if (pauseMenuIdx == 0) {
-            // Resume Workout
-            resumeFromPauseMenu();
-            return;
-        } else if (pauseMenuIdx == 1) {
-            // Save Workout (ends activity early and saves FIT)
-            finishAndSaveWorkout();
-            return;
-        } else if (pauseMenuIdx == 2) {
-            // Discard Workout (show confirmation)
-            openDiscardConfirm();
-            return;
-        } else if (pauseMenuIdx == 3) {
-            // Skip Current Set
-            if (_session != null && !_session.isRecording()) {
-                try {
-                    _session.start();
-                } catch (ex) {}
+    function skipCurrentSet() as Void {
+        if (_session != null && !_session.isRecording()) {
+            try {
+                _session.start();
+            } catch (ex) {}
+        }
+        startTimer();
+        if (previousWorkoutState == STATE_REST) {
+            setElapsedSec = 0;
+            screenState = STATE_ACTIVE_SET;
+        } else {
+            if (currentStepIdx < steps.size()) {
+                var currStep = steps[currentStepIdx] as Dictionary;
+                currStep.put("completed", true);
             }
-            startTimer();
-            if (previousWorkoutState == STATE_REST) {
-                setElapsedSec = 0;
-                screenState = STATE_ACTIVE_SET;
-            } else if (currentStepIdx + 1 < steps.size()) {
-                currentStepIdx += 1;
-                setElapsedSec = 0;
-                screenState = STATE_ACTIVE_SET;
-            } else {
+            var nextIdx = -1;
+            for (var i = currentStepIdx + 1; i < steps.size(); i += 1) {
+                var stp = steps[i] as Dictionary;
+                if (stp.get("completed") != true) {
+                    nextIdx = i;
+                    break;
+                }
+            }
+            if (nextIdx < 0) {
+                for (var j = 0; j < currentStepIdx; j += 1) {
+                    var stp = steps[j] as Dictionary;
+                    if (stp.get("completed") != true) {
+                        nextIdx = j;
+                        break;
+                    }
+                }
+            }
+            if (nextIdx < 0) {
                 onWorkoutComplete();
                 return;
             }
-        } else if (pauseMenuIdx == 4) {
-            // Previous Set
-            if (_session != null && !_session.isRecording()) {
-                try {
-                    _session.start();
-                } catch (ex) {}
-            }
-            startTimer();
-            if (currentStepIdx > 0) {
-                currentStepIdx -= 1;
-                if (completedSetsCount > 0) {
-                    completedSetsCount -= 1;
-                }
-            }
+            currentStepIdx = nextIdx;
             setElapsedSec = 0;
             screenState = STATE_ACTIVE_SET;
         }
         WatchUi.requestUpdate();
+    }
+
+    function goToPreviousSet() as Void {
+        if (_session != null && !_session.isRecording()) {
+            try {
+                _session.start();
+            } catch (ex) {}
+        }
+        startTimer();
+        if (currentStepIdx > 0) {
+            currentStepIdx -= 1;
+            var prevStep = steps[currentStepIdx] as Dictionary;
+            prevStep.put("completed", false);
+            if (completedSetsCount > 0) {
+                completedSetsCount -= 1;
+            }
+        }
+        setElapsedSec = 0;
+        screenState = STATE_ACTIVE_SET;
+        WatchUi.requestUpdate();
+    }
+
+    function executePauseMenuAction() as Void {
+        var items = getPauseMenuItems();
+        if (pauseMenuIdx < 0 || pauseMenuIdx >= items.size()) {
+            return;
+        }
+        var action = items[pauseMenuIdx] as String;
+
+        if (action.equals("Resume") || action.equals("Resume Workout")) {
+            resumeFromPauseMenu();
+            return;
+        } else if (action.equals("Select Exercise")) {
+            openExercisePicker();
+            return;
+        } else if (action.equals("Skip Set")) {
+            skipCurrentSet();
+            return;
+        } else if (action.equals("Previous Set")) {
+            goToPreviousSet();
+            return;
+        } else if (action.equals("Save Workout")) {
+            finishAndSaveWorkout();
+            return;
+        } else if (action.equals("Discard")) {
+            openDiscardConfirm();
+            return;
+        }
     }
 
     function finishAndSaveWorkout() as Void {
