@@ -742,11 +742,6 @@ class HaganeWatchView extends WatchUi.View {
         dc.drawText(cx, h - 36, Graphics.FONT_XTINY, "UP/DN: Back  •  START: Done", Graphics.TEXT_JUSTIFY_CENTER);
     }
 
-    private function getFormattedClockTime() as String {
-        var clock = System.getClockTime();
-        return Lang.format("$1$:$2$", [clock.hour.format("%02d"), clock.min.format("%02d")]);
-    }
-
     // -------------------------------------------------------------------------
     // Formatting Helpers
     // -------------------------------------------------------------------------

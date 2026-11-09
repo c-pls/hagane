@@ -78,12 +78,20 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
             WatchUi.requestUpdate();
             return true;
         } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
-            // Return back to pause menu
+            // Return back to pause menu; if all steps are completed, preserve isWorkoutComplete
+            if (_state.areAllStepsCompleted()) {
+                _state.isWorkoutComplete = true;
+            }
             _state.screenState = HaganeWorkoutState.STATE_PAUSE_MENU;
             WatchUi.requestUpdate();
             return true;
         } else if (st == HaganeWorkoutState.STATE_PAUSE_MENU) {
-            // Resume workout on BACK (also restarts paused FIT session if still recording)
+            if (_state.isWorkoutComplete || _state.areAllStepsCompleted()) {
+                // On complete screen, BACK should not resume straight to a completed set.
+                // Open the exercise picker so the lifter can pick an exercise to do extra sets for.
+                _state.openExercisePicker();
+                return true;
+            }
             _state.resumeFromPauseMenu();
             return true;
         } else if (st == HaganeWorkoutState.STATE_DISCARD_CONFIRM) {

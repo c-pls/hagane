@@ -774,6 +774,13 @@ class HaganeWorkoutState {
         }
 
         var step = steps[currentStepIdx] as Dictionary;
+
+        // Guard against re-completing an already completed step:
+        // If the step was previously marked completed, retract its prior totals before re-logging
+        if (step.get("completed") == true) {
+            uncompleteStep(currentStepIdx);
+        }
+
         var exName = (step.get("name") instanceof String) ? (step.get("name") as String) : "Exercise";
         var exLabel = (step.get("label") instanceof String) ? (step.get("label") as String) : "";
         var setNum = (step.get("setNum") instanceof Number) ? (step.get("setNum") as Number) : 1;
@@ -957,7 +964,46 @@ class HaganeWorkoutState {
         WatchUi.requestUpdate();
     }
 
+    function areAllStepsCompleted() as Boolean {
+        if (steps.size() == 0) {
+            return false;
+        }
+        for (var i = 0; i < steps.size(); i += 1) {
+            var stp = steps[i] as Dictionary;
+            if (stp.get("completed") != true) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     function resumeFromPauseMenu() as Void {
+        if (isWorkoutComplete || areAllStepsCompleted()) {
+            openExercisePicker();
+            return;
+        }
+
+        // If current step is already completed, advance to next uncompleted step or open picker
+        if (currentStepIdx < steps.size()) {
+            var currStep = steps[currentStepIdx] as Dictionary;
+            if (currStep.get("completed") == true) {
+                var nextIdx = -1;
+                for (var i = 0; i < steps.size(); i += 1) {
+                    var stp = steps[i] as Dictionary;
+                    if (stp.get("completed") != true) {
+                        nextIdx = i;
+                        break;
+                    }
+                }
+                if (nextIdx >= 0) {
+                    currentStepIdx = nextIdx;
+                } else {
+                    openExercisePicker();
+                    return;
+                }
+            }
+        }
+
         if (_session != null && !_session.isRecording()) {
             try {
                 _session.start();

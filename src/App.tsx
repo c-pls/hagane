@@ -53,7 +53,9 @@ import {
   flushGarminWatchCache,
   setGarminSyncStatusHandler,
   addGarminSyncErrorListener,
+  addGarminMessageStatusListener,
   addGarminWorkoutCompletedListener,
+  resetGarminLastSentPayload,
 } from './services/garminSync';
 
 export const App: React.FC = () => {
@@ -565,11 +567,39 @@ export const App: React.FC = () => {
 
     const errorSubPromise = addGarminSyncErrorListener((event) => {
       console.warn('[Hagane] Garmin sync error:', event);
+      resetGarminLastSentPayload();
       if (event.error === 'PAYLOAD_TOO_LARGE') {
         showToast(
           lang === 'vi'
-            ? '⚠️ Dữ liệu bài tập vượt quá giới hạn Bluetooth của đồng hồ'
-            : '⚠️ Watch payload exceeded Bluetooth limits',
+            ? '⚠️ Dữ liệu bài tập vượt quá giới hạn Bluetooth của đồng hồ (8KB)'
+            : '⚠️ Watch payload exceeded Bluetooth limits (8KB)',
+          4000
+        );
+      } else if (event.error === 'SEND_EXCEPTION' || event.message) {
+        showToast(
+          lang === 'vi'
+            ? `⚠️ Lỗi truyền dữ liệu sang Garmin: ${event.message || event.error}`
+            : `⚠️ Garmin transmission error: ${event.message || event.error}`,
+          4000
+        );
+      } else {
+        showToast(
+          lang === 'vi'
+            ? `⚠️ Lỗi đồng bộ Garmin: ${event.error}`
+            : `⚠️ Garmin sync error: ${event.error}`,
+          4000
+        );
+      }
+    });
+
+    const statusSubPromise = addGarminMessageStatusListener((event) => {
+      console.info('[Hagane] Garmin message status:', event);
+      if (!event.success) {
+        resetGarminLastSentPayload();
+        showToast(
+          lang === 'vi'
+            ? `⚠️ Không thể gửi bài tập sang ${event.device} (${event.status})`
+            : `⚠️ Failed to send routines to ${event.device} (${event.status})`,
           4000
         );
       }
@@ -588,6 +618,7 @@ export const App: React.FC = () => {
 
     return () => {
       errorSubPromise?.then((h) => h.remove());
+      statusSubPromise?.then((h) => h.remove());
       completedSubPromise?.then((h) => h.remove());
     };
   }, [lang]);

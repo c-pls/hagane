@@ -320,7 +320,7 @@ export function buildGarminPayload(
   let isTrimmed = false;
   let trimReason = '';
 
-  // Enforce BLE / Storage payload budget (~10 KB UTF-8)
+  // Enforce BLE / Storage payload budget (8 KB UTF-8)
   let serializedBytes = getPayloadUtf8Bytes(payload);
   if (serializedBytes > GARMIN_MAX_PAYLOAD_BYTES) {
     // Step 1: Strip per-exercise notes to save space
@@ -386,7 +386,7 @@ export function buildGarminPayload(
     }
   }
 
-  // Step 3 final check: if still over budget on a single exercise, trim sets to guarantee < 10KB
+  // Step 3 final check: if still over budget on a single exercise, trim sets to guarantee <= 8KB
   if (getPayloadUtf8Bytes(payload) > GARMIN_MAX_PAYLOAD_BYTES) {
     if (payload.routines.length > 0 && payload.routines[0].e.length > 0) {
       const singleEx = payload.routines[0].e[0];
@@ -428,6 +428,10 @@ let pendingGarminArgs: {
 } | null = null;
 let lastSentPayloadJson = '';
 
+export function resetGarminLastSentPayload(): void {
+  lastSentPayloadJson = '';
+}
+
 async function executeGarminCacheUpdate(
   routines: Routine[],
   exercisesMap: Record<string, Exercise>
@@ -450,6 +454,7 @@ async function executeGarminCacheUpdate(
         message: isTrimmed ? trimReason : undefined,
       });
     } else {
+      lastSentPayloadJson = '';
       console.warn('[GarminSync] Cache/push returned non-success:', res);
       garminSyncStatusHandler?.({
         success: false,
@@ -457,6 +462,7 @@ async function executeGarminCacheUpdate(
       });
     }
   } catch (err: unknown) {
+    lastSentPayloadJson = '';
     const errMsg = err instanceof Error ? err.message : 'Failed to update watch cache';
     console.warn('[GarminSync] Failed to update watch cache:', err);
     garminSyncStatusHandler?.({
