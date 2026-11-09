@@ -616,7 +616,8 @@ class HaganeWorkoutState {
                                 "isWarmupSet" => isWarmupSet,
                                 "restSeconds" => restSec,
                                 "note"        => (ntObj instanceof String) ? (ntObj as String) : "",
-                                "completed"   => false
+                                "completed"   => false,
+                                "skipped"     => false
                             };
                             result.add(step);
                         }
@@ -638,6 +639,7 @@ class HaganeWorkoutState {
             var label = step.get("label") as String;
             var key = label + "_" + name;
             var isCompleted = (step.get("completed") == true);
+            var isSkipped = (step.get("skipped") == true);
 
             if (!seen.hasKey(key)) {
                 var item = {
@@ -646,6 +648,7 @@ class HaganeWorkoutState {
                     "firstStepIdx"  => i,
                     "totalSets"     => 0,
                     "completedSets" => 0,
+                    "handledSets"   => 0,
                     "isDone"        => false
                 };
                 seen.put(key, item);
@@ -656,14 +659,17 @@ class HaganeWorkoutState {
             entry.put("totalSets", (entry.get("totalSets") as Number) + 1);
             if (isCompleted) {
                 entry.put("completedSets", (entry.get("completedSets") as Number) + 1);
+                entry.put("handledSets", (entry.get("handledSets") as Number) + 1);
+            } else if (isSkipped) {
+                entry.put("handledSets", (entry.get("handledSets") as Number) + 1);
             }
         }
 
         for (var j = 0; j < list.size(); j += 1) {
             var e = list[j] as Dictionary;
-            var cSets = e.get("completedSets") as Number;
+            var hSets = e.get("handledSets") as Number;
             var tSets = e.get("totalSets") as Number;
-            e.put("isDone", (cSets >= tSets));
+            e.put("isDone", (hSets >= tSets));
         }
 
         return list;
@@ -684,7 +690,7 @@ class HaganeWorkoutState {
             var step = steps[i] as Dictionary;
             if ((step.get("label") as String).equals(targetLabel) &&
                 (step.get("name") as String).equals(targetName)) {
-                if (step.get("completed") != true) {
+                if (step.get("completed") != true && step.get("skipped") != true) {
                     foundIdx = i;
                     break;
                 }
@@ -692,7 +698,7 @@ class HaganeWorkoutState {
         }
         if (foundIdx < 0) {
             foundIdx = target.get("firstStepIdx") as Number;
-            // Lifter jumped to an already-completed exercise to redo it -> uncomplete it cleanly
+            // Lifter jumped to an already-completed/skipped exercise to redo it -> uncomplete it cleanly
             uncompleteStep(foundIdx);
         }
 
@@ -775,9 +781,9 @@ class HaganeWorkoutState {
 
         var step = steps[currentStepIdx] as Dictionary;
 
-        // Guard against re-completing an already completed step:
+        // Guard against re-completing an already completed or skipped step:
         // If the step was previously marked completed, retract its prior totals before re-logging
-        if (step.get("completed") == true) {
+        if (step.get("completed") == true || step.get("skipped") == true) {
             uncompleteStep(currentStepIdx);
         }
 
@@ -854,9 +860,10 @@ class HaganeWorkoutState {
         if (currentStepIdx < steps.size()) {
             var currStep = steps[currentStepIdx] as Dictionary;
             currStep.put("completed", true);
+            currStep.put("skipped", false);
         }
 
-        // 6. Commit lap to FIT file (if not the last set; on the last set, session.stop() finalizes it)
+        // 6. Commit lap to FIT file for each completed set
         if (_session != null && _session.isRecording()) {
             try {
                 _session.addLap();
@@ -867,7 +874,7 @@ class HaganeWorkoutState {
         var nextIdx = -1;
         for (var i = currentStepIdx + 1; i < steps.size(); i += 1) {
             var stp = steps[i] as Dictionary;
-            if (stp.get("completed") != true) {
+            if (stp.get("completed") != true && stp.get("skipped") != true) {
                 nextIdx = i;
                 break;
             }
@@ -875,7 +882,7 @@ class HaganeWorkoutState {
         if (nextIdx < 0) {
             for (var j = 0; j < currentStepIdx; j += 1) {
                 var stp = steps[j] as Dictionary;
-                if (stp.get("completed") != true) {
+                if (stp.get("completed") != true && stp.get("skipped") != true) {
                     nextIdx = j;
                     break;
                 }
@@ -970,7 +977,7 @@ class HaganeWorkoutState {
         }
         for (var i = 0; i < steps.size(); i += 1) {
             var stp = steps[i] as Dictionary;
-            if (stp.get("completed") != true) {
+            if (stp.get("completed") != true && stp.get("skipped") != true) {
                 return false;
             }
         }
@@ -983,14 +990,14 @@ class HaganeWorkoutState {
             return;
         }
 
-        // If current step is already completed, advance to next uncompleted step or open picker
+        // If current step is already completed or skipped, advance to next uncompleted step or open picker
         if (currentStepIdx < steps.size()) {
             var currStep = steps[currentStepIdx] as Dictionary;
-            if (currStep.get("completed") == true) {
+            if (currStep.get("completed") == true || currStep.get("skipped") == true) {
                 var nextIdx = -1;
                 for (var i = 0; i < steps.size(); i += 1) {
                     var stp = steps[i] as Dictionary;
-                    if (stp.get("completed") != true) {
+                    if (stp.get("completed") != true && stp.get("skipped") != true) {
                         nextIdx = i;
                         break;
                     }
@@ -1047,12 +1054,13 @@ class HaganeWorkoutState {
         } else {
             if (currentStepIdx < steps.size()) {
                 var currStep = steps[currentStepIdx] as Dictionary;
-                currStep.put("completed", true);
+                currStep.put("skipped", true);
+                currStep.put("completed", false);
             }
             var nextIdx = -1;
             for (var i = currentStepIdx + 1; i < steps.size(); i += 1) {
                 var stp = steps[i] as Dictionary;
-                if (stp.get("completed") != true) {
+                if (stp.get("completed") != true && stp.get("skipped") != true) {
                     nextIdx = i;
                     break;
                 }
@@ -1060,7 +1068,7 @@ class HaganeWorkoutState {
             if (nextIdx < 0) {
                 for (var j = 0; j < currentStepIdx; j += 1) {
                     var stp = steps[j] as Dictionary;
-                    if (stp.get("completed") != true) {
+                    if (stp.get("completed") != true && stp.get("skipped") != true) {
                         nextIdx = j;
                         break;
                     }
@@ -1083,15 +1091,22 @@ class HaganeWorkoutState {
             return;
         }
         var step = steps[stepIdx] as Dictionary;
-        if (step.get("completed") != true) {
+        var wasCompleted = (step.get("completed") == true);
+        var wasSkipped = (step.get("skipped") == true);
+
+        if (!wasCompleted && !wasSkipped) {
             return;
         }
+
         step.put("completed", false);
-        if (completedSetsCount > 0) {
-            completedSetsCount -= 1;
+        step.put("skipped", false);
+
+        if (wasSkipped && !wasCompleted) {
+            // Skipped step has no log entry and never incremented counts; nothing to remove!
+            return;
         }
 
-        // Find and remove the matching entry from completedLog (searching backwards)
+        // Find and remove the matching entry from completedLog (searching backwards strictly by stepIdx)
         var removed = false;
         for (var i = completedLog.size() - 1; i >= 0; i -= 1) {
             var entry = completedLog[i] as Dictionary;
@@ -1112,22 +1127,9 @@ class HaganeWorkoutState {
             }
         }
 
-        if (!removed && completedLog.size() > 0) {
-            var lastEntry = completedLog[completedLog.size() - 1] as Dictionary;
-            var exName = step.get("name") as String;
-            if ((lastEntry.get("name") as String).equals(exName)) {
-                var vol = lastEntry.get("vol") as Float;
-                var reps = lastEntry.get("reps") as Number;
-                totalWorkoutVolume -= vol;
-                if (totalWorkoutVolume < 0.0f) {
-                    totalWorkoutVolume = 0.0f;
-                }
-                totalWorkoutReps -= reps;
-                if (totalWorkoutReps < 0) {
-                    totalWorkoutReps = 0;
-                }
-                completedLog.remove(lastEntry);
-            }
+        // Only decrement completedSetsCount if a log entry was actually removed!
+        if (removed && completedSetsCount > 0) {
+            completedSetsCount -= 1;
         }
 
         updateSessionFitFields();
@@ -1143,6 +1145,8 @@ class HaganeWorkoutState {
         if (currentStepIdx > 0) {
             currentStepIdx -= 1;
             uncompleteStep(currentStepIdx);
+        } else if (currentStepIdx == 0) {
+            uncompleteStep(0);
         }
         setElapsedSec = 0;
         screenState = STATE_ACTIVE_SET;
