@@ -40,7 +40,9 @@ import {
 } from './services/native';
 import {
   autoLoadFromDevice,
+  autoSaveToDevice,
   debouncedAutoSaveToDevice,
+  ensureStoragePermissions,
   flushPendingDeviceSave,
   setDeviceBackupErrorHandler,
   HaganeDeviceBackup,
@@ -89,6 +91,15 @@ export const App: React.FC = () => {
       setDeviceBackupError(hasError);
     });
     return () => setDeviceBackupErrorHandler(null);
+  }, []);
+
+  // Request storage permissions on app start on native Android/iOS
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      ensureStoragePermissions().catch((err) => {
+        console.warn('[Hagane] Storage permission check error on startup:', err);
+      });
+    }
   }, []);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -1213,7 +1224,7 @@ export const App: React.FC = () => {
         {/* Physical Device Backup Write Failure Banner */}
         {deviceBackupError && (
           <div className="bg-amber-50 border border-amber-300 rounded-[24px] p-4 shadow-xs flex items-center justify-between gap-3">
-            <div className="space-y-0.5">
+            <div className="space-y-0.5 min-w-0 flex-1">
               <h3 className="font-bold text-sm text-amber-950">
                 ⚠️ {lang === 'vi' ? 'Không thể lưu bản sao lưu thiết bị' : 'Device Backup Write Failed'}
               </h3>
@@ -1223,14 +1234,32 @@ export const App: React.FC = () => {
                   : 'Unable to write backup to device Documents storage. Please check storage permissions.'}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setDeviceBackupError(false)}
-              aria-label={lang === 'vi' ? 'Đóng thông báo' : 'Dismiss'}
-              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center bg-amber-100 hover:bg-amber-200 text-amber-900 text-sm font-bold cursor-pointer shrink-0"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={async () => {
+                  const granted = await ensureStoragePermissions();
+                  if (granted) {
+                    setDeviceBackupError(false);
+                    const ok = await autoSaveToDevice(routinesRef.current);
+                    if (ok) {
+                      showToast(lang === 'vi' ? 'Đã lưu bản sao lưu thiết bị' : 'Device backup saved');
+                    }
+                  }
+                }}
+                className="px-3.5 py-2 min-h-[44px] flex items-center justify-center rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition cursor-pointer shadow-xs"
+              >
+                {lang === 'vi' ? 'Cấp quyền' : 'Grant Permission'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeviceBackupError(false)}
+                aria-label={lang === 'vi' ? 'Đóng thông báo' : 'Dismiss'}
+                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center bg-amber-100 hover:bg-amber-200 text-amber-900 text-sm font-bold cursor-pointer shrink-0"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         )}
 

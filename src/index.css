@@ -61,3 +61,9 @@ input[type="number"] {
 .is-native .pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
 }
+
+/* 5. Mobile performance: Instant 0ms tap response & smooth overscroll containment */
+html, body {
+  touch-action: manipulation;
+  overscroll-behavior-y: none;
+}

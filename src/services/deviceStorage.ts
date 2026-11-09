@@ -21,6 +21,24 @@ export function setDeviceBackupErrorHandler(handler: DeviceBackupErrorHandler | 
 }
 
 /**
+ * Check and request public storage permissions if not already granted on native device.
+ */
+export async function ensureStoragePermissions(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return true;
+  try {
+    const status = await Filesystem.checkPermissions();
+    if (status.publicStorage === 'granted') {
+      return true;
+    }
+    const request = await Filesystem.requestPermissions();
+    return request.publicStorage === 'granted';
+  } catch (err) {
+    console.warn('[Hagane] Storage permission request error:', err);
+    return false;
+  }
+}
+
+/**
  * Automatically persist routines to the physical device's public Documents directory.
  * This storage is NOT deleted when the app is uninstalled on Android, allowing
  * seamless restoration even after a complete app uninstall/reinstall.
@@ -30,37 +48,55 @@ export async function autoSaveToDevice(routines: Routine[]): Promise<boolean> {
     return false;
   }
 
+  const payload: HaganeDeviceBackup = {
+    version: 1,
+    timestamp: Date.now(),
+    routines,
+  };
+
+  const data = JSON.stringify(payload, null, 2);
+
+  // 1. Primary: Persist to public Documents (survives app reinstallation)
   try {
-    const payload: HaganeDeviceBackup = {
-      version: 1,
-      timestamp: Date.now(),
-      routines,
-    };
+    const hasPermission = await ensureStoragePermissions();
+    if (hasPermission) {
+      try {
+        await Filesystem.mkdir({
+          path: BACKUP_DIR,
+          directory: Directory.Documents,
+          recursive: true,
+        });
+      } catch {
+        // directory likely already exists
+      }
 
-    const data = JSON.stringify(payload, null, 2);
-
-    try {
-      await Filesystem.mkdir({
-        path: BACKUP_DIR,
+      await Filesystem.writeFile({
+        path: `${BACKUP_DIR}/${BACKUP_FILE}`,
+        data,
         directory: Directory.Documents,
-        recursive: true,
+        encoding: Encoding.UTF8,
       });
-    } catch {
-      // directory likely already exists
+
+      return true;
     }
-
-    await Filesystem.writeFile({
-      path: `${BACKUP_DIR}/${BACKUP_FILE}`,
-      data,
-      directory: Directory.Documents,
-      encoding: Encoding.UTF8,
-    });
-
-    return true;
   } catch (err) {
     console.warn('[Hagane] Error saving backup to device Documents:', err);
-    return false;
   }
+
+  // 2. Secondary fallback: Persist to internal app data storage (requires zero permissions)
+  try {
+    await Filesystem.writeFile({
+      path: BACKUP_FILE,
+      data,
+      directory: Directory.Data,
+      encoding: Encoding.UTF8,
+    });
+    console.info('[Hagane] Backup saved to internal app data fallback.');
+  } catch (fallbackErr) {
+    console.warn('[Hagane] Fallback write to internal app data failed:', fallbackErr);
+  }
+
+  return false;
 }
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -152,15 +188,37 @@ export async function autoLoadFromDevice(): Promise<HaganeDeviceBackup | null> {
   }
 
   try {
-    const result = await Filesystem.readFile({
-      path: `${BACKUP_DIR}/${BACKUP_FILE}`,
-      directory: Directory.Documents,
-      encoding: Encoding.UTF8,
-    });
+    let rawData: string | null = null;
 
-    if (result && typeof result.data === 'string') {
+    // 1. Check public Documents folder first
+    try {
+      const result = await Filesystem.readFile({
+        path: `${BACKUP_DIR}/${BACKUP_FILE}`,
+        directory: Directory.Documents,
+        encoding: Encoding.UTF8,
+      });
+      if (result && typeof result.data === 'string') {
+        rawData = result.data;
+      }
+    } catch {
+      // 2. Check internal Directory.Data fallback
       try {
-        const parsed = JSON.parse(result.data) as Record<string, unknown>;
+        const fallbackResult = await Filesystem.readFile({
+          path: BACKUP_FILE,
+          directory: Directory.Data,
+          encoding: Encoding.UTF8,
+        });
+        if (fallbackResult && typeof fallbackResult.data === 'string') {
+          rawData = fallbackResult.data;
+        }
+      } catch {
+        // no backup file exists in either directory
+      }
+    }
+
+    if (rawData) {
+      try {
+        const parsed = JSON.parse(rawData) as Record<string, unknown>;
         if (parsed && Array.isArray(parsed.routines)) {
           const legacyComments =
             parsed.comments && typeof parsed.comments === 'object'
@@ -184,7 +242,7 @@ export async function autoLoadFromDevice(): Promise<HaganeDeviceBackup | null> {
         try {
           await Filesystem.writeFile({
             path: `${BACKUP_DIR}/hagane_backup_corrupt.json`,
-            data: result.data,
+            data: rawData,
             directory: Directory.Documents,
             encoding: Encoding.UTF8,
           });

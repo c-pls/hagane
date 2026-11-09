@@ -297,30 +297,13 @@ export const RoutineList: React.FC<RoutineListProps> = ({
 
       {/* Empty State when no routines exist yet */}
       {routines.length === 0 && !showNewModal && (
-        <div className="bg-white rounded-[24px] p-8 text-center shadow-xs space-y-4 border border-slate-200/80 my-2">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mx-auto text-blue-600 mb-1">
-            <svg
-              className="w-7 h-7"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-          </div>
-          <div className="space-y-1.5">
-            <p className="font-bold text-base text-slate-900">
-              {t.noRoutinesYetTitle}
-            </p>
-            <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-              {t.noRoutinesYetDesc}
-            </p>
-          </div>
+        <div className="bg-white rounded-[24px] p-8 text-center shadow-xs space-y-3 border border-slate-200/80 my-2">
+          <p className="font-bold text-base text-slate-900">
+            {t.noRoutinesYetTitle}
+          </p>
+          <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+            {t.noRoutinesYetDesc}
+          </p>
           <div className="pt-2">
             <button
               type="button"
@@ -329,12 +312,9 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                 setNewTag('');
                 setShowNewModal(true);
               }}
-              className="px-6 py-3 min-h-[44px] inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition cursor-pointer"
+              className="px-6 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              <span>{t.newRoutineBtn}</span>
+              {t.newRoutineBtn}
             </button>
           </div>
         </div>
