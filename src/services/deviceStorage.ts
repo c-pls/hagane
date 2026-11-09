@@ -226,10 +226,59 @@ export function flushPendingDeviceSave(): void {
 }
 
 /**
+ * Preserves corrupt file contents in a dedicated quarantine file,
+ * then safely removes the corrupt original so it is not repeatedly encountered on every launch.
+ */
+async function quarantineAndRemoveBackup(
+  corruptData: string,
+  backupPath: string,
+  quarantinePath: string,
+  directory: Directory
+): Promise<void> {
+  try {
+    // 1. Preserve corrupt file contents in quarantine file
+    await Filesystem.writeFile({
+      path: quarantinePath,
+      data: corruptData,
+      directory,
+      encoding: Encoding.UTF8,
+    });
+  } catch (err) {
+    console.warn(`[Hagane] Failed to write quarantine file to ${directory}:`, err);
+  }
+
+  try {
+    // 2. Remove the corrupt original so it is not repeatedly encountered
+    await Filesystem.deleteFile({
+      path: backupPath,
+      directory,
+    });
+  } catch (deleteErr) {
+    console.warn(`[Hagane] Failed to delete corrupt backup in ${directory}, attempting overwrite:`, deleteErr);
+    try {
+      // Overwrite with minimal valid empty payload if delete is unsupported or fails
+      const emptyPayload: HaganeDeviceBackup = {
+        version: 1,
+        timestamp: 0,
+        routines: [],
+      };
+      await Filesystem.writeFile({
+        path: backupPath,
+        data: JSON.stringify(emptyPayload),
+        directory,
+        encoding: Encoding.UTF8,
+      });
+    } catch {
+      // ignore
+    }
+  }
+}
+
+/**
  * Check and restore routines from device storage.
  * Reads both public Documents and internal Data storage, compares timestamps,
- * and recovers the newest valid backup. Corrupted files in one location do not
- * shadow valid backups in the other.
+ * and recovers the newest valid backup. Corrupted or malformed files in one location
+ * are quarantined and deleted so they do not shadow valid backups or cause repeat toasts.
  */
 export async function autoLoadFromDevice(): Promise<HaganeDeviceBackup | null> {
   if (!Capacitor.isNativePlatform()) {
@@ -249,9 +298,10 @@ export async function autoLoadFromDevice(): Promise<HaganeDeviceBackup | null> {
       encoding: Encoding.UTF8,
     });
     if (result && typeof result.data === 'string') {
+      let isDocValid = false;
       try {
         const parsed = JSON.parse(result.data) as Record<string, unknown>;
-        if (parsed && Array.isArray(parsed.routines)) {
+        if (parsed && typeof parsed === 'object' && Array.isArray(parsed.routines)) {
           const legacyComments =
             parsed.comments && typeof parsed.comments === 'object'
               ? (parsed.comments as Record<string, string>)
@@ -267,22 +317,21 @@ export async function autoLoadFromDevice(): Promise<HaganeDeviceBackup | null> {
             timestamp: Number.isFinite(ts) && ts > 0 ? ts : 0,
             routines: sanitizedRoutines,
           };
-        } else {
-          docCorrupted = true;
+          isDocValid = true;
         }
       } catch (parseErr) {
-        console.error('[Hagane] Corrupt backup in Documents:', parseErr);
+        console.error('[Hagane] Corrupt JSON in Documents backup:', parseErr);
+      }
+
+      if (!isDocValid) {
+        console.warn('[Hagane] Quarantining and removing invalid Documents backup file.');
         docCorrupted = true;
-        try {
-          await Filesystem.writeFile({
-            path: `${BACKUP_DIR}/hagane_backup_corrupt.json`,
-            data: result.data,
-            directory: Directory.Documents,
-            encoding: Encoding.UTF8,
-          });
-        } catch {
-          // ignore
-        }
+        await quarantineAndRemoveBackup(
+          result.data,
+          `${BACKUP_DIR}/${BACKUP_FILE}`,
+          `${BACKUP_DIR}/hagane_backup_corrupt.json`,
+          Directory.Documents
+        );
       }
     }
   } catch {
@@ -297,9 +346,10 @@ export async function autoLoadFromDevice(): Promise<HaganeDeviceBackup | null> {
       encoding: Encoding.UTF8,
     });
     if (fallbackResult && typeof fallbackResult.data === 'string') {
+      let isDataValid = false;
       try {
         const parsed = JSON.parse(fallbackResult.data) as Record<string, unknown>;
-        if (parsed && Array.isArray(parsed.routines)) {
+        if (parsed && typeof parsed === 'object' && Array.isArray(parsed.routines)) {
           const legacyComments =
             parsed.comments && typeof parsed.comments === 'object'
               ? (parsed.comments as Record<string, string>)
@@ -315,23 +365,21 @@ export async function autoLoadFromDevice(): Promise<HaganeDeviceBackup | null> {
             timestamp: Number.isFinite(ts) && ts > 0 ? ts : 0,
             routines: sanitizedRoutines,
           };
-        } else {
-          dataCorrupted = true;
+          isDataValid = true;
         }
       } catch (parseErr) {
-        console.error('[Hagane] Corrupt backup in Data:', parseErr);
+        console.error('[Hagane] Corrupt JSON in Data backup:', parseErr);
+      }
+
+      if (!isDataValid) {
+        console.warn('[Hagane] Quarantining and removing invalid Data backup file.');
         dataCorrupted = true;
-        // Quarantine to Data directory specifically
-        try {
-          await Filesystem.writeFile({
-            path: 'hagane_backup_corrupt.json',
-            data: fallbackResult.data,
-            directory: Directory.Data,
-            encoding: Encoding.UTF8,
-          });
-        } catch {
-          // ignore
-        }
+        await quarantineAndRemoveBackup(
+          fallbackResult.data,
+          BACKUP_FILE,
+          'hagane_backup_corrupt.json',
+          Directory.Data
+        );
       }
     }
   } catch {
