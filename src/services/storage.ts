@@ -29,6 +29,31 @@ const LEGACY_EXERCISE_ID_MAP: Record<string, string> = {
 
 let storageCorruptionLocked = false;
 
+const CORRUPT_BAK_KEY = ROUTINES_KEY + '_corrupt_bak';
+const CORRUPT_BAK_PREV_KEY = ROUTINES_KEY + '_quarantine_prev';
+
+/**
+ * Preserve an unreadable routines payload without destroying an earlier quarantined one:
+ * the previous slot is rotated into a second slot before the new payload is written.
+ * Returns true only when the payload was actually preserved.
+ */
+export function quarantineRoutinesRaw(raw: string): boolean {
+  try {
+    const existing = localStorage.getItem(CORRUPT_BAK_KEY);
+    if (existing !== null && existing !== raw) {
+      try {
+        localStorage.setItem(CORRUPT_BAK_PREV_KEY, existing);
+      } catch {
+        // best effort: a full quota must not stop the new payload being preserved
+      }
+    }
+    localStorage.setItem(CORRUPT_BAK_KEY, raw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function isStorageCorruptionLocked(): boolean {
   return storageCorruptionLocked;
 }
@@ -42,7 +67,8 @@ export function clearStorageCorruptionLock(deleteBackup = false): void {
   }
   if (deleteBackup) {
     try {
-      localStorage.removeItem(ROUTINES_KEY + '_corrupt_bak');
+      localStorage.removeItem(CORRUPT_BAK_KEY);
+      localStorage.removeItem(CORRUPT_BAK_PREV_KEY);
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const key = localStorage.key(i);
         if (key && key.startsWith(`${ROUTINES_KEY}_corrupt_bak_`)) {
@@ -57,7 +83,7 @@ export function clearStorageCorruptionLock(deleteBackup = false): void {
 
 export function getCorruptBackupRaw(): string | null {
   try {
-    return localStorage.getItem(ROUTINES_KEY + '_corrupt_bak');
+    return localStorage.getItem(CORRUPT_BAK_KEY);
   } catch {
     return null;
   }
@@ -322,6 +348,8 @@ export function saveLanguage(lang: Language): boolean {
 const DEFAULT_ROUTINES: Routine[] = [];
 
 export const LAST_SAVED_AT_KEY = 'hagane_last_saved_at';
+/** Timestamp of the last device backup this install wrote successfully. */
+export const LAST_BACKUP_AT_KEY = 'hagane_last_backup_at';
 
 export function loadRoutines(): Routine[] {
   let raw: string | null = null;
@@ -351,13 +379,14 @@ export function loadRoutines(): Routine[] {
     return sanitizeRoutines(parsed, legacyComments);
   } catch (err) {
     console.error('[Hagane] Error parsing stored routines from localStorage:', err);
-    try {
-      if (raw) {
-        localStorage.setItem(ROUTINES_KEY + '_corrupt_bak', raw);
-        storageCorruptionLocked = true;
+    // Lock saves whenever there is a non-empty payload we could not read, even if preserving a
+    // copy fails (e.g. quota): the unreadable original must never be overwritten silently.
+    // An empty string holds no data, so there is nothing to protect.
+    if (raw) {
+      if (!quarantineRoutinesRaw(raw)) {
+        console.error('[Hagane] Could not preserve corrupt routines copy; original left untouched.');
       }
-    } catch {
-      // ignore
+      storageCorruptionLocked = true;
     }
     return DEFAULT_ROUTINES;
   }

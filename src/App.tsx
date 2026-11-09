@@ -28,6 +28,7 @@ import {
   saveLanguage,
   saveRoutines,
   LAST_SAVED_AT_KEY,
+  LAST_BACKUP_AT_KEY,
   sortRoutineExercisesBySection,
 } from './services/storage';
 import { CategoryTagPicker, RoutineList } from './components/RoutineList';
@@ -206,7 +207,14 @@ export const App: React.FC = () => {
           const localTimestamp = Number(
             localStorage.getItem(LAST_SAVED_AT_KEY) || '0'
           );
+          const lastBackupWritten = Number(
+            localStorage.getItem(LAST_BACKUP_AT_KEY) || '0'
+          );
+          // Anything this install wrote itself (data save or device backup) is not "newer".
+          const knownTimestamp = Math.max(localTimestamp, lastBackupWritten);
           const backupTimestamp = backup.timestamp || 0;
+          const sameAsCurrent =
+            JSON.stringify(backup.routines) === JSON.stringify(routinesRef.current);
 
           if (
             routinesRef.current.length === 0 &&
@@ -236,8 +244,9 @@ export const App: React.FC = () => {
             }
           } else if (
             backup.routines.length > 0 &&
+            !sameAsCurrent &&
             (isStorageCorruptionLocked() ||
-              (backupTimestamp > 0 && backupTimestamp > localTimestamp))
+              (backupTimestamp > 0 && backupTimestamp > knownTimestamp))
           ) {
             // Existing local data or corrupt state -> ask user for confirmation before overwriting
             setPendingBackupRestore(backup);
@@ -596,6 +605,15 @@ export const App: React.FC = () => {
       console.info('[Hagane] Garmin message status:', event);
       if (!event.success) {
         resetGarminLastSentPayload();
+        // These are expected whenever the watch app is simply not open or out of range; the
+        // routines are re-sent automatically on the next connect or pull, so stay quiet.
+        if (
+          event.status === 'FAILURE_DURING_TRANSFER' ||
+          event.status === 'FAILURE_DEVICE_NOT_CONNECTED' ||
+          event.status === 'FAILURE_UNKNOWN'
+        ) {
+          return;
+        }
         showToast(
           lang === 'vi'
             ? `⚠️ Không thể gửi bài tập sang ${event.device} (${event.status})`
@@ -607,11 +625,12 @@ export const App: React.FC = () => {
 
     const completedSubPromise = addGarminWorkoutCompletedListener((event) => {
       console.info('[Hagane] Received workout completed from watch:', event);
+      // The watch records the activity itself (FIT file); the phone only gets a notice.
       const setsStr = event.sets ? `${event.sets} sets` : 'workout';
       showToast(
         lang === 'vi'
-          ? `🎉 Đã đồng bộ kết quả buổi tập (${setsStr}) từ đồng hồ Garmin!`
-          : `🎉 Synced completed ${setsStr} from Garmin watch!`,
+          ? `🎉 Đồng hồ Garmin đã lưu buổi tập (${setsStr})!`
+          : `🎉 Garmin watch saved your ${setsStr}!`,
         4500
       );
     });

@@ -48,6 +48,35 @@ public class GarminSyncPlugin extends Plugin {
         }
     }
 
+    @Override
+    protected void handleOnDestroy() {
+        shutdownConnectIQ();
+        super.handleOnDestroy();
+    }
+
+    /** Releases listeners and the Connect IQ service binding so nothing leaks or double-registers. */
+    private void shutdownConnectIQ() {
+        final ConnectIQ sdk = connectIQ;
+        final Context context = getContext();
+        sdkReady = false;
+        sdkInitializing = false;
+        registeredDeviceIds.clear();
+        if (sdk == null) return;
+        try {
+            sdk.unregisterAllForEvents();
+        } catch (Exception e) {
+            Log.w(TAG, "Error unregistering Connect IQ listeners: " + e.getMessage());
+        }
+        try {
+            if (context != null) {
+                sdk.shutdown(context);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Error shutting down Connect IQ SDK: " + e.getMessage());
+        }
+        connectIQ = null;
+    }
+
     /**
      * Caches the latest English workout payload in SharedPreferences and, if a paired
      * Garmin watch is connected, registers for watch pull requests ("SYNC_ROUTINES")
@@ -68,6 +97,7 @@ public class GarminSyncPlugin extends Plugin {
         }
 
         final String jsonStr = payloadObj.toString();
+        final int jsonBytes = jsonStr.getBytes(StandardCharsets.UTF_8).length;
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putString(KEY_CACHED_PAYLOAD, jsonStr).apply();
 
@@ -80,7 +110,7 @@ public class GarminSyncPlugin extends Plugin {
                 }
                 JSObject res = new JSObject();
                 res.put("success", true);
-                res.put("cachedBytes", jsonStr.length());
+                res.put("cachedBytes", jsonBytes);
                 res.put("pushedDevices", pushedCount);
                 res.put("status", sdkReady ? "SDK_READY" : "CACHED_WAITING_FOR_WATCH");
                 call.resolve(res);
@@ -88,7 +118,7 @@ public class GarminSyncPlugin extends Plugin {
         } else {
             JSObject res = new JSObject();
             res.put("success", true);
-            res.put("cachedBytes", jsonStr.length());
+            res.put("cachedBytes", jsonBytes);
             res.put("pushedDevices", 0);
             res.put("status", "CACHED_ONLY");
             call.resolve(res);
@@ -158,8 +188,8 @@ public class GarminSyncPlugin extends Plugin {
                 if (registeredDeviceIds.contains(deviceId)) {
                     continue;
                 }
-                registeredDeviceIds.add(deviceId);
 
+                try {
                 // 1. Listen for watch reconnects over Bluetooth -> auto-push cached routines
                 connectIQ.registerForDeviceEvents(
                     device,
@@ -230,6 +260,20 @@ public class GarminSyncPlugin extends Plugin {
                         }
                     }
                 );
+
+                // Only mark the device as registered once BOTH registrations succeeded.
+                registeredDeviceIds.add(deviceId);
+                } catch (InvalidStateException e) {
+                    throw e;
+                } catch (Exception e) {
+                    // Roll back a half-finished registration so a retry cannot double-register.
+                    Log.w(TAG, "Registering listeners for device " + deviceId + " failed: " + e.getMessage());
+                    try {
+                        connectIQ.unregisterForEvents(device);
+                    } catch (Exception ignored) {
+                        // best effort
+                    }
+                }
             }
         } catch (InvalidStateException e) {
             sdkReady = false;
@@ -254,7 +298,7 @@ public class GarminSyncPlugin extends Plugin {
             for (IQDevice d : connected) {
                 if (d == null) continue;
                 String name = d.getFriendlyName() != null ? d.getFriendlyName().toLowerCase() : "";
-                if (name.contains("forerunner") || name.contains("255") || name.contains("fr")) {
+                if (name.contains("forerunner") || name.contains("255")) {
                     targets.add(d);
                 }
             }

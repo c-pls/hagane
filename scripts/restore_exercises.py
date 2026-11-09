@@ -228,7 +228,7 @@ def validate_exercise_structure(row: dict, location: str = ""):
         raise FileNotFoundError(f"{location}[{ex_id}] Video file not found on disk: {v_path}")
 
 
-def restore():
+def restore(check_only: bool = False):
     if not os.path.isfile(SNAPSHOT_PATH):
         print(f"❌ Error: Snapshot file not found at {SNAPSHOT_PATH}")
         sys.exit(1)
@@ -400,15 +400,38 @@ def restore():
     # Sort deterministically: numeric IDs first (0025-3012), then named IDs alphabetically (drv-*, famous-*, new-*)
     merged_list.sort(key=lambda x: (0, int(x["id"])) if x["id"].isdigit() else (1, x["id"]))
 
+    if check_only:
+        # Read-only verification used by `npm test`: never touches exercises.json or the .bak.
+        if not os.path.isfile(EXERCISES_PATH):
+            print(f"❌ {EXERCISES_PATH} is missing.")
+            sys.exit(1)
+        with open(EXERCISES_PATH, "r", encoding="utf-8") as f:
+            current = json.load(f)
+        if current != merged_list:
+            current_ids = {row.get("id") for row in current}
+            expected_ids = {row["id"] for row in merged_list}
+            print(
+                "❌ exercises.json differs from what the snapshot would produce "
+                f"(only in file: {sorted(current_ids - expected_ids)[:10]}, "
+                f"only in snapshot: {sorted(expected_ids - current_ids)[:10]}). "
+                "Run `python3 scripts/restore_exercises.py` to regenerate it."
+            )
+            sys.exit(1)
+        print(f"✅ exercises.json matches the snapshot ({len(current)} exercises); nothing written.")
+        return
+
     # Backup existing file to .bak
     if os.path.isfile(EXERCISES_PATH):
         shutil.copyfile(EXERCISES_PATH, BAK_PATH)
         print(f"💾 Backed up existing exercises to {BAK_PATH}")
 
     os.makedirs(os.path.dirname(EXERCISES_PATH), exist_ok=True)
-    with open(EXERCISES_PATH, "w", encoding="utf-8") as f:
+    # Write to a temp file and rename so an interrupted run cannot truncate exercises.json.
+    tmp_path = EXERCISES_PATH + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
         json.dump(merged_list, f, ensure_ascii=False, indent=2)
         f.write("\n")
+    os.replace(tmp_path, EXERCISES_PATH)
 
     # Post-write verification
     with open(EXERCISES_PATH, "r", encoding="utf-8") as f:
@@ -432,4 +455,4 @@ def restore():
 
 
 if __name__ == "__main__":
-    restore()
+    restore(check_only="--check" in sys.argv)

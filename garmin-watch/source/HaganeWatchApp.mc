@@ -61,7 +61,12 @@ class HaganeWatchApp extends Application.AppBase {
         if (_state != null) {
             _state.onSyncReceived(sanitized);
         }
-        if (Attention has :vibrate) {
+        // Never buzz the wrist during a workout: the new routines are queued silently.
+        var workoutRunning = false;
+        if (_state != null) {
+            workoutRunning = _state.isWorkoutActive();
+        }
+        if (!workoutRunning && (Attention has :vibrate)) {
             try {
                 var vibe = [new Attention.VibeProfile(80, 220)];
                 Attention.vibrate(vibe);
