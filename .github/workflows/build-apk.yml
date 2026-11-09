@@ -110,9 +110,9 @@ jobs:
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "v1.4.${{ github.run_number }}"
+          tag_name: "v1.${{ github.run_number }}"
           target_commitish: ${{ github.sha }}
-          name: "Hagane 1.4.${{ github.run_number }}"
+          name: "Hagane 1.${{ github.run_number }}"
           make_latest: true
           generate_release_notes: true
           body: |
@@ -120,7 +120,7 @@ jobs:
             > *"Forge your steel"*
 
             Download and install the APK directly on your Samsung Galaxy or Android phone:
-            👉 **[Download hagane.apk](https://github.com/${{ github.repository }}/releases/download/v1.4.${{ github.run_number }}/hagane.apk)**
+            👉 **[Download hagane.apk](https://github.com/${{ github.repository }}/releases/download/v1.${{ github.run_number }}/hagane.apk)**
 
             ---
             ### ✨ What's new in Hagane 1.4:
