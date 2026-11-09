@@ -663,6 +663,8 @@ class HaganeWatchView extends WatchUi.View {
 
             var y = startY + (i * spacingY);
 
+            var skipStr = (tSets == 1) ? "Skipped (1 Set)" : ("Skipped (" + tSets + " Sets)");
+
             if (isSelected) {
                 dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_DK_BLUE);
                 dc.fillRoundedRectangle(20, y, w - 40, itemH, 10);
@@ -670,8 +672,8 @@ class HaganeWatchView extends WatchUi.View {
                 dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
                 dc.drawText(cx, y + 4, Graphics.FONT_XTINY, "[" + label + "] " + truncateText(name, 17), Graphics.TEXT_JUSTIFY_CENTER);
 
-                var statusStr = isDone ? "Done (" + cSets + "/" + tSets + ")" : (cSets + "/" + tSets + " Sets Completed");
-                dc.setColor(isDone ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+                var statusStr = isDone ? (cSets == 0 ? skipStr : ("Done (" + cSets + "/" + tSets + ")")) : (cSets + "/" + tSets + " Sets Completed");
+                dc.setColor(isDone ? (cSets == 0 ? Graphics.COLOR_ORANGE : Graphics.COLOR_GREEN) : Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
                 dc.drawText(cx, y + 24, Graphics.FONT_XTINY, statusStr, Graphics.TEXT_JUSTIFY_CENTER);
             } else {
                 dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_LT_GRAY);
@@ -680,8 +682,8 @@ class HaganeWatchView extends WatchUi.View {
                 dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
                 dc.drawText(cx, y + 4, Graphics.FONT_XTINY, "[" + label + "] " + truncateText(name, 17), Graphics.TEXT_JUSTIFY_CENTER);
 
-                var statusStr = isDone ? "Done (" + cSets + "/" + tSets + ")" : (cSets + "/" + tSets + " Sets");
-                dc.setColor(isDone ? Graphics.COLOR_DK_GREEN : Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+                var statusStr = isDone ? (cSets == 0 ? skipStr : ("Done (" + cSets + "/" + tSets + " Sets)")) : (cSets + "/" + tSets + " Sets");
+                dc.setColor(isDone ? (cSets == 0 ? Graphics.COLOR_ORANGE : Graphics.COLOR_DK_GREEN) : Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
                 dc.drawText(cx, y + 24, Graphics.FONT_XTINY, statusStr, Graphics.TEXT_JUSTIFY_CENTER);
             }
         }

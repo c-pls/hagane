@@ -13643,7 +13643,7 @@
   },
   {
     "id": "famous-bb-overhand-bent-over-row",
-    "slug": "barbell-bent-over-row-overhand",
+    "slug": "barbell-overhand-bent-over-row",
     "name": "Bent-Over Row - Overhand (Barbell)",
     "nameVi": "Gập người chèo tạ đòn úp tay",
     "aliases": [
@@ -13867,7 +13867,7 @@
   },
   {
     "id": "famous-db-flat-bench-press",
-    "slug": "dumbbell-bench-press",
+    "slug": "dumbbell-bench-press-flat",
     "name": "Flat Bench Press (Dumbbell)",
     "nameVi": "Nằm ghế phẳng đẩy ngực với tạ đơn",
     "aliases": [
@@ -13937,7 +13937,7 @@
   },
   {
     "id": "famous-db-one-arm-row",
-    "slug": "one-arm-dumbbell-row",
+    "slug": "dumbbell-one-arm-row",
     "name": "One-Arm Row (Dumbbell)",
     "nameVi": "Chèo tạ đơn một tay tựa ghế tập xô",
     "aliases": [
