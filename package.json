@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc -b",
-    "test": "npm run typecheck && python3 scripts/restore_exercises.py",
+    "test": "npm run typecheck && python3 scripts/restore_exercises.py --check",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "cap:sync": "npm run build && npx cap sync android",

@@ -1,6 +1,10 @@
 import { Capacitor, registerPlugin, PluginListenerHandle } from '@capacitor/core';
 import { Exercise, Routine } from '../types/gym';
-import { getDefaultRestSeconds, sortRoutineExercisesBySection } from './storage';
+import {
+  getDefaultRestSeconds,
+  isStorageCorruptionLocked,
+  sortRoutineExercisesBySection,
+} from './storage';
 
 export interface GarminCacheResult {
   success: boolean;
@@ -343,16 +347,19 @@ export function buildGarminPayload(
 
   // Step 2: If still over budget, trim trailing routines until within GARMIN_MAX_PAYLOAD_BYTES
   const originalRoutinesCount = payload.routines.length;
+  const omittedNames: string[] = [];
   while (
     payload.routines.length > 1 &&
     getPayloadUtf8Bytes(payload) > GARMIN_MAX_PAYLOAD_BYTES
   ) {
-    payload.routines.pop();
+    const dropped = payload.routines.pop();
+    if (dropped) omittedNames.unshift(dropped.n);
   }
   if (payload.routines.length < originalRoutinesCount) {
     isTrimmed = true;
     const omitted = originalRoutinesCount - payload.routines.length;
-    trimReason = `Trimmed ${omitted} routine(s) to fit watch memory limit`;
+    // Say exactly which routines the watch will not receive, not just how many.
+    trimReason = `${omitted} routine(s) not sent to the watch (memory limit): ${omittedNames.join(', ')}`;
     console.warn(`[GarminSync] ${trimReason}`);
   }
 
@@ -383,6 +390,8 @@ export function buildGarminPayload(
     if (firstRoutine.e.length < origExCount) {
       isTrimmed = true;
       trimReason = `Trimmed exercises to fit watch memory limit`;
+      // The new last exercise must not point at a superset partner that was just removed.
+      firstRoutine.e[firstRoutine.e.length - 1].sn = 0;
     }
   }
 
@@ -427,6 +436,8 @@ let pendingGarminArgs: {
   exercisesMap: Record<string, Exercise>;
 } | null = null;
 let lastSentPayloadJson = '';
+// True once a non-empty routine list has been handed to the native bridge this session.
+let hasSentNonEmptyPayload = false;
 
 export function resetGarminLastSentPayload(): void {
   lastSentPayloadJson = '';
@@ -436,6 +447,12 @@ async function executeGarminCacheUpdate(
   routines: Routine[],
   exercisesMap: Record<string, Exercise>
 ): Promise<void> {
+  // Never let an empty list overwrite the watch cache just because storage has not loaded yet
+  // (quarantined/corrupt data, or the first render before a restore): only push an empty list
+  // when it is a real change from routines that were sent earlier in this session.
+  if (routines.length === 0 && (isStorageCorruptionLocked() || !hasSentNonEmptyPayload)) {
+    return;
+  }
   try {
     const { payload, isTrimmed, trimReason } = buildGarminPayload(
       routines,
@@ -448,6 +465,7 @@ async function executeGarminCacheUpdate(
     const res = await GarminSyncNative.cacheRoutinesForWatch({ payload });
     if (res && res.success) {
       lastSentPayloadJson = jsonStr;
+      hasSentNonEmptyPayload = routines.length > 0;
       garminSyncStatusHandler?.({
         success: true,
         isTrimmed,

@@ -1,7 +1,7 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Routine } from '../types/gym';
-import { sanitizeRoutines } from './storage';
+import { sanitizeRoutines, LAST_BACKUP_AT_KEY } from './storage';
 
 const BACKUP_DIR = 'Hagane';
 const BACKUP_FILE = 'hagane_backup.json';
@@ -63,9 +63,40 @@ export async function requestStoragePermissions(): Promise<boolean> {
 }
 
 /**
- * Backward-compatibility alias for startup/manual permission request.
+ * Write via a temp file and rename so a process kill mid-write can never leave a truncated
+ * backup behind: the previous complete file stays in place until the new one is complete.
  */
-export const ensureStoragePermissions = requestStoragePermissions;
+async function writeFileAtomic(
+  path: string,
+  directory: Directory,
+  data: string
+): Promise<void> {
+  const tmp = `${path}.tmp`;
+  await Filesystem.writeFile({ path: tmp, data, directory, encoding: Encoding.UTF8 });
+  try {
+    await Filesystem.rename({ from: tmp, to: path, directory, toDirectory: directory });
+    return;
+  } catch {
+    // Some platforms refuse to rename over an existing file: replace it explicitly below.
+  }
+  try {
+    await Filesystem.deleteFile({ path, directory });
+  } catch {
+    // destination may not exist yet
+  }
+  try {
+    await Filesystem.rename({ from: tmp, to: path, directory, toDirectory: directory });
+  } catch (renameErr) {
+    // Last resort: a plain write is better than losing the backup entirely.
+    console.warn('[Hagane] Atomic rename unavailable, writing backup directly:', renameErr);
+    await Filesystem.writeFile({ path, data, directory, encoding: Encoding.UTF8 });
+    try {
+      await Filesystem.deleteFile({ path: tmp, directory });
+    } catch {
+      // ignore
+    }
+  }
+}
 
 /**
  * Automatically persist routines to the physical device's public Documents directory.
@@ -101,14 +132,18 @@ export async function autoSaveToDevice(routines: Routine[]): Promise<AutoSaveRes
         // directory likely already exists
       }
 
-      await Filesystem.writeFile({
+      await writeFileAtomic(`${BACKUP_DIR}/${BACKUP_FILE}`, Directory.Documents, data);
+
+      // Only claim "reinstall-safe" if the file can actually be read back intact.
+      const verify = await Filesystem.readFile({
         path: `${BACKUP_DIR}/${BACKUP_FILE}`,
-        data,
         directory: Directory.Documents,
         encoding: Encoding.UTF8,
       });
-
-      savedToPublic = true;
+      savedToPublic = typeof verify.data === 'string' && verify.data === data;
+      if (!savedToPublic) {
+        console.warn('[Hagane] Documents backup read-back did not match what was written.');
+      }
     }
   } catch (err) {
     console.warn('[Hagane] Error saving backup to device Documents:', err);
@@ -117,15 +152,20 @@ export async function autoSaveToDevice(routines: Routine[]): Promise<AutoSaveRes
   // 2. Also persist to internal app data storage as cache / fallback
   let savedToInternal = false;
   try {
-    await Filesystem.writeFile({
-      path: BACKUP_FILE,
-      data,
-      directory: Directory.Data,
-      encoding: Encoding.UTF8,
-    });
+    await writeFileAtomic(BACKUP_FILE, Directory.Data, data);
     savedToInternal = true;
   } catch (fallbackErr) {
     console.warn('[Hagane] Fallback write to internal app data failed:', fallbackErr);
+  }
+
+  if (savedToPublic || savedToInternal) {
+    // Remember what this install last wrote so the next launch does not mistake it for a
+    // newer backup from elsewhere.
+    try {
+      localStorage.setItem(LAST_BACKUP_AT_KEY, String(payload.timestamp));
+    } catch {
+      // ignore
+    }
   }
 
   if (savedToPublic) {
