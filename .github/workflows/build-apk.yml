@@ -123,7 +123,7 @@ jobs:
             👉 **[Download hagane.apk](https://github.com/${{ github.repository }}/releases/download/v1.${{ github.run_number }}/hagane.apk)**
 
             ---
-            ### ✨ What's new in Hagane 1.4:
+            ### ✨ What's in this release:
             - **New Identity & Twin Katana Logo**: Rebranded to **Hagane** with sleek Katana Barbell branding across Android and Garmin.
             - **⌚ Garmin Forerunner 255 Watch Integration**: Custom English-only strength workout companion app (`type="watch-app"`) with live Heart Rate, set tracking, and native `.FIT` recording.
             - **⏱ Per-Exercise Rest Timers**: Custom rest countdowns (`2:30` compound, `1:30` isolation, `1:00` warm-up) with 360° watch progress ring and overtime tracking.
