@@ -6,8 +6,7 @@
         launcherIcon="@Drawables.LauncherIcon"
         minApiLevel="3.2.0"
         name="@Strings.AppName"
-        type="watch-app"
-        version="1.4.0">
+        type="watch-app">
 
         <iq:products>
             <!-- Garmin Forerunner 255 Music (46mm, 260x260) & Forerunner 255 (46mm, 260x260) -->
