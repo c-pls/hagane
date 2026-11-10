@@ -44,6 +44,8 @@ import {
   autoSaveToDevice,
   debouncedAutoSaveToDevice,
   requestStoragePermissions,
+  checkStoragePermissions,
+  grantBackupAccess,
   flushPendingDeviceSave,
   setDeviceBackupErrorHandler,
   DeviceBackupStatus,
@@ -90,6 +92,8 @@ export const App: React.FC = () => {
   const [deviceBackupStatus, setDeviceBackupStatus] = useState<DeviceBackupStatus | null>(null);
   const [routineVersion, setRoutineVersion] = useState(0);
   const isRestoringRef = useRef(false);
+  // Set when the user was sent to system settings to allow file access; checked on return.
+  const awaitingStorageAccessRef = useRef(false);
   const hasDiscardedDraftRef = useRef(false);
 
   useEffect(() => {
@@ -639,6 +643,41 @@ export const App: React.FC = () => {
       errorSubPromise?.then((h) => h.remove());
       statusSubPromise?.then((h) => h.remove());
       completedSubPromise?.then((h) => h.remove());
+    };
+  }, [lang]);
+
+  const retryBackupNow = async () => {
+    const res = await autoSaveToDevice(routinesRef.current);
+    if (res.isReinstallSafe) {
+      setDeviceBackupStatus(null);
+      showToast(
+        lang === 'vi'
+          ? 'Đã lưu bản sao lưu an toàn vào Documents!'
+          : 'Backup saved to Documents (reinstall-safe)!'
+      );
+    } else {
+      showToast(lang === 'vi' ? 'Chưa ghi được vào Documents' : 'Could not write to Documents');
+    }
+  };
+
+  // Back from the system "All files access" page: retry the backup straight away.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let handle: { remove: () => void } | null = null;
+    let mounted = true;
+    CapApp.addListener('appStateChange', async ({ isActive }) => {
+      if (!isActive || !awaitingStorageAccessRef.current) return;
+      awaitingStorageAccessRef.current = false;
+      if (await checkStoragePermissions()) {
+        await retryBackupNow();
+      }
+    }).then((h) => {
+      if (!mounted) h.remove();
+      else handle = h;
+    });
+    return () => {
+      mounted = false;
+      if (handle) handle.remove();
     };
   }, [lang]);
 
@@ -1313,39 +1352,38 @@ export const App: React.FC = () => {
             <div className="space-y-0.5 min-w-0 flex-1">
               <h3 className="font-bold text-sm text-amber-950">
                 {deviceBackupStatus.isInternalOnly
-                  ? (lang === 'vi' ? '⚠️ Chưa bật sao lưu an toàn khi cài lại máy' : '⚠️ Reinstall-Safe Backup Not Active')
+                  ? (lang === 'vi' ? '⚠️ Sao lưu sẽ mất khi gỡ app' : '⚠️ Backup not reinstall-safe')
                   : (lang === 'vi' ? '⚠️ Không thể lưu bản sao lưu thiết bị' : '⚠️ Device Backup Failed')}
               </h3>
               <p className="text-xs text-amber-800 leading-relaxed">
                 {deviceBackupStatus.isInternalOnly
                   ? (lang === 'vi'
-                      ? 'Bản sao lưu hiện chỉ lưu tạm trong bộ nhớ riêng của ứng dụng và SẼ BỊ MẤT nếu gỡ ứng dụng. Hãy cấp quyền bộ nhớ Documents để bảo vệ dữ liệu khi cài lại máy.'
-                      : 'Backup is currently stored in app-internal memory only and will NOT survive app uninstallation. Please grant storage permission so your routines survive reinstallation.')
+                      ? 'Cấp quyền truy cập tệp để giữ giáo án khi cài lại.'
+                      : 'Allow file access so your routines survive uninstalling.')
                   : (lang === 'vi'
-                      ? 'Ứng dụng không thể ghi tệp sao lưu vào bộ nhớ máy. Vui lòng kiểm tra dung lượng trống hoặc quyền truy cập.'
-                      : 'Unable to write backup to device storage. Please check storage permissions or free space.')}
+                      ? 'Không ghi được bản sao lưu. Kiểm tra dung lượng hoặc quyền truy cập tệp.'
+                      : 'Couldn\'t write the backup. Check free space or file access.')}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={async () => {
-                  const granted = await requestStoragePermissions();
-                  if (granted) {
-                    const res = await autoSaveToDevice(routinesRef.current);
-                    if (res.isReinstallSafe) {
-                      setDeviceBackupStatus(null);
-                      showToast(lang === 'vi' ? 'Đã lưu bản sao lưu an toàn vào Documents!' : 'Device backup saved to Documents (reinstall-safe)!');
-                    } else {
-                      showToast(lang === 'vi' ? 'Chưa ghi được vào Documents' : 'Could not write to Documents');
-                    }
+                  const result = await grantBackupAccess();
+                  if (result === 'opened-settings') {
+                    // The user finishes in system settings; the app-resume listener retries.
+                    awaitingStorageAccessRef.current = true;
+                    return;
+                  }
+                  if (result === 'granted') {
+                    await retryBackupNow();
                   } else {
                     showToast(lang === 'vi' ? 'Chưa được cấp quyền bộ nhớ' : 'Storage permission not granted');
                   }
                 }}
                 className="px-3.5 py-2 min-h-[44px] flex items-center justify-center rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition cursor-pointer shadow-xs"
               >
-                {lang === 'vi' ? 'Cấp quyền' : 'Grant Permission'}
+                {lang === 'vi' ? 'Cấp quyền' : 'Allow'}
               </button>
               <button
                 type="button"

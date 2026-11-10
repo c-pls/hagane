@@ -2,6 +2,7 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Routine } from '../types/gym';
 import { sanitizeRoutines, LAST_BACKUP_AT_KEY } from './storage';
+import { getAllFilesAccessStatus, openAllFilesAccessSettings } from './storageAccess';
 
 const BACKUP_DIR = 'Hagane';
 const BACKUP_FILE = 'hagane_backup.json';
@@ -36,6 +37,9 @@ export function setDeviceBackupErrorHandler(handler: DeviceBackupErrorHandler | 
 export async function checkStoragePermissions(): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) return true;
   try {
+    // Android 11+: the legacy storage permission is ignored, "All files access" decides.
+    const access = await getAllFilesAccessStatus();
+    if (access.needsAllFilesAccess) return access.granted;
     const status = await Filesystem.checkPermissions();
     return status.publicStorage === 'granted';
   } catch (err) {
@@ -50,6 +54,10 @@ export async function checkStoragePermissions(): Promise<boolean> {
 export async function requestStoragePermissions(): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) return true;
   try {
+    const access = await getAllFilesAccessStatus();
+    // Android 11+ has no dialog to show; this only reports the current state.
+    // The settings page is opened by grantBackupAccess() on an explicit tap.
+    if (access.needsAllFilesAccess) return access.granted;
     const status = await Filesystem.checkPermissions();
     if (status.publicStorage === 'granted') {
       return true;
@@ -60,6 +68,29 @@ export async function requestStoragePermissions(): Promise<boolean> {
     console.warn('[Hagane] Storage permission request error:', err);
     return false;
   }
+}
+
+export type GrantBackupAccessResult = 'granted' | 'opened-settings' | 'denied';
+
+/**
+ * Called when the user taps "Allow". On Android 11+ this jumps straight to the system
+ * "All files access" page for the app; the caller retries the backup when the app resumes.
+ * On older Android it shows the regular permission dialog.
+ */
+export async function grantBackupAccess(): Promise<GrantBackupAccessResult> {
+  if (!Capacitor.isNativePlatform()) return 'granted';
+  try {
+    const access = await getAllFilesAccessStatus();
+    if (access.needsAllFilesAccess) {
+      if (access.granted) return 'granted';
+      await openAllFilesAccessSettings();
+      return 'opened-settings';
+    }
+  } catch (err) {
+    console.warn('[Hagane] Could not open All files access settings:', err);
+    return 'denied';
+  }
+  return (await requestStoragePermissions()) ? 'granted' : 'denied';
 }
 
 /**

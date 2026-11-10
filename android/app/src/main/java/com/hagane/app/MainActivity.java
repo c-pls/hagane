@@ -7,6 +7,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(GarminSyncPlugin.class);
+        registerPlugin(StorageAccessPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
