@@ -422,6 +422,9 @@ class HaganeWatchView extends WatchUi.View {
         if (item.equals("Save Workout")) {
             return "Save";
         }
+        if (item.equals("Previous Set")) {
+            return "Undo Set";
+        }
         return item;
     }
 

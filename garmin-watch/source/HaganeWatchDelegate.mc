@@ -78,6 +78,13 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
             WatchUi.requestUpdate();
             return true;
         } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
+            if (_state.pickerReturnState != HaganeWorkoutState.STATE_PAUSE_MENU) {
+                // Opened directly from a set / rest screen: go straight back to it
+                _state.screenState = _state.pickerReturnState;
+                _state.pickerReturnState = HaganeWorkoutState.STATE_PAUSE_MENU;
+                WatchUi.requestUpdate();
+                return true;
+            }
             // Return back to pause menu; if all steps are completed, preserve isWorkoutComplete
             if (_state.areAllStepsCompleted()) {
                 _state.isWorkoutComplete = true;
@@ -205,14 +212,14 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
         return false;
     }
 
-    // Long-press UP (Menu) -> on Routine List triggers Sync from Phone; during workout opens Pause Menu
+    // Long-press UP (Menu) -> on Routine List triggers Sync from Phone; during a set or rest opens the exercise picker
     function onMenu() as Boolean {
         var st = _state.screenState;
         if (st == HaganeWorkoutState.STATE_ROUTINE_LIST) {
             _state.requestSyncFromPhone(false);
             return true;
         } else if (st == HaganeWorkoutState.STATE_ACTIVE_SET || st == HaganeWorkoutState.STATE_REST) {
-            _state.openPauseMenu();
+            _state.openExercisePickerDirect();
             return true;
         }
         return false;

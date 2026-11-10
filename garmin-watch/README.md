@@ -27,7 +27,7 @@ Custom English-only **Monkey C** strength-training watch app (`type="watch-app"`
 | :--- | :--- | :--- | :--- | :--- |
 | **START** *(Top-Right)* | Start selected routine *(or Sync if empty)* | **Finish Set** -> Start Rest (or next Superset exercise) | **Begin Next Set** (early or after `00:00`) | Select menu action |
 | **BACK** *(Bottom-Right)* | Exit app | Open **Pause Menu** | Open **Pause Menu** | Resume workout |
-| **UP** *(Middle-Left)* | Previous routine *(Hold: Sync from Phone)* | *(Hold: Pause Menu)* | **`+15s`** rest time | Move cursor up |
+| **UP** *(Middle-Left)* | Previous routine *(Hold: Sync from Phone)* | Clock screen *(Hold: Switch exercise)* | **`+15s`** rest time *(Hold: Switch exercise)* | Move cursor up |
 | **DOWN** *(Bottom-Left)* | Next routine | — | **`-15s`** rest time | Move cursor down |
 
 ---

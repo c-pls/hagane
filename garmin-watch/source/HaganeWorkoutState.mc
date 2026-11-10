@@ -49,6 +49,11 @@ class HaganeWorkoutState {
     public var activeRoutineId as String = "";
     // Routines received from the phone while a workout was running; applied once it ends.
     public var pendingRoutines as Array? = null;
+    // Step indices of sets left unfinished when the lifter jumped to another exercise (machine busy).
+    // The workout returns to them once the detour exercise is finished.
+    public var returnStack as Array = [];
+    // Where BACK goes from the exercise picker: the pause menu, or the screen it was opened from
+    public var pickerReturnState as Number = STATE_PAUSE_MENU;
 
     // Flattened execution steps for the active routine
     public var steps as Array = [];
@@ -70,8 +75,8 @@ class HaganeWorkoutState {
     public static const PAUSE_MENU_ITEMS = [
         "Resume",
         "Select Exercise",
-        "Skip Set",
         "Previous Set",
+        "Skip Set",
         "Save Workout",
         "Discard"
     ];
@@ -702,6 +707,81 @@ class HaganeWorkoutState {
         return list;
     }
 
+    // "3A"/"3B" -> "3", "W1A" -> "W1", "2" -> "2": steps of one exercise or superset share a group
+    private function groupKeyOf(label as String) as String {
+        var n = label.length();
+        if (n >= 2) {
+            var last = label.substring(n - 1, n);
+            var prev = label.substring(n - 2, n - 1);
+            var digits = "0123456789";
+            if (digits.find(prev) != null && digits.find(last) == null) {
+                return label.substring(0, n - 1);
+            }
+        }
+        return label;
+    }
+
+    private function groupOfStep(stepIdx as Number) as String {
+        var lbl = (steps[stepIdx] as Dictionary).get("label");
+        return (lbl instanceof String) ? groupKeyOf(lbl as String) : "";
+    }
+
+    // Called when jumping to another exercise: remember the set we were about to do so the
+    // workout can come back to it after the detour (e.g. leg press taken -> leg extension first).
+    private function rememberReturnPoint(targetIdx as Number) as Void {
+        if (currentStepIdx < 0 || currentStepIdx >= steps.size() || targetIdx < 0 || targetIdx >= steps.size()) {
+            return;
+        }
+        var cur = steps[currentStepIdx] as Dictionary;
+        if (cur.get("completed") == true || cur.get("skipped") == true) {
+            return;
+        }
+        if (groupOfStep(currentStepIdx).equals(groupOfStep(targetIdx))) {
+            return;
+        }
+        for (var i = 0; i < returnStack.size(); i += 1) {
+            if ((returnStack[i] as Number) == currentStepIdx) {
+                return;
+            }
+        }
+        returnStack.add(currentStepIdx);
+        if (returnStack.size() > 4) {
+            returnStack = returnStack.slice(1, returnStack.size());
+        }
+    }
+
+    // After finishing a set: if we are about to leave the exercise/superset we detoured into,
+    // return the step to go back to; otherwise -1 (keep the normal order).
+    private function popReturnPoint(doneIdx as Number, nextIdx as Number) as Number {
+        if (returnStack.size() == 0 || doneIdx < 0 || doneIdx >= steps.size()) {
+            return -1;
+        }
+        var doneGroup = groupOfStep(doneIdx);
+        if (nextIdx >= 0 && nextIdx < steps.size() && groupOfStep(nextIdx).equals(doneGroup)) {
+            return -1;
+        }
+        while (returnStack.size() > 0) {
+            var idx = returnStack[returnStack.size() - 1] as Number;
+            returnStack = returnStack.slice(0, returnStack.size() - 1);
+            if (idx >= 0 && idx < steps.size()) {
+                var stp = steps[idx] as Dictionary;
+                if (stp.get("completed") != true && stp.get("skipped") != true &&
+                    !groupOfStep(idx).equals(doneGroup)) {
+                    return idx;
+                }
+            }
+        }
+        return -1;
+    }
+
+    // Hold UP during a set or rest: open the exercise picker right away, without pausing the recording
+    function openExercisePickerDirect() as Void {
+        var origin = screenState;
+        previousWorkoutState = origin;
+        openExercisePicker();
+        pickerReturnState = origin;
+    }
+
     function jumpToExercise(targetExIdx as Number) as Void {
         var exList = getActiveExerciseList();
         if (targetExIdx < 0 || targetExIdx >= exList.size()) {
@@ -748,6 +828,7 @@ class HaganeWorkoutState {
             setElapsedSec = 0;
         }
 
+        rememberReturnPoint(foundIdx);
         currentStepIdx = foundIdx;
         restElapsedSec = 0;
         screenState = STATE_ACTIVE_SET;
@@ -768,6 +849,7 @@ class HaganeWorkoutState {
         }
         var startIdObj = routine.get("id");
         activeRoutineId = (startIdObj instanceof String) ? (startIdObj as String) : "";
+        returnStack = [];
 
         currentStepIdx = 0;
         setElapsedSec = 0;
@@ -930,6 +1012,12 @@ class HaganeWorkoutState {
             }
         }
 
+        // Detour finished? Go back to the exercise that was left unfinished.
+        var returnIdx = popReturnPoint(currentStepIdx, nextIdx);
+        if (returnIdx >= 0) {
+            nextIdx = returnIdx;
+        }
+
         // If all steps in the entire workout are completed, prompt Save / Discard!
         if (nextIdx < 0) {
             onWorkoutComplete();
@@ -1063,6 +1151,7 @@ class HaganeWorkoutState {
     }
 
     function openExercisePicker() as Void {
+        pickerReturnState = STATE_PAUSE_MENU;
         var exList = getActiveExerciseList();
         exercisePickerIdx = 0;
         if (currentStepIdx < steps.size()) {
