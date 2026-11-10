@@ -9,7 +9,7 @@ Hagane is a strength-training app for the **Garmin Forerunner 255 / 255 Music**.
 1. **Phone**: open the Hagane Android app and create your routines (exercises, sets, reps, weight, rest time).
 2. **Watch**: press **START** → choose **Hagane** (next to Run, Bike…).
 3. The watch asks your phone for the latest routines and stores them on the watch. After that it works **offline** — you can leave the phone in the locker.
-4. Pick a routine with **UP / DOWN**, press **START** to begin.
+4. Pick a routine with **UP / DOWN**, press **START**. A **GET READY** screen waits for you; press **START** again when you are at the machine and set 1 begins.
 
 > No routines showing? Open the Hagane app on the phone once (so it can answer), then on the watch **hold UP** on the routine list to sync again.
 
@@ -32,7 +32,7 @@ Hagane is a strength-training app for the **Garmin Forerunner 255 / 255 Music**.
 ### Set screen
 - Top: exercise number and set (e.g. `EX 2 • SET 1/3`). Orange = warm-up, purple = superset.
 - Big numbers: **weight (kg)** on the left, **reps** on the right.
-- Bottom: live heart rate, how long this set has lasted, and the time of day.
+- Bottom: live heart rate and how long this set has lasted.
 - Press **START** when the set is done.
 
 ### Log what you really did

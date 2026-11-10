@@ -1175,7 +1175,11 @@ class HaganeWorkoutState {
         calories = 0;
         isWorkoutComplete = false;
         discardConfirmIdx = 0;
-        screenState = STATE_ACTIVE_SET;
+        // Wait on the GET READY screen (no countdown) until the lifter presses START for set 1
+        previousWorkoutState = STATE_REST;
+        restTargetSec = 0;
+        hasVibratedForRest = true;
+        screenState = STATE_REST;
 
         // Start Garmin FIT Strength Training Recording Session
         var nmObj = routine.get("n");

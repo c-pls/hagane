@@ -180,7 +180,6 @@ class HaganeWatchView extends WatchUi.View {
     // -------------------------------------------------------------------------
     private function drawActiveSet(dc as Graphics.Dc) as Void {
         var w = dc.getWidth();
-        var h = dc.getHeight();
         var cx = w / 2;
 
         if (_state.currentStepIdx >= _state.steps.size()) {
@@ -250,28 +249,21 @@ class HaganeWatchView extends WatchUi.View {
                 var nextLbl = nextStep.get("label") as String;
                 var nextNm = nextStep.get("name") as String;
                 dc.drawText(cx, 164, Graphics.FONT_XTINY, "Next -> " + nextLbl + " " + truncateText(nextNm, 14), Graphics.TEXT_JUSTIFY_CENTER);
-            } else {
-                dc.drawText(cx, 164, Graphics.FONT_XTINY, "Rest after set: " + formatMmSs(restSec), Graphics.TEXT_JUSTIFY_CENTER);
             }
         }
 
         // Bottom bar: live HR + elapsed time of this set
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawLine(44, 186, w - 44, 186);
+        dc.drawLine(44, 188, w - 44, 188);
 
         var hrStr = _state.heartRate > 0 ? (_state.heartRate.toString() + " bpm") : "-- bpm";
         var durStr = formatMmSs(_state.setElapsedSec);
 
         dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 42, 188, Graphics.FONT_XTINY, "HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 42, 196, Graphics.FONT_XTINY, "HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 46, 188, Graphics.FONT_XTINY, durStr, Graphics.TEXT_JUSTIFY_CENTER);
-
-        // Time of day, small, at the very bottom
-        var ct = System.getClockTime();
-        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h - 36, Graphics.FONT_XTINY, ct.hour.format("%02d") + ":" + ct.min.format("%02d"), Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 46, 196, Graphics.FONT_XTINY, durStr, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // -------------------------------------------------------------------------
@@ -416,9 +408,9 @@ class HaganeWatchView extends WatchUi.View {
         // Selected item sits in the middle row with its neighbours above and below (wraps around)
         var midY = h * 54 / 100;
         var rowH = h * 21 / 100;
-        var barX = w * 17 / 100;
-        var iconX = w * 27 / 100;
-        var textX = w * 37 / 100;
+        var barX = w * 14 / 100;
+        var iconX = w * 24 / 100;
+        var textX = w * 34 / 100;
 
         for (var r = -1; r <= 1; r += 1) {
             var i = ((sel + r) % count + count) % count;
@@ -442,7 +434,7 @@ class HaganeWatchView extends WatchUi.View {
             dc.drawText(
                 textX,
                 cy,
-                isSelected ? Graphics.FONT_MEDIUM : Graphics.FONT_SMALL,
+                Graphics.FONT_MEDIUM,
                 pauseLabel(itemText),
                 Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
             );
