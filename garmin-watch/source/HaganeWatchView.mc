@@ -336,89 +336,150 @@ class HaganeWatchView extends WatchUi.View {
     }
 
     // -------------------------------------------------------------------------
-    // 4. PAUSE / OPTIONS MENU (Save, Discard, Resume, etc.)
+    // 4. PAUSE / OPTIONS MENU (running-style: time of day + icon list)
     // -------------------------------------------------------------------------
     private function drawPauseMenu(dc as Graphics.Dc) as Void {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var cx = w / 2;
 
-        var isComplete = _state.isWorkoutComplete;
+        // Dark screen like the native running pause page
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.clear();
 
-        // Top Status Header
-        if (isComplete) {
-            dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 18, Graphics.FONT_XTINY, "WORKOUT COMPLETE!", Graphics.TEXT_JUSTIFY_CENTER);
+        // Red ring marks the paused state
+        dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
+        dc.setPenWidth(3);
+        dc.drawCircle(cx, h / 2, (w / 2) - 7);
+        dc.setPenWidth(1);
 
-            dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-            var durStr = formatMmSs(_state.workoutTotalSec);
-            dc.drawText(cx, 34, Graphics.FONT_XTINY, _state.completedSetsCount + " Sets  •  " + durStr, Graphics.TEXT_JUSTIFY_CENTER);
-        } else {
-            dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 18, Graphics.FONT_XTINY, "WORKOUT PAUSED", Graphics.TEXT_JUSTIFY_CENTER);
-
-            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-            var durStr = formatMmSs(_state.workoutTotalSec);
-            dc.drawText(cx, 34, Graphics.FONT_XTINY, durStr + "  •  " + _state.completedSetsCount + " Sets", Graphics.TEXT_JUSTIFY_CENTER);
-        }
-
-        // Thin divider
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawLine(44, 50, w - 44, 50);
+        // Current time of day is the only information shown
+        var clock = System.getClockTime();
+        var timeStr = Lang.format("$1$:$2$", [clock.hour.format("%02d"), clock.min.format("%02d")]);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, h * 12 / 100, Graphics.FONT_NUMBER_MEDIUM, timeStr, Graphics.TEXT_JUSTIFY_CENTER);
 
         var items = _state.getPauseMenuItems();
-        var sel = _state.pauseMenuIdx;
         var count = items.size();
+        var sel = _state.pauseMenuIdx;
 
-        // Calculate card layout based on item count
-        var itemH = isComplete ? 34 : 22;
-        var startY = isComplete ? 64 : 54;
-        var spacingY = isComplete ? 40 : 25;
-
-        for (var i = 0; i < count; i += 1) {
-            var y = startY + (i * spacingY);
-            var itemText = items[i] as String;
-            var isSelected = (i == sel);
-
-            if (isSelected) {
-                var bgColor = Graphics.COLOR_DK_BLUE;
-                if (itemText.equals("Resume") || itemText.equals("Resume Workout")) {
-                    bgColor = Graphics.COLOR_DK_GREEN;
-                } else if (itemText.equals("Save Workout")) {
-                    bgColor = Graphics.COLOR_DK_GREEN;
-                } else if (itemText.equals("Discard")) {
-                    bgColor = Graphics.COLOR_DK_RED;
-                } else if (itemText.equals("Select Exercise")) {
-                    bgColor = Graphics.COLOR_DK_BLUE;
-                } else {
-                    bgColor = Graphics.COLOR_DK_GRAY;
-                }
-
-                dc.setColor(bgColor, bgColor);
-                dc.fillRoundedRectangle(26, y - 2, w - 52, itemH, 8);
-                dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(cx, y + (itemH / 2) - 10, Graphics.FONT_XTINY, itemText, Graphics.TEXT_JUSTIFY_CENTER);
-            } else {
-                var textColor = Graphics.COLOR_DK_GRAY;
-                if (itemText.equals("Save Workout")) {
-                    textColor = Graphics.COLOR_DK_GREEN;
-                } else if (itemText.equals("Discard")) {
-                    textColor = Graphics.COLOR_DK_RED;
-                } else if (itemText.equals("Select Exercise")) {
-                    textColor = Graphics.COLOR_DK_BLUE;
-                }
-                dc.setColor(textColor, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(cx, y + (itemH / 2) - 10, Graphics.FONT_XTINY, itemText, Graphics.TEXT_JUSTIFY_CENTER);
-            }
+        // Three rows are visible; the window follows the selection
+        var visibleRows = 3;
+        var rowH = h * 17 / 100;
+        var listTop = h * 40 / 100;
+        var firstRow = sel - 1;
+        if (firstRow > count - visibleRows) {
+            firstRow = count - visibleRows;
+        }
+        if (firstRow < 0) {
+            firstRow = 0;
         }
 
-        // Bottom guide
-        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        if (isComplete) {
-            dc.drawText(cx, h - 34, Graphics.FONT_XTINY, "START: Select", Graphics.TEXT_JUSTIFY_CENTER);
+        var barX = w * 20 / 100;
+        var iconX = w * 29 / 100;
+        var textX = w * 40 / 100;
+
+        for (var r = 0; r < visibleRows; r += 1) {
+            var i = firstRow + r;
+            if (i >= count) {
+                break;
+            }
+            var itemText = items[i] as String;
+            var isSelected = (i == sel);
+            var cy = listTop + (r * rowH) + (rowH / 2);
+
+            var color = Graphics.COLOR_LT_GRAY;
+            if (itemText.equals("Discard")) {
+                color = isSelected ? Graphics.COLOR_RED : Graphics.COLOR_DK_RED;
+            } else if (isSelected) {
+                color = Graphics.COLOR_WHITE;
+            }
+            dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+
+            if (isSelected) {
+                dc.setPenWidth(3);
+                dc.drawLine(barX, cy - (rowH / 2) + 6, barX, cy + (rowH / 2) - 6);
+                dc.setPenWidth(1);
+            }
+
+            drawPauseIcon(dc, itemText, iconX, cy);
+            dc.drawText(
+                textX,
+                cy,
+                Graphics.FONT_SMALL,
+                pauseLabel(itemText),
+                Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
+            );
+        }
+        dc.setPenWidth(1);
+    }
+
+    // Short label shown for each pause menu action (the action strings themselves stay unchanged)
+    private function pauseLabel(item as String) as String {
+        if (item.equals("Resume Workout")) {
+            return "Resume";
+        }
+        if (item.equals("Save Workout")) {
+            return "Save";
+        }
+        return item;
+    }
+
+    // 22px glyphs drawn with plain primitives, in the colour currently set on the dc
+    private function drawPauseIcon(dc as Graphics.Dc, item as String, x as Number, cy as Number) as Void {
+        var s = 22;
+        var half = s / 2;
+        var left = x - half;
+        dc.setPenWidth(1);
+
+        if (item.equals("Resume") || item.equals("Resume Workout")) {
+            fillTriangleRight(dc, left + 3, cy, s - 4, half);
+        } else if (item.equals("Select Exercise")) {
+            dc.fillRectangle(left, cy - 8, s, 3);
+            dc.fillRectangle(left, cy - 1, s, 3);
+            dc.fillRectangle(left, cy + 6, s, 3);
+        } else if (item.equals("Skip Set")) {
+            fillTriangleRight(dc, left, cy, s - 6, half);
+            dc.fillRectangle(left + s - 4, cy - half, 4, s);
+        } else if (item.equals("Previous Set")) {
+            dc.fillRectangle(left, cy - half, 4, s);
+            fillTriangleLeft(dc, left + 6, cy, s - 6, half);
+        } else if (item.equals("Save Workout")) {
+            // download arrow: stem, head and tray
+            dc.fillRectangle(x - 2, cy - half, 4, half - 1);
+            fillTriangleDown(dc, x, cy - 2, 8, 9);
+            dc.fillRectangle(left, cy + half - 3, s, 3);
+        } else if (item.equals("Discard")) {
+            dc.setPenWidth(3);
+            dc.drawLine(left + 2, cy - 8, left + s - 2, cy + 8);
+            dc.drawLine(left + 2, cy + 8, left + s - 2, cy - 8);
+            dc.setPenWidth(1);
         } else {
-            dc.drawText(cx, h - 40, Graphics.FONT_XTINY, "START: Select", Graphics.TEXT_JUSTIFY_CENTER);
-            dc.drawText(cx, h - 24, Graphics.FONT_XTINY, "BACK: Resume", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.fillCircle(x, cy, 5);
+        }
+    }
+
+    // Triangle pointing right: flat edge at x, apex at x + wd
+    private function fillTriangleRight(dc as Graphics.Dc, x as Number, cy as Number, wd as Number, hh as Number) as Void {
+        for (var i = 0; i < wd; i += 1) {
+            var e = hh * (wd - i) / wd;
+            dc.drawLine(x + i, cy - e, x + i, cy + e);
+        }
+    }
+
+    // Triangle pointing left: apex at x, flat edge at x + wd
+    private function fillTriangleLeft(dc as Graphics.Dc, x as Number, cy as Number, wd as Number, hh as Number) as Void {
+        for (var i = 0; i < wd; i += 1) {
+            var e = hh * i / wd;
+            dc.drawLine(x + i, cy - e, x + i, cy + e);
+        }
+    }
+
+    // Triangle pointing down: flat edge at top y, apex at y + ht
+    private function fillTriangleDown(dc as Graphics.Dc, cx as Number, y as Number, hw as Number, ht as Number) as Void {
+        for (var j = 0; j < ht; j += 1) {
+            var e = hw * (ht - j) / ht;
+            dc.drawLine(cx - e, y + j, cx + e, y + j);
         }
     }
 
@@ -693,54 +754,23 @@ class HaganeWatchView extends WatchUi.View {
     }
 
     // -------------------------------------------------------------------------
-    // 8. CLOCK & SESSION GLANCE SCREEN (Press UP/DOWN in Active Set)
+    // 8. CLOCK SCREEN (Press UP/DOWN in Active Set)
     // -------------------------------------------------------------------------
     private function drawClockGlance(dc as Graphics.Dc) as Void {
         var w = dc.getWidth();
         var h = dc.getHeight();
-        var cx = w / 2;
 
-        // Top Header
-        dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 16, Graphics.FONT_XTINY, "CURRENT TIME", Graphics.TEXT_JUSTIFY_CENTER);
-
-        // Huge Time of Day in Center
+        // Current time of day only
         var clock = System.getClockTime();
         var timeStr = Lang.format("$1$:$2$", [clock.hour.format("%02d"), clock.min.format("%02d")]);
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 38, Graphics.FONT_NUMBER_HOT, timeStr, Graphics.TEXT_JUSTIFY_CENTER);
-
-        // Seconds indicator
-        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 114, Graphics.FONT_XTINY, ":" + clock.sec.format("%02d") + " sec", Graphics.TEXT_JUSTIFY_CENTER);
-
-        // Divider
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawLine(36, 134, w - 36, 134);
-
-        // Active Session Context
-        var hrStr = _state.heartRate > 0 ? (_state.heartRate.toString() + " bpm") : "-- bpm";
-        var totalDurStr = formatMmSs(_state.workoutTotalSec);
-
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 142, Graphics.FONT_XTINY, "Workout Total: " + totalDurStr, Graphics.TEXT_JUSTIFY_CENTER);
-
-        dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 162, Graphics.FONT_XTINY, "HR " + hrStr + "  •  " + _state.completedSetsCount + " Sets", Graphics.TEXT_JUSTIFY_CENTER);
-
-        if (_state.currentStepIdx < _state.steps.size()) {
-            var step = _state.steps[_state.currentStepIdx] as Dictionary;
-            var lbl = step.get("label") as String;
-            var nm = step.get("name") as String;
-            var sNum = step.get("setNum") as Number;
-            var sTot = step.get("setTotal") as Number;
-            dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 182, Graphics.FONT_XTINY, "[" + lbl + "] " + truncateText(nm, 14) + " (" + sNum + "/" + sTot + ")", Graphics.TEXT_JUSTIFY_CENTER);
-        }
-
-        // Bottom guide
-        dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h - 36, Graphics.FONT_XTINY, "UP/DN: Back  •  START: Done", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(
+            w / 2,
+            h / 2,
+            Graphics.FONT_NUMBER_HOT,
+            timeStr,
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+        );
     }
 
     // -------------------------------------------------------------------------

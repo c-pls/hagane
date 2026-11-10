@@ -555,6 +555,9 @@ class HaganeWorkoutState {
                 vibrateRestComplete();
             }
             WatchUi.requestUpdate();
+        } else if (screenState == STATE_PAUSE_MENU) {
+            // Keep the time of day on the pause screen current
+            WatchUi.requestUpdate();
         }
     }
 
