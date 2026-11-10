@@ -17,6 +17,7 @@ Custom English-only **Monkey C** strength-training watch app (`type="watch-app"`
   - **Early Set Start**: Press **START** at any time during the rest countdown to jump into the next set early.
   - **Rest Complete Vibration + Overtime (`+00:01`)**: When the countdown reaches `00:00`, the watch fires a strong multi-pulse wrist vibration and counts up overtime (`+00:01`, `+00:02`...) in yellow/orange until you press **START** to begin your next set.
   - **Live `±15s` Adjustment**: Press **UP** (`+15s`) or **DOWN** (`-15s`) during rest to adjust the timer on the fly.
+- **Log what you really lifted**: on the set screen **UP/DOWN** change the reps by ±1 (changed numbers turn orange). Different weight? Pause menu → **Edit Weight** (±2.5 kg, applies to the remaining sets of that exercise). The logged values go to the FIT file and Garmin Connect.
 - **Switch Exercise Mid-Workout**: Machine busy? **Hold `UP`** during a set or rest to pick another exercise. When you finish it, Hagane takes you back to the exercise you left (supersets stay together).
 - **Rest Cues**: One buzz at 10s left, one per second for the last 3s, and the full pattern at `00:00`. The rest screen also shows how far your heart rate has dropped from the set's peak.
 - **Resume After Exit**: If the app is closed or killed mid-workout, the next launch offers **START: Resume** / **BACK: Discard**. Progress is kept on the watch only and expires after 6 hours.
@@ -30,8 +31,8 @@ Custom English-only **Monkey C** strength-training watch app (`type="watch-app"`
 | :--- | :--- | :--- | :--- | :--- |
 | **START** *(Top-Right)* | Start selected routine *(or Sync if empty)* | **Finish Set** -> Start Rest (or next Superset exercise) | **Begin Next Set** (early or after `00:00`) | Select menu action |
 | **BACK** *(Bottom-Right)* | Exit app | Open **Pause Menu** | Open **Pause Menu** | Resume workout |
-| **UP** *(Middle-Left)* | Previous routine *(Hold: Sync from Phone)* | Clock screen *(Hold: Switch exercise)* | **`+15s`** rest time *(Hold: Switch exercise)* | Move cursor up |
-| **DOWN** *(Bottom-Left)* | Next routine | — | **`-15s`** rest time | Move cursor down |
+| **UP** *(Middle-Left)* | Previous routine *(Hold: Sync from Phone)* | **+1 rep** *(Hold: Switch exercise)* | **`+15s`** rest time *(Hold: Switch exercise)* | Move cursor up |
+| **DOWN** *(Bottom-Left)* | Next routine | **-1 rep** | **`-15s`** rest time | Move cursor down |
 
 ---
 

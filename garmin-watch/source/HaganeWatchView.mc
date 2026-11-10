@@ -39,7 +39,28 @@ class HaganeWatchView extends WatchUi.View {
             drawClockGlance(dc);
         } else if (st == HaganeWorkoutState.STATE_RESUME_PROMPT) {
             drawResumePrompt(dc);
+        } else if (st == HaganeWorkoutState.STATE_EDIT_WEIGHT) {
+            drawEditWeight(dc);
         }
+    }
+
+    // Weight editor opened from the pause menu (UP/DOWN = +/- 2.5 kg, START = apply)
+    private function drawEditWeight(dc as Graphics.Dc) as Void {
+        var w = dc.getWidth();
+        var h = dc.getHeight();
+        var cx = w / 2;
+        var name = "";
+        if (_state.currentStepIdx >= 0 && _state.currentStepIdx < _state.steps.size()) {
+            name = (_state.steps[_state.currentStepIdx] as Dictionary).get("name") as String;
+        }
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 30, Graphics.FONT_XTINY, "WEIGHT", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 56, Graphics.FONT_SMALL, truncateText(name, 18), Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 96, Graphics.FONT_NUMBER_HOT, formatWeight(_state.editWeightValue), Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 170, Graphics.FONT_XTINY, "kg", Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // -------------------------------------------------------------------------
@@ -208,8 +229,11 @@ class HaganeWatchView extends WatchUi.View {
 
         // Target weight and reps are the two numbers the lifter looks at between reps
         var weightStr = formatWeight(weight);
-        dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
+        var weightChanged = (HaganeWorkoutState.parseWeightToFloat(weight) != HaganeWorkoutState.parseWeightToFloat(step.get("plannedWeight")));
+        var repsChanged = (reps != step.get("plannedReps"));
+        dc.setColor(weightChanged ? Graphics.COLOR_ORANGE : Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx - 52, 98, Graphics.FONT_LARGE, weightStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(repsChanged ? Graphics.COLOR_ORANGE : Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx + 52, 98, Graphics.FONT_LARGE, reps.toString(), Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx - 52, 140, Graphics.FONT_XTINY, "kg", Graphics.TEXT_JUSTIFY_CENTER);
@@ -234,16 +258,21 @@ class HaganeWatchView extends WatchUi.View {
 
         // Bottom bar: live HR + elapsed time of this set
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawLine(44, 188, w - 44, 188);
+        dc.drawLine(44, 186, w - 44, 186);
 
         var hrStr = _state.heartRate > 0 ? (_state.heartRate.toString() + " bpm") : "-- bpm";
         var durStr = formatMmSs(_state.setElapsedSec);
 
         dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 42, 196, Graphics.FONT_XTINY, "HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 42, 188, Graphics.FONT_XTINY, "HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 46, 196, Graphics.FONT_XTINY, durStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 46, 188, Graphics.FONT_XTINY, durStr, Graphics.TEXT_JUSTIFY_CENTER);
+
+        // Time of day, small, at the very bottom
+        var ct = System.getClockTime();
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, h - 36, Graphics.FONT_XTINY, ct.hour.format("%02d") + ":" + ct.min.format("%02d"), Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // -------------------------------------------------------------------------
@@ -456,6 +485,9 @@ class HaganeWatchView extends WatchUi.View {
             dc.fillRectangle(left, cy - 8, s, 3);
             dc.fillRectangle(left, cy - 1, s, 3);
             dc.fillRectangle(left, cy + 6, s, 3);
+        } else if (item.equals("Edit Weight")) {
+            dc.fillRectangle(left, cy - 2, s, 4);
+            dc.fillRectangle(x - 2, cy - half, 4, s);
         } else if (item.equals("Skip Set")) {
             fillTriangleRight(dc, left, cy, s - 6, half);
             dc.fillRectangle(left + s - 4, cy - half, 4, s);

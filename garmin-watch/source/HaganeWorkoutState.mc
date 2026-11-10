@@ -38,6 +38,7 @@ class HaganeWorkoutState {
     public static const STATE_EXERCISE_PICKER  = 6;
     public static const STATE_CLOCK_GLANCE     = 7;
     public static const STATE_RESUME_PROMPT    = 8;
+    public static const STATE_EDIT_WEIGHT      = 9;
 
     public var screenState as Number = STATE_ROUTINE_LIST;
     public var previousWorkoutState as Number = STATE_ACTIVE_SET;
@@ -59,6 +60,7 @@ class HaganeWorkoutState {
     // Highest heart rate during the set just finished, and the same value kept during rest so the
     // rest screen can show how far the heart rate has recovered
     public var setPeakHr as Number = 0;
+    public var editWeightValue as Float = 0.0f;
     public var restPeakHr as Number = 0;
 
     // Resume-after-close: saved progress offered on launch
@@ -87,6 +89,7 @@ class HaganeWorkoutState {
     public static const PAUSE_MENU_ITEMS = [
         "Resume",
         "Select Exercise",
+        "Edit Weight",
         "Previous Set",
         "Skip Set",
         "Save Workout",
@@ -936,6 +939,8 @@ class HaganeWorkoutState {
                                 "setTotal"    => sArr.size(),
                                 "weight"      => weightVal,
                                 "reps"        => repsVal,
+                                "plannedWeight" => weightVal,
+                                "plannedReps" => repsVal,
                                 "isWarmupSet" => isWarmupSet,
                                 "restSeconds" => restSec,
                                 "note"        => (ntObj instanceof String) ? (ntObj as String) : "",
@@ -1583,6 +1588,61 @@ class HaganeWorkoutState {
         WatchUi.requestUpdate();
     }
 
+    // UP / DOWN on the set screen: log what was really lifted (reps +/- 1)
+    function adjustReps(delta as Number) as Void {
+        if (currentStepIdx < 0 || currentStepIdx >= steps.size()) {
+            return;
+        }
+        var step = steps[currentStepIdx] as Dictionary;
+        var cur = (step.get("reps") instanceof Number) ? (step.get("reps") as Number) : 0;
+        var next = cur + delta;
+        if (next < 0) { next = 0; }
+        if (next > 99) { next = 99; }
+        step.put("reps", next);
+        WatchUi.requestUpdate();
+    }
+
+    function openEditWeight() as Void {
+        if (currentStepIdx < 0 || currentStepIdx >= steps.size() || isWorkoutComplete) {
+            return;
+        }
+        var step = steps[currentStepIdx] as Dictionary;
+        editWeightValue = parseWeightToFloat(step.get("weight"));
+        screenState = STATE_EDIT_WEIGHT;
+        WatchUi.requestUpdate();
+    }
+
+    function adjustEditWeight(delta as Float) as Void {
+        var next = editWeightValue + delta;
+        if (next < 0.0f) { next = 0.0f; }
+        if (next > 500.0f) { next = 500.0f; }
+        editWeightValue = next;
+        WatchUi.requestUpdate();
+    }
+
+    // Apply the new weight to this set and the remaining sets of the same exercise
+    function confirmEditWeight() as Void {
+        if (currentStepIdx >= 0 && currentStepIdx < steps.size()) {
+            var cur = steps[currentStepIdx] as Dictionary;
+            var nm = cur.get("name");
+            var lb = cur.get("label");
+            var wu = (cur.get("isWarmupSet") == true);
+            for (var i = currentStepIdx; i < steps.size(); i += 1) {
+                var stp = steps[i] as Dictionary;
+                if (stp.get("completed") == true || stp.get("skipped") == true) {
+                    continue;
+                }
+                var sameEx = (stp.get("name") as String).equals(nm as String) &&
+                             (stp.get("label") as String).equals(lb as String) &&
+                             ((stp.get("isWarmupSet") == true) == wu);
+                if (i == currentStepIdx || sameEx) {
+                    stp.put("weight", editWeightValue);
+                }
+            }
+        }
+        resumeFromPauseMenu();
+    }
+
     function executePauseMenuAction() as Void {
         var items = getPauseMenuItems();
         if (pauseMenuIdx < 0 || pauseMenuIdx >= items.size()) {
@@ -1602,6 +1662,9 @@ class HaganeWorkoutState {
             return;
         } else if (action.equals("Select Exercise")) {
             openExercisePicker();
+            return;
+        } else if (action.equals("Edit Weight")) {
+            openEditWeight();
             return;
         } else if (action.equals("Skip Set")) {
             skipCurrentSet();

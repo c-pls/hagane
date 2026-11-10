@@ -62,6 +62,9 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
         } else if (st == HaganeWorkoutState.STATE_RESUME_PROMPT) {
             _state.resumeSavedWorkout();
             return true;
+        } else if (st == HaganeWorkoutState.STATE_EDIT_WEIGHT) {
+            _state.confirmEditWeight();
+            return true;
         }
         return false;
     }
@@ -78,6 +81,10 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
         } else if (st == HaganeWorkoutState.STATE_CLOCK_GLANCE) {
             // Return back to active set
             _state.screenState = HaganeWorkoutState.STATE_ACTIVE_SET;
+            WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_EDIT_WEIGHT) {
+            _state.screenState = HaganeWorkoutState.STATE_PAUSE_MENU;
             WatchUi.requestUpdate();
             return true;
         } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
@@ -130,14 +137,16 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
             }
             return true;
         } else if (st == HaganeWorkoutState.STATE_ACTIVE_SET) {
-            // Pressing UP during active set toggles Clock / Session Glance screen (like Running data pages)
-            _state.screenState = HaganeWorkoutState.STATE_CLOCK_GLANCE;
-            WatchUi.requestUpdate();
+            // UP = one more rep than planned
+            _state.adjustReps(1);
             return true;
         } else if (st == HaganeWorkoutState.STATE_CLOCK_GLANCE) {
             // Return back to active set
             _state.screenState = HaganeWorkoutState.STATE_ACTIVE_SET;
             WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_EDIT_WEIGHT) {
+            _state.adjustEditWeight(2.5f);
             return true;
         } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
             var count = _state.getActiveExerciseList().size();
@@ -179,14 +188,16 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
             }
             return true;
         } else if (st == HaganeWorkoutState.STATE_ACTIVE_SET) {
-            // Pressing DOWN during active set toggles Clock / Session Glance screen (like Running data pages)
-            _state.screenState = HaganeWorkoutState.STATE_CLOCK_GLANCE;
-            WatchUi.requestUpdate();
+            // DOWN = one rep fewer than planned
+            _state.adjustReps(-1);
             return true;
         } else if (st == HaganeWorkoutState.STATE_CLOCK_GLANCE) {
             // Return back to active set
             _state.screenState = HaganeWorkoutState.STATE_ACTIVE_SET;
             WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_EDIT_WEIGHT) {
+            _state.adjustEditWeight(-2.5f);
             return true;
         } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
             var count = _state.getActiveExerciseList().size();
