@@ -182,20 +182,19 @@ class HaganeWatchView extends WatchUi.View {
             dc.drawText(cx, 69, Graphics.FONT_SMALL, lines[1] as String, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
-        // Divider line
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawLine(34, 102, w - 34, 102);
-
-        // Target Weight x Reps
+        // Target weight and reps are the two numbers the lifter looks at between reps
         var weightStr = formatWeight(weight);
-        var targetStr = weightStr + " kg  x  " + reps;
         dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 110, Graphics.FONT_MEDIUM, targetStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 52, 98, Graphics.FONT_LARGE, weightStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 52, 98, Graphics.FONT_LARGE, reps.toString(), Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx - 52, 140, Graphics.FONT_XTINY, "kg", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 52, 140, Graphics.FONT_XTINY, "reps", Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Optional Exercise Note (if present) or Next Exercise hint
+        // Optional exercise note, or what comes next / the rest that follows
         if (note != null && note.length() > 0) {
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 152, Graphics.FONT_XTINY, truncateText(note, 24), Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(cx, 164, Graphics.FONT_XTINY, truncateText(note, 24), Graphics.TEXT_JUSTIFY_CENTER);
         } else {
             var restSec = step.get("restSeconds") as Number;
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
@@ -203,28 +202,24 @@ class HaganeWatchView extends WatchUi.View {
                 var nextStep = _state.steps[_state.currentStepIdx + 1] as Dictionary;
                 var nextLbl = nextStep.get("label") as String;
                 var nextNm = nextStep.get("name") as String;
-                dc.drawText(cx, 152, Graphics.FONT_XTINY, "Next -> " + nextLbl + " " + truncateText(nextNm, 14), Graphics.TEXT_JUSTIFY_CENTER);
+                dc.drawText(cx, 164, Graphics.FONT_XTINY, "Next -> " + nextLbl + " " + truncateText(nextNm, 14), Graphics.TEXT_JUSTIFY_CENTER);
             } else {
-                dc.drawText(cx, 152, Graphics.FONT_XTINY, "Rest after set: " + formatMmSs(restSec), Graphics.TEXT_JUSTIFY_CENTER);
+                dc.drawText(cx, 164, Graphics.FONT_XTINY, "Rest after set: " + formatMmSs(restSec), Graphics.TEXT_JUSTIFY_CENTER);
             }
         }
 
-        // Bottom Bar: Live HR + Active Set Elapsed Time
+        // Bottom bar: live HR + elapsed time of this set
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawLine(44, 184, w - 44, 184);
+        dc.drawLine(44, 188, w - 44, 188);
 
         var hrStr = _state.heartRate > 0 ? (_state.heartRate.toString() + " bpm") : "-- bpm";
         var durStr = formatMmSs(_state.setElapsedSec);
 
         dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 42, 192, Graphics.FONT_XTINY, "HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx - 42, 196, Graphics.FONT_XTINY, "HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 46, 192, Graphics.FONT_XTINY, durStr, Graphics.TEXT_JUSTIFY_CENTER);
-
-        // Action Prompt at bottom
-        dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h - 40, Graphics.FONT_XTINY, "START: Done Set", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx + 46, 196, Graphics.FONT_XTINY, durStr, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // -------------------------------------------------------------------------
@@ -297,14 +292,14 @@ class HaganeWatchView extends WatchUi.View {
         }
         dc.drawText(cx, 50, Graphics.FONT_NUMBER_HOT, timerStr, Graphics.TEXT_JUSTIFY_CENTER);
 
-        // UP/DOWN +/-15s & HR sub-row
+        // Heart rate, with how far it has dropped from the peak of the set just finished
         var hrStr = _state.heartRate > 0 ? (_state.heartRate.toString() + " bpm") : "-- bpm";
-        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        if (isZeroRest) {
-            dc.drawText(cx, 126, Graphics.FONT_XTINY, "HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
-        } else {
-            dc.drawText(cx, 126, Graphics.FONT_XTINY, "UP/DN +/-15s  •  HR " + hrStr, Graphics.TEXT_JUSTIFY_CENTER);
+        var recStr = "";
+        if (_state.heartRate > 0 && _state.restPeakHr > _state.heartRate) {
+            recStr = "  -" + (_state.restPeakHr - _state.heartRate);
         }
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 126, Graphics.FONT_XTINY, "HR " + hrStr + recStr, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Divider
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
@@ -329,10 +324,6 @@ class HaganeWatchView extends WatchUi.View {
             dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, 196, Graphics.FONT_XTINY, nextWeight + " kg x " + nextReps, Graphics.TEXT_JUSTIFY_CENTER);
         }
-
-        // Bottom prompt
-        dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h - 40, Graphics.FONT_XTINY, "START: Begin Set", Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // -------------------------------------------------------------------------
@@ -750,10 +741,6 @@ class HaganeWatchView extends WatchUi.View {
                 dc.drawText(cx, y + 24, Graphics.FONT_XTINY, statusStr, Graphics.TEXT_JUSTIFY_CENTER);
             }
         }
-
-        // Bottom guide
-        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h - 36, Graphics.FONT_XTINY, "UP/DN: Scroll  •  START: Pick", Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // -------------------------------------------------------------------------

@@ -54,6 +54,10 @@ class HaganeWorkoutState {
     public var returnStack as Array = [];
     // Where BACK goes from the exercise picker: the pause menu, or the screen it was opened from
     public var pickerReturnState as Number = STATE_PAUSE_MENU;
+    // Highest heart rate during the set just finished, and the same value kept during rest so the
+    // rest screen can show how far the heart rate has recovered
+    public var setPeakHr as Number = 0;
+    public var restPeakHr as Number = 0;
 
     // Flattened execution steps for the active routine
     public var steps as Array = [];
@@ -541,6 +545,9 @@ class HaganeWorkoutState {
             setElapsedSec += 1;
             workoutTotalSec += 1;
             totalWorkSec += 1;
+            if (heartRate > setPeakHr) {
+                setPeakHr = heartRate;
+            }
             if (_fitRecordWeight != null && currentStepIdx < steps.size()) {
                 var step = steps[currentStepIdx] as Dictionary;
                 _fitRecordWeight.setData(parseWeightToFloat(step.get("weight")));
@@ -550,6 +557,14 @@ class HaganeWorkoutState {
             restElapsedSec += 1;
             workoutTotalSec += 1;
             totalRestSec += 1;
+
+            // Countdown cues so the lifter can look away from the watch: one tick at 10s left,
+            // then one each for the last three seconds (the full pattern still fires at 00:00)
+            if (restTargetSec >= 20 && restElapsedSec == restTargetSec - 10) {
+                vibrateTick();
+            } else if (restTargetSec > 3 && restElapsedSec >= restTargetSec - 3 && restElapsedSec < restTargetSec) {
+                vibrateTick();
+            }
             if (_fitRecordWeight != null) {
                 _fitRecordWeight.setData(0.0f);
             }
@@ -850,6 +865,8 @@ class HaganeWorkoutState {
         var startIdObj = routine.get("id");
         activeRoutineId = (startIdObj instanceof String) ? (startIdObj as String) : "";
         returnStack = [];
+        setPeakHr = 0;
+        restPeakHr = 0;
 
         currentStepIdx = 0;
         setElapsedSec = 0;
@@ -1026,6 +1043,9 @@ class HaganeWorkoutState {
 
         currentStepIdx = nextIdx;
         setElapsedSec = 0;
+
+        restPeakHr = setPeakHr;
+        setPeakHr = 0;
 
         // ALWAYS enter rest/prep state! Moving to next set is ALWAYS manual!
         var restSec = step.get("restSeconds") as Number;
@@ -1399,6 +1419,14 @@ class HaganeWorkoutState {
         applyPendingRoutines();
         syncStatusText = "Workout Discarded";
         WatchUi.requestUpdate();
+    }
+
+    function vibrateTick() as Void {
+        if (Attention has :vibrate) {
+            try {
+                Attention.vibrate([new Attention.VibeProfile(60, 90)]);
+            } catch (ex) {}
+        }
     }
 
     function vibrateShort() as Void {
