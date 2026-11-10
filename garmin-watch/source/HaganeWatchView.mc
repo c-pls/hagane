@@ -47,7 +47,6 @@ class HaganeWatchView extends WatchUi.View {
     // Weight editor opened from the pause menu (UP/DOWN = +/- 2.5 kg, START = apply)
     private function drawEditWeight(dc as Graphics.Dc) as Void {
         var w = dc.getWidth();
-        var h = dc.getHeight();
         var cx = w / 2;
         var name = "";
         if (_state.currentStepIdx >= 0 && _state.currentStepIdx < _state.steps.size()) {
@@ -730,7 +729,6 @@ class HaganeWatchView extends WatchUi.View {
     // -------------------------------------------------------------------------
     private function drawExercisePicker(dc as Graphics.Dc) as Void {
         var w = dc.getWidth();
-        var h = dc.getHeight();
         var cx = w / 2;
 
         dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
