@@ -369,7 +369,14 @@ class HaganeWatchView extends WatchUi.View {
             var nextReps   = nextStep.get("reps") as Number;
 
             dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 156, Graphics.FONT_XTINY, "NEXT: [" + nextLabel + "] SET " + nextSetNum + "/" + nextSetTot, Graphics.TEXT_JUSTIFY_CENTER);
+            var nextTag = "NEXT";
+            if (nextLabel.length() >= 2) {
+                var nl = nextLabel.substring(nextLabel.length() - 1, nextLabel.length());
+                if (nl.toNumber() == null) {
+                    nextTag = "NEXT " + nextLabel; // superset partner such as 3B
+                }
+            }
+            dc.drawText(cx, 156, Graphics.FONT_XTINY, nextTag + " • SET " + nextSetNum + "/" + nextSetTot, Graphics.TEXT_JUSTIFY_CENTER);
 
             dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, 176, Graphics.FONT_XTINY, truncateText(nextName, 21), Graphics.TEXT_JUSTIFY_CENTER);
@@ -401,48 +408,34 @@ class HaganeWatchView extends WatchUi.View {
         var clock = System.getClockTime();
         var timeStr = Lang.format("$1$:$2$", [clock.hour.format("%02d"), clock.min.format("%02d")]);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 12 / 100, Graphics.FONT_NUMBER_MEDIUM, timeStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, 8, Graphics.FONT_NUMBER_MILD, timeStr, Graphics.TEXT_JUSTIFY_CENTER);
 
         var items = _state.getPauseMenuItems();
         var count = items.size();
         var sel = _state.pauseMenuIdx;
 
-        // Three rows are visible; the window follows the selection
-        var visibleRows = 3;
-        var rowH = h * 17 / 100;
-        var listTop = h * 40 / 100;
-        var firstRow = sel - 1;
-        if (firstRow > count - visibleRows) {
-            firstRow = count - visibleRows;
-        }
-        if (firstRow < 0) {
-            firstRow = 0;
-        }
+        // Selected item sits in the middle row with its neighbours above and below (wraps around)
+        var midY = h * 54 / 100;
+        var rowH = h * 21 / 100;
+        var barX = w * 17 / 100;
+        var iconX = w * 27 / 100;
+        var textX = w * 37 / 100;
 
-        var barX = w * 20 / 100;
-        var iconX = w * 29 / 100;
-        var textX = w * 40 / 100;
-
-        for (var r = 0; r < visibleRows; r += 1) {
-            var i = firstRow + r;
-            if (i >= count) {
-                break;
-            }
+        for (var r = -1; r <= 1; r += 1) {
+            var i = ((sel + r) % count + count) % count;
             var itemText = items[i] as String;
-            var isSelected = (i == sel);
-            var cy = listTop + (r * rowH) + (rowH / 2);
+            var isSelected = (r == 0);
+            var cy = midY + (r * rowH);
 
-            var color = Graphics.COLOR_LT_GRAY;
+            var color = isSelected ? Graphics.COLOR_WHITE : Graphics.COLOR_LT_GRAY;
             if (itemText.equals("Discard")) {
                 color = isSelected ? Graphics.COLOR_RED : Graphics.COLOR_DK_RED;
-            } else if (isSelected) {
-                color = Graphics.COLOR_WHITE;
             }
             dc.setColor(color, Graphics.COLOR_TRANSPARENT);
 
             if (isSelected) {
-                dc.setPenWidth(3);
-                dc.drawLine(barX, cy - (rowH / 2) + 6, barX, cy + (rowH / 2) - 6);
+                dc.setPenWidth(4);
+                dc.drawLine(barX, cy - (rowH / 2) + 4, barX, cy + (rowH / 2) - 4);
                 dc.setPenWidth(1);
             }
 
@@ -450,7 +443,7 @@ class HaganeWatchView extends WatchUi.View {
             dc.drawText(
                 textX,
                 cy,
-                Graphics.FONT_SMALL,
+                isSelected ? Graphics.FONT_MEDIUM : Graphics.FONT_SMALL,
                 pauseLabel(itemText),
                 Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
             );
@@ -468,6 +461,12 @@ class HaganeWatchView extends WatchUi.View {
         }
         if (item.equals("Previous Set")) {
             return "Undo Set";
+        }
+        if (item.equals("Select Exercise")) {
+            return "Exercise";
+        }
+        if (item.equals("Edit Weight")) {
+            return "Weight";
         }
         return item;
     }

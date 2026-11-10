@@ -1,0 +1,1 @@
+Log actual reps with UP/DOWN, Edit Weight, rest countdown cues, heart rate recovery, switch exercise and come back, resume after exit.

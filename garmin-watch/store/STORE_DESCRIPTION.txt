@@ -1,0 +1,37 @@
+Hagane turns your Forerunner 255 into a gym logbook. Plan your routines in the Hagane Android app, then train with just your watch. No phone needed in the gym.
+
+Routines on your wrist: exercises, sets, reps and weight sync from the Hagane phone app and work offline.
+
+Big, clear set screen: weight and reps in large numbers, plus live heart rate and set timer.
+
+Log what you really lifted: UP and DOWN adjust reps by 1, and Edit Weight in the pause menu changes the load. Changed values are highlighted in orange.
+
+Smart rest timer: a custom rest time per exercise, wrist buzzes at 10 seconds and the last 3 seconds, an overtime counter, and 15 second adjustments on the fly.
+
+Supersets: go straight from A to B, rest after the pair.
+
+Busy machine? Hold UP to switch exercise. Finish it and Hagane brings you back to where you were.
+
+Undo or skip a set from the pause menu.
+
+Heart rate recovery: see how far your heart rate dropped from the set's peak while you rest.
+
+Resume after exit: if the app closes mid-workout, pick up where you stopped.
+
+Saved to Garmin Connect: heart rate, calories and a lap for every set with exercise, reps and weight.
+
+HOW IT WORKS
+
+1. Create routines in the Hagane Android app.
+2. Open Hagane on your watch. Routines sync through Garmin Connect Mobile.
+3. Choose a routine, press START, and lift.
+
+GOOD TO KNOW
+
+Requires the Hagane Android app to create and sync routines.
+
+Garmin Connect Mobile must be installed and paired on your phone for syncing.
+
+Workout history is stored in Garmin Connect only. The phone app does not keep sessions.
+
+Exercise names are shown in English text.

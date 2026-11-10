@@ -808,6 +808,29 @@ class HaganeWorkoutState {
         return groups;
     }
 
+    private function tickRest() as Void {
+        restElapsedSec += 1;
+        workoutTotalSec += 1;
+        totalRestSec += 1;
+
+        // Countdown cues so the lifter can look away from the watch: one tick at 10s left,
+        // then one each for the last three seconds (the full pattern still fires at 00:00)
+        if (restTargetSec >= 20 && restElapsedSec == restTargetSec - 10) {
+            vibrateTick();
+        } else if (restTargetSec > 3 && restElapsedSec >= restTargetSec - 3 && restElapsedSec < restTargetSec) {
+            vibrateTick();
+        }
+        if (_fitRecordWeight != null) {
+            _fitRecordWeight.setData(0.0f);
+        }
+
+        // Fire rest-complete vibration once when elapsed >= target (safe against +/-15s adjustments)
+        if (!hasVibratedForRest && restTargetSec > 0 && restElapsedSec >= restTargetSec) {
+            hasVibratedForRest = true;
+            vibrateRestComplete();
+        }
+    }
+
     function onTick() as Void {
         var info = Activity.getActivityInfo();
         if (info != null && info.currentHeartRate != null) {
@@ -827,28 +850,13 @@ class HaganeWorkoutState {
             }
             WatchUi.requestUpdate();
         } else if (screenState == STATE_REST) {
-            restElapsedSec += 1;
-            workoutTotalSec += 1;
-            totalRestSec += 1;
-
-            // Countdown cues so the lifter can look away from the watch: one tick at 10s left,
-            // then one each for the last three seconds (the full pattern still fires at 00:00)
-            if (restTargetSec >= 20 && restElapsedSec == restTargetSec - 10) {
-                vibrateTick();
-            } else if (restTargetSec > 3 && restElapsedSec >= restTargetSec - 3 && restElapsedSec < restTargetSec) {
-                vibrateTick();
-            }
-            if (_fitRecordWeight != null) {
-                _fitRecordWeight.setData(0.0f);
-            }
-
-            // Fire rest-complete vibration once when elapsed >= target (safe against +/-15s adjustments)
-            if (!hasVibratedForRest && restTargetSec > 0 && restElapsedSec >= restTargetSec) {
-                hasVibratedForRest = true;
-                vibrateRestComplete();
-            }
+            tickRest();
             WatchUi.requestUpdate();
         } else if (screenState == STATE_PAUSE_MENU) {
+            // The rest countdown keeps running while the pause menu is open over the rest screen
+            if (previousWorkoutState == STATE_REST && !isWorkoutComplete) {
+                tickRest();
+            }
             // Keep the time of day on the pause screen current
             WatchUi.requestUpdate();
         }
@@ -1322,6 +1330,7 @@ class HaganeWorkoutState {
             return;
         }
 
+        var doneStepIdx = currentStepIdx;
         currentStepIdx = nextIdx;
         setElapsedSec = 0;
 
@@ -1330,6 +1339,11 @@ class HaganeWorkoutState {
 
         // ALWAYS enter rest/prep state! Moving to next set is ALWAYS manual!
         var restSec = step.get("restSeconds") as Number;
+        // Moving on to another exercise: no rest, just a wait screen until START
+        // (supersets keep their own rest settings)
+        if (!groupOfStep(doneStepIdx).equals(groupOfStep(nextIdx))) {
+            restSec = 0;
+        }
         vibrateShort();
         restTargetSec = (restSec != null && restSec > 0) ? restSec : 0;
         restElapsedSec = 0;
@@ -1387,8 +1401,8 @@ class HaganeWorkoutState {
         isWorkoutComplete = false;
         pauseMenuIdx = 0; // "Resume" is pre-selected
         screenState = STATE_PAUSE_MENU;
-        // Pause the underlying FIT recording session while in Pause Menu
-        if (_session != null && _session.isRecording()) {
+        // Pause the FIT recording while a set is paused; during rest the clock keeps running
+        if (previousWorkoutState != STATE_REST && _session != null && _session.isRecording()) {
             try {
                 _session.stop();
             } catch (ex) {}
