@@ -37,7 +37,31 @@ class HaganeWatchView extends WatchUi.View {
             drawExercisePicker(dc);
         } else if (st == HaganeWorkoutState.STATE_CLOCK_GLANCE) {
             drawClockGlance(dc);
+        } else if (st == HaganeWorkoutState.STATE_RESUME_PROMPT) {
+            drawResumePrompt(dc);
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // RESUME PROMPT (shown on launch when an unfinished workout was saved)
+    // -------------------------------------------------------------------------
+    private function drawResumePrompt(dc as Graphics.Dc) as Void {
+        var w = dc.getWidth();
+        var cx = w / 2;
+
+        dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 30, Graphics.FONT_XTINY, "RESUME WORKOUT?", Graphics.TEXT_JUSTIFY_CENTER);
+
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 70, Graphics.FONT_SMALL, truncateText(_state.resumeRoutineName, 15), Graphics.TEXT_JUSTIFY_CENTER);
+
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 104, Graphics.FONT_XTINY, _state.resumeSetsDone + " sets done", Graphics.TEXT_JUSTIFY_CENTER);
+
+        dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 150, Graphics.FONT_SMALL, "START  Resume", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 182, Graphics.FONT_SMALL, "BACK  Discard", Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // -------------------------------------------------------------------------

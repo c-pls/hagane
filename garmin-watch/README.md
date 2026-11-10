@@ -17,6 +17,9 @@ Custom English-only **Monkey C** strength-training watch app (`type="watch-app"`
   - **Early Set Start**: Press **START** at any time during the rest countdown to jump into the next set early.
   - **Rest Complete Vibration + Overtime (`+00:01`)**: When the countdown reaches `00:00`, the watch fires a strong multi-pulse wrist vibration and counts up overtime (`+00:01`, `+00:02`...) in yellow/orange until you press **START** to begin your next set.
   - **Live `±15s` Adjustment**: Press **UP** (`+15s`) or **DOWN** (`-15s`) during rest to adjust the timer on the fly.
+- **Switch Exercise Mid-Workout**: Machine busy? **Hold `UP`** during a set or rest to pick another exercise. When you finish it, Hagane takes you back to the exercise you left (supersets stay together).
+- **Rest Cues**: One buzz at 10s left, one per second for the last 3s, and the full pattern at `00:00`. The rest screen also shows how far your heart rate has dropped from the set's peak.
+- **Resume After Exit**: If the app is closed or killed mid-workout, the next launch offers **START: Resume** / **BACK: Discard**. Progress is kept on the watch only and expires after 6 hours.
 - **Native `.FIT` Strength Activity Recording**: Records live wrist Heart Rate, total elapsed time, and set laps into Garmin Connect.
 
 ---

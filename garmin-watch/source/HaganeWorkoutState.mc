@@ -6,6 +6,7 @@ import Toybox.Communications;
 import Toybox.FitContributor;
 import Toybox.Lang;
 import Toybox.Sensor;
+import Toybox.Time;
 import Toybox.Timer;
 import Toybox.WatchUi;
 
@@ -36,6 +37,7 @@ class HaganeWorkoutState {
     public static const STATE_DISCARD_CONFIRM  = 5;
     public static const STATE_EXERCISE_PICKER  = 6;
     public static const STATE_CLOCK_GLANCE     = 7;
+    public static const STATE_RESUME_PROMPT    = 8;
 
     public var screenState as Number = STATE_ROUTINE_LIST;
     public var previousWorkoutState as Number = STATE_ACTIVE_SET;
@@ -58,6 +60,12 @@ class HaganeWorkoutState {
     // rest screen can show how far the heart rate has recovered
     public var setPeakHr as Number = 0;
     public var restPeakHr as Number = 0;
+
+    // Resume-after-close: saved progress offered on launch
+    public var resumeRoutineName as String = "";
+    public var resumeSetsDone as Number = 0;
+    private var _progress as Dictionary? = null;
+    public static const PROGRESS_KEY = "hagane_progress";
 
     // Flattened execution steps for the active routine
     public var steps as Array = [];
@@ -181,6 +189,268 @@ class HaganeWorkoutState {
         return clean;
     }
 
+    // -------------------------------------------------------------------------
+    // Progress persistence: lets a workout be resumed if the app is closed or killed mid-session
+    // -------------------------------------------------------------------------
+    function saveProgress() as Void {
+        if (activeRoutineId.length() == 0 || steps.size() == 0) {
+            return;
+        }
+        var done = [] as Array;
+        var skipped = [] as Array;
+        for (var i = 0; i < steps.size(); i += 1) {
+            var stp = steps[i] as Dictionary;
+            if (stp.get("completed") == true) {
+                done.add(i);
+            } else if (stp.get("skipped") == true) {
+                skipped.add(i);
+            }
+        }
+        var log = [] as Array;
+        for (var j = 0; j < completedLog.size(); j += 1) {
+            var e = completedLog[j] as Dictionary;
+            log.add([e.get("stepIdx"), e.get("weight"), e.get("reps"), e.get("workSec"), e.get("restSec")]);
+        }
+        try {
+            Storage.setValue(PROGRESS_KEY, {
+                "rid"  => activeRoutineId,
+                "t"    => Time.now().value(),
+                "cur"  => currentStepIdx,
+                "done" => done,
+                "skip" => skipped,
+                "log"  => log,
+                "tot"  => workoutTotalSec,
+                "work" => totalWorkSec,
+                "rest" => totalRestSec
+            });
+        } catch (ex) {
+            // Storage unavailable: resuming simply will not be offered
+        }
+    }
+
+    function clearProgress() as Void {
+        try {
+            Storage.deleteValue(PROGRESS_KEY);
+        } catch (ex) {}
+    }
+
+    private function findRoutineIndexById(rid as String) as Number {
+        for (var i = 0; i < routines.size(); i += 1) {
+            var r = routines[i] as Dictionary;
+            var idObj = r.get("id");
+            if ((idObj instanceof String) && (idObj as String).equals(rid)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // Called on launch: offers to resume if a recent unfinished workout was saved
+    function checkForSavedWorkout() as Void {
+        try {
+            var saved = Storage.getValue(PROGRESS_KEY);
+            if (saved == null || !(saved instanceof Dictionary)) {
+                return;
+            }
+            var d = saved as Dictionary;
+            var ridObj = d.get("rid");
+            var tObj = d.get("t");
+            var doneObj = d.get("done");
+            if (!(ridObj instanceof String) || !(tObj instanceof Number) || !(doneObj instanceof Array)) {
+                clearProgress();
+                return;
+            }
+            var ageSec = Time.now().value() - (tObj as Number);
+            var idx = findRoutineIndexById(ridObj as String);
+            var doneCount = (doneObj as Array).size();
+            if (ageSec < 0 || ageSec > 6 * 3600 || idx < 0 || doneCount == 0) {
+                clearProgress();
+                return;
+            }
+            var nmObj = (routines[idx] as Dictionary).get("n");
+            resumeRoutineName = (nmObj instanceof String) ? (nmObj as String) : "Workout";
+            resumeSetsDone = doneCount;
+            _progress = d;
+            screenState = STATE_RESUME_PROMPT;
+        } catch (ex) {
+            clearProgress();
+        }
+    }
+
+    function discardSavedWorkout() as Void {
+        _progress = null;
+        clearProgress();
+        screenState = STATE_ROUTINE_LIST;
+        WatchUi.requestUpdate();
+    }
+
+    // START on the resume prompt: rebuild the workout where it left off and start a new FIT session
+    function resumeSavedWorkout() as Void {
+        var saved = _progress;
+        _progress = null;
+        if (saved == null) {
+            discardSavedWorkout();
+            return;
+        }
+        var prog = saved as Dictionary;
+        try {
+            var ridObj = prog.get("rid");
+            var idx = (ridObj instanceof String) ? findRoutineIndexById(ridObj as String) : -1;
+            if (idx < 0) {
+                discardSavedWorkout();
+                return;
+            }
+            selectedRoutineIdx = idx;
+            var routine = routines[idx] as Dictionary;
+            steps = buildStepsForRoutine(routine);
+            if (steps.size() == 0) {
+                discardSavedWorkout();
+                return;
+            }
+
+            currentStepIdx = 0;
+            setElapsedSec = 0;
+            restElapsedSec = 0;
+            hasVibratedForRest = false;
+            workoutTotalSec = 0;
+            completedSetsCount = 0;
+            totalWorkoutVolume = 0.0f;
+            totalWorkoutReps = 0;
+            totalWorkSec = 0;
+            totalRestSec = 0;
+            lastRestElapsedSec = 0;
+            completedLog = [];
+            summaryPageIdx = 0;
+            avgHeartRate = 0;
+            maxHeartRate = 0;
+            calories = 0;
+            isWorkoutComplete = false;
+            discardConfirmIdx = 0;
+            returnStack = [];
+            setPeakHr = 0;
+            restPeakHr = 0;
+            activeRoutineId = ridObj as String;
+
+            // Completed / skipped flags
+            var doneObj = prog.get("done");
+            if (doneObj instanceof Array) {
+                var da = doneObj as Array;
+                for (var k = 0; k < da.size(); k += 1) {
+                    var di = da[k];
+                    if ((di instanceof Number) && (di as Number) >= 0 && (di as Number) < steps.size()) {
+                        (steps[di as Number] as Dictionary).put("completed", true);
+                    }
+                }
+            }
+            var skipObj = prog.get("skip");
+            if (skipObj instanceof Array) {
+                var sa = skipObj as Array;
+                for (var q = 0; q < sa.size(); q += 1) {
+                    var si = sa[q];
+                    if ((si instanceof Number) && (si as Number) >= 0 && (si as Number) < steps.size()) {
+                        (steps[si as Number] as Dictionary).put("skipped", true);
+                    }
+                }
+            }
+
+            // Rebuild the per-set log and totals for the summary pages
+            var logObj = prog.get("log");
+            if (logObj instanceof Array) {
+                var la = logObj as Array;
+                for (var m = 0; m < la.size(); m += 1) {
+                    var row = la[m];
+                    if (!(row instanceof Array)) {
+                        continue;
+                    }
+                    var ra = row as Array;
+                    if (ra.size() < 5 || !(ra[0] instanceof Number) || !(ra[2] instanceof Number)) {
+                        continue;
+                    }
+                    var sIdx = ra[0] as Number;
+                    if (sIdx < 0 || sIdx >= steps.size()) {
+                        continue;
+                    }
+                    var stp = steps[sIdx] as Dictionary;
+                    var wF = parseWeightToFloat(ra[1]);
+                    var rp = ra[2] as Number;
+                    var vol = wF * rp.toFloat();
+                    completedLog.add({
+                        "name"     => stp.get("name"),
+                        "label"    => stp.get("label"),
+                        "setNum"   => stp.get("setNum"),
+                        "setTotal" => stp.get("setTotal"),
+                        "weight"   => wF,
+                        "reps"     => rp,
+                        "vol"      => vol,
+                        "workSec"  => ((ra[3] instanceof Number) ? (ra[3] as Number) : 0),
+                        "restSec"  => ((ra[4] instanceof Number) ? (ra[4] as Number) : 0),
+                        "stepIdx"  => sIdx
+                    });
+                    completedSetsCount += 1;
+                    totalWorkoutVolume += vol;
+                    totalWorkoutReps += rp;
+                }
+            }
+
+            var totObj = prog.get("tot");
+            if (totObj instanceof Number) { workoutTotalSec = totObj as Number; }
+            var workObj = prog.get("work");
+            if (workObj instanceof Number) { totalWorkSec = workObj as Number; }
+            var restObj = prog.get("rest");
+            if (restObj instanceof Number) { totalRestSec = restObj as Number; }
+
+            // Continue from the saved position, or the first unfinished set after it
+            var start = -1;
+            var curObj = prog.get("cur");
+            var cur = (curObj instanceof Number) ? (curObj as Number) : 0;
+            for (var a = cur; a < steps.size() && start < 0; a += 1) {
+                if (a >= 0) {
+                    var sa1 = steps[a] as Dictionary;
+                    if (sa1.get("completed") != true && sa1.get("skipped") != true) {
+                        start = a;
+                    }
+                }
+            }
+            for (var b = 0; b < steps.size() && b < cur && start < 0; b += 1) {
+                var sb1 = steps[b] as Dictionary;
+                if (sb1.get("completed") != true && sb1.get("skipped") != true) {
+                    start = b;
+                }
+            }
+            if (start < 0) {
+                // Everything was already finished: the earlier session was saved when the app closed
+                discardSavedWorkout();
+                return;
+            }
+            currentStepIdx = start;
+
+            // New FIT recording for the rest of the workout
+            var nmObj = routine.get("n");
+            var routineName = (nmObj instanceof String) ? (nmObj as String) : "Hagane";
+            try {
+                if (Toybox has :ActivityRecording) {
+                    _session = ActivityRecording.createSession({
+                        :name => routineName,
+                        :sport => Activity.SPORT_TRAINING,
+                        :subSport => Activity.SUB_SPORT_STRENGTH_TRAINING
+                    });
+                    initFitContributorFields();
+                    _session.start();
+                }
+            } catch (ex) {
+                _session = null;
+            }
+            updateSessionFitFields();
+
+            screenState = STATE_ACTIVE_SET;
+            vibrateShort();
+            startTimer();
+            WatchUi.requestUpdate();
+        } catch (ex) {
+            discardSavedWorkout();
+        }
+    }
+
     function loadFromStorage() as Void {
         try {
             var saved = Storage.getValue("hagane_routines");
@@ -226,7 +496,7 @@ class HaganeWorkoutState {
 
     // True while a workout is in progress (any screen between starting a routine and the summary).
     public function isWorkoutActive() as Boolean {
-        return screenState != STATE_ROUTINE_LIST && screenState != STATE_SUMMARY;
+        return screenState != STATE_ROUTINE_LIST && screenState != STATE_SUMMARY && screenState != STATE_RESUME_PROMPT;
     }
 
     function onSyncReceived(newRoutines as Array) as Void {
@@ -578,6 +848,12 @@ class HaganeWorkoutState {
         } else if (screenState == STATE_PAUSE_MENU) {
             // Keep the time of day on the pause screen current
             WatchUi.requestUpdate();
+        }
+
+        // Save progress every 15s of workout time so the session can be resumed after an exit
+        if (workoutTotalSec > 0 && workoutTotalSec % 15 == 0 &&
+            (screenState == STATE_ACTIVE_SET || screenState == STATE_REST || screenState == STATE_CLOCK_GLANCE)) {
+            saveProgress();
         }
     }
 
@@ -1054,6 +1330,7 @@ class HaganeWorkoutState {
         restElapsedSec = 0;
         hasVibratedForRest = false;
         screenState = STATE_REST;
+        saveProgress();
         WatchUi.requestUpdate();
     }
 
@@ -1343,6 +1620,7 @@ class HaganeWorkoutState {
 
     function finishAndSaveWorkout() as Void {
         stopTimer();
+        clearProgress();
         // Capture telemetry before saving FIT session
         try {
             var info = Activity.getActivityInfo();
@@ -1404,6 +1682,7 @@ class HaganeWorkoutState {
 
     function discardWorkout() as Void {
         stopTimer();
+        clearProgress();
         if (_session != null) {
             try {
                 if (_session.isRecording()) {

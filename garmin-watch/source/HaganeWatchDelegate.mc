@@ -59,6 +59,9 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
             // In Clock Glance, pressing START completes the set just like in Active Set
             _state.completeCurrentSet();
             return true;
+        } else if (st == HaganeWorkoutState.STATE_RESUME_PROMPT) {
+            _state.resumeSavedWorkout();
+            return true;
         }
         return false;
     }
@@ -109,6 +112,9 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
         } else if (st == HaganeWorkoutState.STATE_SUMMARY) {
             _state.screenState = HaganeWorkoutState.STATE_ROUTINE_LIST;
             WatchUi.requestUpdate();
+            return true;
+        } else if (st == HaganeWorkoutState.STATE_RESUME_PROMPT) {
+            _state.discardSavedWorkout();
             return true;
         }
         return false;

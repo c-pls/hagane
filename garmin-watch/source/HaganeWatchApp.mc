@@ -15,6 +15,8 @@ class HaganeWatchApp extends Application.AppBase {
     function onStart(state as Dictionary?) as Void {
         _state = new HaganeWorkoutState();
         _state.loadFromStorage();
+        // Offer to resume if the last workout was closed before it was saved
+        _state.checkForSavedWorkout();
 
         // Register listener for incoming workouts sent by the phone companion bridge
         Communications.registerForPhoneAppMessages(method(:onPhoneMessage));
