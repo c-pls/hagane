@@ -1,5 +1,6 @@
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.Math;
 import Toybox.WatchUi;
 
 class HaganeWatchView extends WatchUi.View {
@@ -208,35 +209,35 @@ class HaganeWatchView extends WatchUi.View {
             nameBottom = 102;
         }
 
-        // Weight and reps: the two numbers the lifter reads between reps. Changed values turn orange.
+        // Weight x reps on one line, as large as fits. Changed values turn orange.
         var weightChanged = (HaganeWorkoutState.parseWeightToFloat(weight) != HaganeWorkoutState.parseWeightToFloat(step.get("plannedWeight")));
         var repsChanged = (reps != step.get("plannedReps"));
-        var rowsTop = nameBottom + 2;
-        var rowsBottom = 212;
-        var rowH = (rowsBottom - rowsTop) / 2;
-        var numFont = Graphics.FONT_NUMBER_MEDIUM;
-        if (dc.getFontHeight(numFont) > rowH) {
-            numFont = Graphics.FONT_NUMBER_MILD;
+        var mainStr = formatWeight(weight) + "kg x " + reps + " reps";
+        var mainFont = Graphics.FONT_LARGE;
+        if (dc.getTextWidthInPixels(mainStr, mainFont) > w - 24) {
+            mainFont = Graphics.FONT_MEDIUM;
         }
-        var row1 = rowsTop + (rowH / 2);
-        var row2 = row1 + rowH;
-        var numX = cx + 22;   // numbers end here, units start just after
-        var unitX = cx + 30;
+        if (dc.getTextWidthInPixels(mainStr, mainFont) > w - 24) {
+            mainFont = Graphics.FONT_SMALL;
+        }
+        var mainY = nameBottom + 24;
+        dc.setColor((weightChanged || repsChanged) ? Graphics.COLOR_ORANGE : Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, mainY, mainFont, mainStr, cj);
 
-        dc.setColor(weightChanged ? Graphics.COLOR_ORANGE : Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(numX, row1, numFont, formatWeight(weight), Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
-        dc.setColor(repsChanged ? Graphics.COLOR_ORANGE : Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(numX, row2, numFont, reps.toString(), Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
-        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(unitX, row1 + 6, Graphics.FONT_SMALL, "kg", Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
-        dc.drawText(unitX, row2 + 6, Graphics.FONT_SMALL, "reps", Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        // Time of this set right below
+        var timerTop = mainY + (dc.getFontHeight(mainFont) / 2) + 2;
+        var timerRoom = 206 - timerTop;
+        var timerFont = Graphics.FONT_NUMBER_MEDIUM;
+        if (dc.getFontHeight(timerFont) > timerRoom) {
+            timerFont = Graphics.FONT_NUMBER_MILD;
+        }
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, timerTop + (timerRoom / 2), timerFont, formatMmSs(_state.setElapsedSec), cj);
 
-        // Bottom row: live heart rate (red) and how long this set has lasted
+        // Live heart rate, labelled
         var hrStr = _state.heartRate > 0 ? _state.heartRate.toString() : "--";
         dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx - 10, 230, Graphics.FONT_SMALL, hrStr, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx + 10, 230, Graphics.FONT_SMALL, formatMmSs(_state.setElapsedSec), Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(cx, 228, Graphics.FONT_SMALL, "HR " + hrStr, cj);
     }
 
     // -------------------------------------------------------------------------
@@ -360,18 +361,19 @@ class HaganeWatchView extends WatchUi.View {
         var clock = System.getClockTime();
         var timeStr = Lang.format("$1$:$2$", [clock.hour.format("%02d"), clock.min.format("%02d")]);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 8, Graphics.FONT_NUMBER_MILD, timeStr, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, 50, Graphics.FONT_NUMBER_MEDIUM, timeStr, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
         var items = _state.getPauseMenuItems();
         var count = items.size();
         var sel = _state.pauseMenuIdx;
 
-        // Selected item sits in the middle row with its neighbours above and below (wraps around)
-        var midY = h * 54 / 100;
-        var rowH = h * 21 / 100;
-        var barX = w * 14 / 100;
-        var iconX = w * 24 / 100;
-        var textX = w * 34 / 100;
+        // Selected item sits in the middle row, its neighbours above and below (wraps around)
+        var midY = 154;
+        var rowH = 56;
+        var barX = w * 13 / 100;
+        var iconX = w * 22 / 100;
+        var textX = w * 32 / 100;
+        var radius = cx - 8;
 
         for (var r = -1; r <= 1; r += 1) {
             var i = ((sel + r) % count + count) % count;
@@ -387,18 +389,24 @@ class HaganeWatchView extends WatchUi.View {
 
             if (isSelected) {
                 dc.setPenWidth(4);
-                dc.drawLine(barX, cy - (rowH / 2) + 4, barX, cy + (rowH / 2) - 4);
+                dc.drawLine(barX, cy - (rowH / 2) + 6, barX, cy + (rowH / 2) - 6);
                 dc.setPenWidth(1);
             }
 
             drawPauseIcon(dc, itemText, iconX, cy);
-            dc.drawText(
-                textX,
-                cy,
-                Graphics.FONT_MEDIUM,
-                pauseLabel(itemText),
-                Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
-            );
+
+            // Largest font whose text still fits inside the round screen on this row
+            var label = pauseLabel(itemText);
+            var dy = (cy - (h / 2)).abs();
+            var rightEdge = cx + Math.sqrt((radius * radius) - (dy * dy)).toNumber() - 6;
+            var fnt = Graphics.FONT_LARGE;
+            if (textX + dc.getTextWidthInPixels(label, fnt) > rightEdge) {
+                fnt = Graphics.FONT_MEDIUM;
+            }
+            if (textX + dc.getTextWidthInPixels(label, fnt) > rightEdge) {
+                fnt = Graphics.FONT_SMALL;
+            }
+            dc.drawText(textX, cy, fnt, label, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
         }
         dc.setPenWidth(1);
     }
@@ -425,7 +433,7 @@ class HaganeWatchView extends WatchUi.View {
 
     // 22px glyphs drawn with plain primitives, in the colour currently set on the dc
     private function drawPauseIcon(dc as Graphics.Dc, item as String, x as Number, cy as Number) as Void {
-        var s = 22;
+        var s = 26;
         var half = s / 2;
         var left = x - half;
         dc.setPenWidth(1);
