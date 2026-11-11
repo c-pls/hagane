@@ -1,10 +1,24 @@
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
+import Toybox.Timer;
 import Toybox.WatchUi;
 
 class HaganeWatchView extends WatchUi.View {
     private var _state as HaganeWorkoutState;
+
+    // Scrolling ("marquee") for exercise names that are wider than the screen.
+    // One scrolling line per screen; it pauses at the start and the end, then starts over.
+    private var _marqueeTimer as Timer.Timer?;
+    private var _marqueeText as String = "";
+    private var _marqueeOffset as Number = 0;
+    private var _marqueeMax as Number = 0;
+    private var _marqueePause as Number = 0;
+    private var _marqueeAtEnd as Boolean = false;
+    private var _marqueeUsed as Boolean = false;
+    private static const MARQUEE_STEP_PX = 6;
+    private static const MARQUEE_TICK_MS = 150;
+    private static const MARQUEE_PAUSE_TICKS = 10;
 
     function initialize(state as HaganeWorkoutState) {
         View.initialize();
@@ -16,10 +30,91 @@ class HaganeWatchView extends WatchUi.View {
         _state.ensureTimerIfActive();
     }
 
+    function onHide() as Void {
+        stopMarquee();
+    }
+
     function onUpdate(dc as Graphics.Dc) as Void {
         // Clear screen to crisp white for maximum MIP legibility in light mode
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_WHITE);
         dc.clear();
+        _marqueeUsed = false;
+        drawScreen(dc);
+        // Run the scroll timer only while a name on screen is too long to fit
+        if (_marqueeUsed) {
+            if (_marqueeTimer == null) {
+                _marqueeTimer = new Timer.Timer();
+                _marqueeTimer.start(method(:onMarqueeTick), MARQUEE_TICK_MS, true);
+            }
+        } else {
+            stopMarquee();
+        }
+    }
+
+    private function stopMarquee() as Void {
+        if (_marqueeTimer != null) {
+            _marqueeTimer.stop();
+            _marqueeTimer = null;
+        }
+    }
+
+    function onMarqueeTick() as Void {
+        if (_marqueePause > 0) {
+            _marqueePause -= 1;
+            if (_marqueePause == 0 && _marqueeAtEnd) {
+                // Paused at the end: jump back to the start (and pause there again)
+                _marqueeAtEnd = false;
+                _marqueeOffset = 0;
+                _marqueePause = MARQUEE_PAUSE_TICKS;
+                WatchUi.requestUpdate();
+            }
+            return;
+        }
+        _marqueeOffset += MARQUEE_STEP_PX;
+        if (_marqueeOffset >= _marqueeMax) {
+            _marqueeOffset = _marqueeMax;
+            _marqueeAtEnd = true;
+            _marqueePause = MARQUEE_PAUSE_TICKS;
+        }
+        WatchUi.requestUpdate();
+    }
+
+    // Draws text centred at (cx, y). If it is wider than maxW it scrolls right-to-left inside a
+    // maxW-wide window so the whole name can be read.
+    private function drawFitText(dc as Graphics.Dc, cx as Number, y as Number, font as Graphics.FontDefinition, text as String, maxW as Number) as Void {
+        var tw = dc.getTextWidthInPixels(text, font);
+        if (tw <= maxW || _marqueeUsed) {
+            if (tw > maxW) {
+                // A second long line on the same screen: cut it instead of scrolling two lines
+                var t = text;
+                while (t.length() > 2 && dc.getTextWidthInPixels(t + ".", font) > maxW) {
+                    t = t.substring(0, t.length() - 1);
+                }
+                dc.drawText(cx, y, font, t + ".", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+                return;
+            }
+            dc.drawText(cx, y, font, text, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            return;
+        }
+        _marqueeUsed = true;
+        if (!text.equals(_marqueeText)) {
+            _marqueeText = text;
+            _marqueeOffset = 0;
+            _marqueeAtEnd = false;
+            _marqueePause = MARQUEE_PAUSE_TICKS;
+        }
+        _marqueeMax = tw - maxW;
+        if (_marqueeOffset > _marqueeMax) {
+            _marqueeOffset = _marqueeMax;
+        }
+        var fh = dc.getFontHeight(font);
+        var left = cx - (maxW / 2);
+        dc.setClip(left, y - (fh / 2), maxW, fh);
+        dc.drawText(left - _marqueeOffset, y, font, text, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.clearClip();
+    }
+
+    private function drawScreen(dc as Graphics.Dc) as Void {
 
         var st = _state.screenState;
         if (st == HaganeWorkoutState.STATE_ROUTINE_LIST) {
@@ -54,7 +149,7 @@ class HaganeWatchView extends WatchUi.View {
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, 30, Graphics.FONT_SMALL, "WEIGHT", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 66, Graphics.FONT_SMALL, truncateText(name, 14), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        drawFitText(dc, cx, 66, Graphics.FONT_SMALL, name, 196);
         dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, 134, Graphics.FONT_NUMBER_HOT, formatWeight(_state.editWeightValue), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
@@ -73,7 +168,7 @@ class HaganeWatchView extends WatchUi.View {
         dc.drawText(cx, 40, Graphics.FONT_SMALL, "RESUME?", cj);
 
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 84, Graphics.FONT_MEDIUM, truncateText(_state.resumeRoutineName, 13), cj);
+        drawFitText(dc, cx, 84, Graphics.FONT_MEDIUM, _state.resumeRoutineName, 200);
 
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, 122, Graphics.FONT_SMALL, _state.resumeSetsDone + " sets done", cj);
@@ -136,13 +231,7 @@ class HaganeWatchView extends WatchUi.View {
         dc.drawText(cx, 101, Graphics.FONT_SMALL, (sel + 1) + "/" + total + "  " + exCount + " ex", cj);
 
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        var lines = splitTwoLines(currName, 13);
-        if (lines.size() == 1) {
-            dc.drawText(cx, 142, Graphics.FONT_MEDIUM, lines[0] as String, cj);
-        } else {
-            dc.drawText(cx, 130, Graphics.FONT_SMALL, lines[0] as String, cj);
-            dc.drawText(cx, 158, Graphics.FONT_SMALL, lines[1] as String, cj);
-        }
+        drawFitText(dc, cx, 142, Graphics.FONT_MEDIUM, currName, w - 48);
 
         // Next routine (below)
         if (sel + 1 < total && (routines[sel + 1] instanceof Dictionary)) {
@@ -191,18 +280,10 @@ class HaganeWatchView extends WatchUi.View {
         dc.setColor(topColor, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, 30, Graphics.FONT_SMALL, topText, cj);
 
-        // Exercise name: one big line, or two smaller lines when long
+        // Exercise name: one big line; long names scroll so they can be read in full
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        var lines = splitTwoLines(name, 14);
-        var nameBottom = 0;
-        if (lines.size() == 1) {
-            dc.drawText(cx, 66, Graphics.FONT_MEDIUM, lines[0] as String, cj);
-            nameBottom = 86;
-        } else {
-            dc.drawText(cx, 58, Graphics.FONT_SMALL, lines[0] as String, cj);
-            dc.drawText(cx, 86, Graphics.FONT_SMALL, lines[1] as String, cj);
-            nameBottom = 102;
-        }
+        drawFitText(dc, cx, 66, Graphics.FONT_MEDIUM, name, 200);
+        var nameBottom = 86;
 
         // Weight x reps on one line, as large as fits. Changed values turn orange.
         var weightChanged = (HaganeWorkoutState.parseWeightToFloat(weight) != HaganeWorkoutState.parseWeightToFloat(step.get("plannedWeight")));
@@ -328,7 +409,7 @@ class HaganeWatchView extends WatchUi.View {
         if (_state.currentStepIdx < _state.steps.size()) {
             var nextStep = _state.steps[_state.currentStepIdx] as Dictionary;
             dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 176, Graphics.FONT_SMALL, truncateText(nextStep.get("name") as String, 15), cj);
+            drawFitText(dc, cx, 176, Graphics.FONT_SMALL, nextStep.get("name") as String, 210);
             dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, 208, Graphics.FONT_MEDIUM, formatWeight(nextStep.get("weight")) + "kg x " + (nextStep.get("reps") as Number), cj);
         }
@@ -599,7 +680,7 @@ class HaganeWatchView extends WatchUi.View {
         dc.drawText(cx, 28, Graphics.FONT_SMALL, (exIdxZeroBased + 1) + "/" + exGroups.size(), cj);
 
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 60, Graphics.FONT_SMALL, truncateText(exName, 14), cj);
+        drawFitText(dc, cx, 60, Graphics.FONT_SMALL, exName, 190);
 
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, 90, Graphics.FONT_SMALL, sets.size() + " sets  " + formatVolume(totalVol) + " kg", cj);
@@ -672,7 +753,7 @@ class HaganeWatchView extends WatchUi.View {
         dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_DK_BLUE);
         dc.fillRoundedRectangle(12, 92, w - 24, 76, 14);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 118, Graphics.FONT_MEDIUM, truncateText(ex.get("name") as String, 13), cj);
+        drawFitText(dc, cx, 118, Graphics.FONT_MEDIUM, ex.get("name") as String, w - 44);
         dc.setColor(statusColor, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, 150, Graphics.FONT_SMALL, statusStr, cj);
 
@@ -730,23 +811,4 @@ class HaganeWatchView extends WatchUi.View {
         return str.substring(0, maxLen - 1) + ".";
     }
 
-    private function splitTwoLines(str as String, maxLineLen as Number) as Array {
-        if (str.length() <= maxLineLen) {
-            return [str];
-        }
-        var splitIdx = -1;
-        for (var i = 0; i < maxLineLen && i < str.length(); i += 1) {
-            if (str.substring(i, i + 1).equals(" ")) {
-                splitIdx = i;
-            }
-        }
-        if (splitIdx <= 0) {
-            var line1 = str.substring(0, maxLineLen);
-            var line2 = truncateText(str.substring(maxLineLen, str.length()), maxLineLen);
-            return [line1, line2];
-        }
-        var first = str.substring(0, splitIdx);
-        var rest = str.substring(splitIdx + 1, str.length());
-        return [first, truncateText(rest, maxLineLen)];
-    }
 }
