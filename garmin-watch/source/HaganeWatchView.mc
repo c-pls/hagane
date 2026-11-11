@@ -1,6 +1,5 @@
 import Toybox.Graphics;
 import Toybox.Lang;
-import Toybox.Math;
 import Toybox.Timer;
 import Toybox.WatchUi;
 
@@ -123,14 +122,8 @@ class HaganeWatchView extends WatchUi.View {
             drawActiveSet(dc);
         } else if (st == HaganeWorkoutState.STATE_REST) {
             drawRestTimer(dc);
-        } else if (st == HaganeWorkoutState.STATE_PAUSE_MENU) {
-            drawPauseMenu(dc);
-        } else if (st == HaganeWorkoutState.STATE_DISCARD_CONFIRM) {
-            drawDiscardConfirm(dc);
         } else if (st == HaganeWorkoutState.STATE_SUMMARY) {
             drawSummary(dc);
-        } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
-            drawExercisePicker(dc);
         } else if (st == HaganeWorkoutState.STATE_RESUME_PROMPT) {
             drawResumePrompt(dc);
         } else if (st == HaganeWorkoutState.STATE_EDIT_WEIGHT) {
@@ -416,197 +409,6 @@ class HaganeWatchView extends WatchUi.View {
     }
 
     // -------------------------------------------------------------------------
-    // 4. PAUSE / OPTIONS MENU (running-style: time of day + icon list)
-    // -------------------------------------------------------------------------
-    private function drawPauseMenu(dc as Graphics.Dc) as Void {
-        var w = dc.getWidth();
-        var h = dc.getHeight();
-        var cx = w / 2;
-
-        // Dark screen like the native running pause page
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        dc.clear();
-
-        // Red ring marks the paused state
-        dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-        dc.setPenWidth(3);
-        dc.drawCircle(cx, h / 2, (w / 2) - 7);
-        dc.setPenWidth(1);
-
-        // Current time of day is the only information shown
-        var clock = System.getClockTime();
-        var timeStr = Lang.format("$1$:$2$", [clock.hour.format("%02d"), clock.min.format("%02d")]);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 50, Graphics.FONT_NUMBER_MEDIUM, timeStr, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-
-        var items = _state.getPauseMenuItems();
-        var count = items.size();
-        var sel = _state.pauseMenuIdx;
-
-        // Selected item sits in the middle row, its neighbours above and below (wraps around)
-        var midY = 154;
-        var rowH = 56;
-        var barX = w * 13 / 100;
-        var iconX = w * 22 / 100;
-        var textX = w * 32 / 100;
-        var radius = cx - 8;
-
-        for (var r = -1; r <= 1; r += 1) {
-            var i = ((sel + r) % count + count) % count;
-            var itemText = items[i] as String;
-            var isSelected = (r == 0);
-            var cy = midY + (r * rowH);
-
-            var color = isSelected ? Graphics.COLOR_WHITE : Graphics.COLOR_LT_GRAY;
-            if (itemText.equals("Discard")) {
-                color = isSelected ? Graphics.COLOR_RED : Graphics.COLOR_DK_RED;
-            }
-            dc.setColor(color, Graphics.COLOR_TRANSPARENT);
-
-            if (isSelected) {
-                dc.setPenWidth(4);
-                dc.drawLine(barX, cy - (rowH / 2) + 6, barX, cy + (rowH / 2) - 6);
-                dc.setPenWidth(1);
-            }
-
-            drawPauseIcon(dc, itemText, iconX, cy);
-
-            // Largest font whose text still fits inside the round screen on this row
-            var label = pauseLabel(itemText);
-            var dy = (cy - (h / 2)).abs();
-            var rightEdge = cx + Math.sqrt((radius * radius) - (dy * dy)).toNumber() - 6;
-            var fnt = Graphics.FONT_LARGE;
-            if (textX + dc.getTextWidthInPixels(label, fnt) > rightEdge) {
-                fnt = Graphics.FONT_MEDIUM;
-            }
-            if (textX + dc.getTextWidthInPixels(label, fnt) > rightEdge) {
-                fnt = Graphics.FONT_SMALL;
-            }
-            dc.drawText(textX, cy, fnt, label, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
-        }
-        dc.setPenWidth(1);
-    }
-
-    // Short label shown for each pause menu action (the action strings themselves stay unchanged)
-    private function pauseLabel(item as String) as String {
-        if (item.equals("Resume Workout")) {
-            return "Resume";
-        }
-        if (item.equals("Save Workout")) {
-            return "Save";
-        }
-        if (item.equals("Previous Set")) {
-            return "Undo Set";
-        }
-        if (item.equals("Select Exercise")) {
-            return "Exercise";
-        }
-        if (item.equals("Edit Weight")) {
-            return "Weight";
-        }
-        return item;
-    }
-
-    // 22px glyphs drawn with plain primitives, in the colour currently set on the dc
-    private function drawPauseIcon(dc as Graphics.Dc, item as String, x as Number, cy as Number) as Void {
-        var s = 26;
-        var half = s / 2;
-        var left = x - half;
-        dc.setPenWidth(1);
-
-        if (item.equals("Resume") || item.equals("Resume Workout")) {
-            fillTriangleRight(dc, left + 3, cy, s - 4, half);
-        } else if (item.equals("Select Exercise")) {
-            dc.fillRectangle(left, cy - 8, s, 3);
-            dc.fillRectangle(left, cy - 1, s, 3);
-            dc.fillRectangle(left, cy + 6, s, 3);
-        } else if (item.equals("Edit Weight")) {
-            dc.fillRectangle(left, cy - 2, s, 4);
-            dc.fillRectangle(x - 2, cy - half, 4, s);
-        } else if (item.equals("Skip Set")) {
-            fillTriangleRight(dc, left, cy, s - 6, half);
-            dc.fillRectangle(left + s - 4, cy - half, 4, s);
-        } else if (item.equals("Previous Set")) {
-            dc.fillRectangle(left, cy - half, 4, s);
-            fillTriangleLeft(dc, left + 6, cy, s - 6, half);
-        } else if (item.equals("Save Workout")) {
-            // download arrow: stem, head and tray
-            dc.fillRectangle(x - 2, cy - half, 4, half - 1);
-            fillTriangleDown(dc, x, cy - 2, 8, 9);
-            dc.fillRectangle(left, cy + half - 3, s, 3);
-        } else if (item.equals("Discard")) {
-            dc.setPenWidth(3);
-            dc.drawLine(left + 2, cy - 8, left + s - 2, cy + 8);
-            dc.drawLine(left + 2, cy + 8, left + s - 2, cy - 8);
-            dc.setPenWidth(1);
-        } else {
-            dc.fillCircle(x, cy, 5);
-        }
-    }
-
-    // Triangle pointing right: flat edge at x, apex at x + wd
-    private function fillTriangleRight(dc as Graphics.Dc, x as Number, cy as Number, wd as Number, hh as Number) as Void {
-        for (var i = 0; i < wd; i += 1) {
-            var e = hh * (wd - i) / wd;
-            dc.drawLine(x + i, cy - e, x + i, cy + e);
-        }
-    }
-
-    // Triangle pointing left: apex at x, flat edge at x + wd
-    private function fillTriangleLeft(dc as Graphics.Dc, x as Number, cy as Number, wd as Number, hh as Number) as Void {
-        for (var i = 0; i < wd; i += 1) {
-            var e = hh * i / wd;
-            dc.drawLine(x + i, cy - e, x + i, cy + e);
-        }
-    }
-
-    // Triangle pointing down: flat edge at top y, apex at y + ht
-    private function fillTriangleDown(dc as Graphics.Dc, cx as Number, y as Number, hw as Number, ht as Number) as Void {
-        for (var j = 0; j < ht; j += 1) {
-            var e = hw * (ht - j) / ht;
-            dc.drawLine(cx - e, y + j, cx + e, y + j);
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // 5. DISCARD CONFIRMATION SCREEN
-    // -------------------------------------------------------------------------
-    private function drawDiscardConfirm(dc as Graphics.Dc) as Void {
-        var w = dc.getWidth();
-        var cx = w / 2;
-        var cj = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
-
-        dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 44, Graphics.FONT_MEDIUM, "DISCARD?", cj);
-
-        var sel = _state.discardConfirmIdx;
-
-        // Button 0: keep the workout
-        if (sel == 0) {
-            dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_DK_BLUE);
-            dc.fillRoundedRectangle(24, 80, w - 48, 56, 14);
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        } else {
-            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_DK_GRAY);
-            dc.drawRoundedRectangle(24, 80, w - 48, 56, 14);
-            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        }
-        dc.drawText(cx, 108, Graphics.FONT_MEDIUM, "Keep", cj);
-
-        // Button 1: discard
-        if (sel == 1) {
-            dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_DK_RED);
-            dc.fillRoundedRectangle(24, 148, w - 48, 56, 14);
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        } else {
-            dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_DK_RED);
-            dc.drawRoundedRectangle(24, 148, w - 48, 56, 14);
-            dc.setColor(Graphics.COLOR_DK_RED, Graphics.COLOR_TRANSPARENT);
-        }
-        dc.drawText(cx, 176, Graphics.FONT_MEDIUM, "Discard", cj);
-    }
-
-    // -------------------------------------------------------------------------
     // 6. WORKOUT SUMMARY SCREEN (Saved to Garmin Connect)
     // -------------------------------------------------------------------------
     private function drawSummary(dc as Graphics.Dc) as Void {
@@ -701,67 +503,6 @@ class HaganeWatchView extends WatchUi.View {
         if (numSets > maxRows) {
             dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, 122 + (shown * 30), Graphics.FONT_SMALL, "+" + (numSets - shown) + " more", cj);
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // 7. EXERCISE PICKER SCREEN (Jump to any exercise mid-workout)
-    // -------------------------------------------------------------------------
-    private function drawExercisePicker(dc as Graphics.Dc) as Void {
-        var w = dc.getWidth();
-        var cx = w / 2;
-        var cj = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
-
-        dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 28, Graphics.FONT_SMALL, "EXERCISE", cj);
-
-        var exList = _state.getActiveExerciseList();
-        var total = exList.size();
-        if (total == 0) {
-            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 130, Graphics.FONT_SMALL, "No exercises", cj);
-            return;
-        }
-
-        var sel = _state.exercisePickerIdx;
-        if (sel < 0) { sel = 0; }
-        if (sel >= total) { sel = total - 1; }
-
-        // Previous exercise (above)
-        if (sel > 0) {
-            var pex = exList[sel - 1] as Dictionary;
-            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 72, Graphics.FONT_SMALL, truncateText(pex.get("name") as String, 14), cj);
-        }
-
-        // Selected exercise card
-        var ex = exList[sel] as Dictionary;
-        var cSets = ex.get("completedSets") as Number;
-        var tSets = ex.get("totalSets") as Number;
-        var isDone = (ex.get("isDone") == true);
-        var statusStr = cSets + "/" + tSets + " sets";
-        var statusColor = Graphics.COLOR_LT_GRAY;
-        if (isDone) {
-            if (cSets == 0) {
-                statusStr = "Skipped";
-                statusColor = Graphics.COLOR_ORANGE;
-            } else {
-                statusStr = "Done " + cSets + "/" + tSets;
-                statusColor = Graphics.COLOR_GREEN;
-            }
-        }
-        dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_DK_BLUE);
-        dc.fillRoundedRectangle(12, 92, w - 24, 76, 14);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        drawFitText(dc, cx, 118, Graphics.FONT_MEDIUM, ex.get("name") as String, w - 44);
-        dc.setColor(statusColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 150, Graphics.FONT_SMALL, statusStr, cj);
-
-        // Next exercise (below)
-        if (sel + 1 < total) {
-            var nex = exList[sel + 1] as Dictionary;
-            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, 196, Graphics.FONT_SMALL, truncateText(nex.get("name") as String, 14), cj);
         }
     }
 

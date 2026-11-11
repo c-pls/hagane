@@ -1411,7 +1411,7 @@ class HaganeWorkoutState {
             } catch (ex) {}
         }
         vibrateWorkoutComplete();
-        WatchUi.requestUpdate();
+        HaganeNativeUi.showPauseMenu(self);
     }
 
     function openPauseMenu() as Void {
@@ -1425,13 +1425,11 @@ class HaganeWorkoutState {
                 _session.stop();
             } catch (ex) {}
         }
-        WatchUi.requestUpdate();
+        HaganeNativeUi.showPauseMenu(self);
     }
 
     function openDiscardConfirm() as Void {
-        discardConfirmIdx = 0; // 0 = Cancel (safe default), 1 = Discard Workout
-        screenState = STATE_DISCARD_CONFIRM;
-        WatchUi.requestUpdate();
+        HaganeNativeUi.showDiscardConfirm(self);
     }
 
     function areAllStepsCompleted() as Boolean {
@@ -1502,7 +1500,7 @@ class HaganeWorkoutState {
             }
         }
         screenState = STATE_EXERCISE_PICKER;
-        WatchUi.requestUpdate();
+        HaganeNativeUi.showExercisePicker(self);
     }
 
     function skipCurrentSet() as Void {
@@ -1684,7 +1682,40 @@ class HaganeWorkoutState {
         if (pauseMenuIdx < 0 || pauseMenuIdx >= items.size()) {
             return;
         }
-        var action = items[pauseMenuIdx] as String;
+        runPauseAction(items[pauseMenuIdx] as String);
+    }
+
+    // BACK on the pause menu: resume, or pick an exercise for extra sets once everything is done
+    function onPauseMenuBack() as Void {
+        if (isWorkoutComplete || areAllStepsCompleted()) {
+            openExercisePicker();
+            return;
+        }
+        resumeFromPauseMenu();
+    }
+
+    // BACK on the exercise list
+    function onPickerBack() as Void {
+        if (pickerReturnState != STATE_PAUSE_MENU) {
+            // Opened straight from a set / rest screen: go back to it
+            screenState = pickerReturnState;
+            pickerReturnState = STATE_PAUSE_MENU;
+            WatchUi.requestUpdate();
+            return;
+        }
+        if (areAllStepsCompleted()) {
+            isWorkoutComplete = true;
+        }
+        showPauseMenu();
+    }
+
+    // Puts the native pause menu on screen (the custom views stay underneath)
+    function showPauseMenu() as Void {
+        screenState = STATE_PAUSE_MENU;
+        HaganeNativeUi.showPauseMenu(self);
+    }
+
+    function runPauseAction(action as String) as Void {
 
         if (action.equals("Resume") || action.equals("Resume Workout")) {
             if (isWorkoutComplete) {

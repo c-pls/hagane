@@ -35,25 +35,9 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
             // Works both BEFORE 00:00 (early set start) and AFTER 00:00 (overtime)
             _state.startNextSetFromRest();
             return true;
-        } else if (st == HaganeWorkoutState.STATE_PAUSE_MENU) {
-            _state.executePauseMenuAction();
-            return true;
-        } else if (st == HaganeWorkoutState.STATE_DISCARD_CONFIRM) {
-            if (_state.discardConfirmIdx == 0) {
-                // Cancel discard -> return back to pause menu
-                _state.screenState = HaganeWorkoutState.STATE_PAUSE_MENU;
-                WatchUi.requestUpdate();
-            } else {
-                // Confirm discard -> delete FIT recording and return to routine list
-                _state.discardWorkout();
-            }
-            return true;
         } else if (st == HaganeWorkoutState.STATE_SUMMARY) {
             _state.screenState = HaganeWorkoutState.STATE_ROUTINE_LIST;
             WatchUi.requestUpdate();
-            return true;
-        } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
-            _state.jumpToExercise(_state.exercisePickerIdx);
             return true;
         } else if (st == HaganeWorkoutState.STATE_RESUME_PROMPT) {
             _state.resumeSavedWorkout();
@@ -75,37 +59,7 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
             _state.openPauseMenu();
             return true;
         } else if (st == HaganeWorkoutState.STATE_EDIT_WEIGHT) {
-            _state.screenState = HaganeWorkoutState.STATE_PAUSE_MENU;
-            WatchUi.requestUpdate();
-            return true;
-        } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
-            if (_state.pickerReturnState != HaganeWorkoutState.STATE_PAUSE_MENU) {
-                // Opened directly from a set / rest screen: go straight back to it
-                _state.screenState = _state.pickerReturnState;
-                _state.pickerReturnState = HaganeWorkoutState.STATE_PAUSE_MENU;
-                WatchUi.requestUpdate();
-                return true;
-            }
-            // Return back to pause menu; if all steps are completed, preserve isWorkoutComplete
-            if (_state.areAllStepsCompleted()) {
-                _state.isWorkoutComplete = true;
-            }
-            _state.screenState = HaganeWorkoutState.STATE_PAUSE_MENU;
-            WatchUi.requestUpdate();
-            return true;
-        } else if (st == HaganeWorkoutState.STATE_PAUSE_MENU) {
-            if (_state.isWorkoutComplete || _state.areAllStepsCompleted()) {
-                // On complete screen, BACK should not resume straight to a completed set.
-                // Open the exercise picker so the lifter can pick an exercise to do extra sets for.
-                _state.openExercisePicker();
-                return true;
-            }
-            _state.resumeFromPauseMenu();
-            return true;
-        } else if (st == HaganeWorkoutState.STATE_DISCARD_CONFIRM) {
-            // Cancel discard and return to pause menu
-            _state.screenState = HaganeWorkoutState.STATE_PAUSE_MENU;
-            WatchUi.requestUpdate();
+            _state.showPauseMenu();
             return true;
         } else if (st == HaganeWorkoutState.STATE_SUMMARY) {
             _state.screenState = HaganeWorkoutState.STATE_ROUTINE_LIST;
@@ -134,25 +88,9 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
         } else if (st == HaganeWorkoutState.STATE_EDIT_WEIGHT) {
             _state.adjustEditWeight(2.5f);
             return true;
-        } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
-            var count = _state.getActiveExerciseList().size();
-            if (count > 0) {
-                _state.exercisePickerIdx = (_state.exercisePickerIdx - 1 + count) % count;
-                WatchUi.requestUpdate();
-            }
-            return true;
         } else if (st == HaganeWorkoutState.STATE_REST) {
             // Add +15 seconds to current rest timer
             _state.adjustRestTarget(15);
-            return true;
-        } else if (st == HaganeWorkoutState.STATE_PAUSE_MENU) {
-            var count = _state.getPauseMenuItems().size();
-            _state.pauseMenuIdx = (_state.pauseMenuIdx - 1 + count) % count;
-            WatchUi.requestUpdate();
-            return true;
-        } else if (st == HaganeWorkoutState.STATE_DISCARD_CONFIRM) {
-            _state.discardConfirmIdx = (_state.discardConfirmIdx == 0) ? 1 : 0;
-            WatchUi.requestUpdate();
             return true;
         } else if (st == HaganeWorkoutState.STATE_SUMMARY) {
             var exGroups = _state.getExerciseSummaries();
@@ -180,25 +118,9 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
         } else if (st == HaganeWorkoutState.STATE_EDIT_WEIGHT) {
             _state.adjustEditWeight(-2.5f);
             return true;
-        } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
-            var count = _state.getActiveExerciseList().size();
-            if (count > 0) {
-                _state.exercisePickerIdx = (_state.exercisePickerIdx + 1) % count;
-                WatchUi.requestUpdate();
-            }
-            return true;
         } else if (st == HaganeWorkoutState.STATE_REST) {
             // Subtract 15 seconds from current rest timer
             _state.adjustRestTarget(-15);
-            return true;
-        } else if (st == HaganeWorkoutState.STATE_PAUSE_MENU) {
-            var count = _state.getPauseMenuItems().size();
-            _state.pauseMenuIdx = (_state.pauseMenuIdx + 1) % count;
-            WatchUi.requestUpdate();
-            return true;
-        } else if (st == HaganeWorkoutState.STATE_DISCARD_CONFIRM) {
-            _state.discardConfirmIdx = (_state.discardConfirmIdx == 0) ? 1 : 0;
-            WatchUi.requestUpdate();
             return true;
         } else if (st == HaganeWorkoutState.STATE_SUMMARY) {
             var exGroups = _state.getExerciseSummaries();
