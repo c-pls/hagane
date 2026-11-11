@@ -53,7 +53,7 @@ Hagane is a strength-training app for the **Garmin Forerunner 255 / 255 Music**.
 
 ### Machine busy? Switch exercise
 1. **Hold UP** (on the set or rest screen).
-2. Pick another exercise with UP / DOWN, press **START**.
+2. Pick another exercise with UP / DOWN, press **START**. A **GET READY** screen waits while you walk over; press **START** to begin.
 3. Do it. When it is finished, Hagane takes you **back to the exercise you left**.
    You can also use **BACK** to cancel the picker.
 
@@ -64,10 +64,10 @@ Hagane is a strength-training app for the **Garmin Forerunner 255 / 255 Music**.
 | Item | What it does |
 | :-- | :-- |
 | **Resume** | Continue the workout |
-| **Select Exercise** | Jump to any exercise |
-| **Edit Weight** | Change weight for this and later sets of the exercise |
-| **Undo Set** | Go back one set to redo it |
-| **Skip Set** | Skip the current set |
+| **Exercise** | Jump to any exercise |
+| **Weight** | Change weight for this and later sets of the exercise |
+| **Undo Set** | Reopen the set you logged last, to redo it |
+| **Skip Set** | Skip the set that is up next (also works from the rest screen) |
 | **Save** | Finish and save the workout |
 | **Discard** | Throw the workout away (asks to confirm) |
 

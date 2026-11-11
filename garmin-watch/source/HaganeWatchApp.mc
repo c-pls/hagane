@@ -42,7 +42,7 @@ class HaganeWatchApp extends Application.AppBase {
         var ver = dict.get("v");
         if (ver != null && (ver instanceof Number) && (ver as Number) != 1) {
             if (_state != null) {
-                _state.syncStatusText = "Incompatible App v" + ver.toString();
+                _state.syncStatusText = "Update app";
                 WatchUi.requestUpdate();
             }
             return;

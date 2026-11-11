@@ -27,6 +27,15 @@ class HaganeSyncConnectListener extends Communications.ConnectionListener {
     }
 }
 
+// Used for fire-and-forget messages whose failure should not change the sync status
+class HaganeSilentListener extends Communications.ConnectionListener {
+    function initialize() {
+        ConnectionListener.initialize();
+    }
+    function onComplete() as Void {}
+    function onError() as Void {}
+}
+
 class HaganeWorkoutState {
     // Screens / States
     public static const STATE_ROUTINE_LIST     = 0;
@@ -36,7 +45,6 @@ class HaganeWorkoutState {
     public static const STATE_SUMMARY          = 4;
     public static const STATE_DISCARD_CONFIRM  = 5;
     public static const STATE_EXERCISE_PICKER  = 6;
-    public static const STATE_CLOCK_GLANCE     = 7;
     public static const STATE_RESUME_PROMPT    = 8;
     public static const STATE_EDIT_WEIGHT      = 9;
 
@@ -157,7 +165,7 @@ class HaganeWorkoutState {
     public var avgHeartRate as Number = 0;
     public var maxHeartRate as Number = 0;
     public var calories as Number = 0;
-    public var syncStatusText as String = "Forge your steel!";
+    public var syncStatusText as String = "";
     private var _session as ActivityRecording.Session?;
     private var _timer as Timer.Timer?;
 
@@ -445,7 +453,8 @@ class HaganeWorkoutState {
             }
             updateSessionFitFields();
 
-            screenState = STATE_ACTIVE_SET;
+            previousWorkoutState = STATE_REST;
+            enterGetReady(false);
             vibrateShort();
             startTimer();
             WatchUi.requestUpdate();
@@ -509,7 +518,7 @@ class HaganeWorkoutState {
             return;
         }
         setRoutines(newRoutines);
-        syncStatusText = "Forge your steel!";
+        syncStatusText = ""; // the phone buzz confirms the sync; header goes back to the app name
         WatchUi.requestUpdate();
     }
 
@@ -518,19 +527,18 @@ class HaganeWorkoutState {
             var queued = pendingRoutines as Array;
             pendingRoutines = null;
             setRoutines(queued);
-            syncStatusText = "Forge your steel!";
         }
     }
 
     function onSyncRequestFailed() as Void {
-        syncStatusText = "Connect Phone & Retry";
+        syncStatusText = "No phone";
         WatchUi.requestUpdate();
     }
 
     // Watch-initiated pull request: asks the phone / Garmin Connect to send the latest routines
     function requestSyncFromPhone(silent as Boolean) as Void {
         if (!silent) {
-            syncStatusText = "Syncing with Phone...";
+            syncStatusText = "Syncing...";
             vibrateShort();
             WatchUi.requestUpdate();
         }
@@ -542,7 +550,7 @@ class HaganeWorkoutState {
             );
         } catch (ex) {
             if (!silent) {
-                syncStatusText = "Bluetooth Offline";
+                syncStatusText = "Offline";
                 WatchUi.requestUpdate();
             }
         }
@@ -563,7 +571,7 @@ class HaganeWorkoutState {
     }
 
     function ensureTimerIfActive() as Void {
-        if (screenState == STATE_ACTIVE_SET || screenState == STATE_REST || screenState == STATE_CLOCK_GLANCE) {
+        if (screenState == STATE_ACTIVE_SET || screenState == STATE_REST) {
             startTimer();
         }
     }
@@ -837,7 +845,7 @@ class HaganeWorkoutState {
             heartRate = info.currentHeartRate as Number;
         }
 
-        if (screenState == STATE_ACTIVE_SET || screenState == STATE_CLOCK_GLANCE) {
+        if (screenState == STATE_ACTIVE_SET) {
             setElapsedSec += 1;
             workoutTotalSec += 1;
             totalWorkSec += 1;
@@ -863,7 +871,7 @@ class HaganeWorkoutState {
 
         // Save progress every 15s of workout time so the session can be resumed after an exit
         if (workoutTotalSec > 0 && workoutTotalSec % 15 == 0 &&
-            (screenState == STATE_ACTIVE_SET || screenState == STATE_REST || screenState == STATE_CLOCK_GLANCE)) {
+            (screenState == STATE_ACTIVE_SET || screenState == STATE_REST)) {
             saveProgress();
         }
     }
@@ -1122,20 +1130,17 @@ class HaganeWorkoutState {
         }
         startTimer();
 
-        // Only clear rest elapsed if redoing a completed step or jumping to a different step.
-        // If exiting from a rest in progress (and not redoing), capture the rest elapsed for the upcoming set.
-        if (!isRedo && previousWorkoutState == STATE_REST) {
-            lastRestElapsedSec = restElapsedSec;
-            setElapsedSec = 0;
-        } else if (isRedo || foundIdx != currentStepIdx) {
-            lastRestElapsedSec = 0;
-            setElapsedSec = 0;
+        // Picked the exercise we are already on: just go back to where we were
+        if (!isRedo && foundIdx == currentStepIdx) {
+            screenState = (previousWorkoutState == STATE_REST) ? STATE_REST : STATE_ACTIVE_SET;
+            WatchUi.requestUpdate();
+            return;
         }
 
         rememberReturnPoint(foundIdx);
         currentStepIdx = foundIdx;
-        restElapsedSec = 0;
-        screenState = STATE_ACTIVE_SET;
+        // Wait screen so the lifter can move to the other machine; a running rest keeps counting
+        enterGetReady(!isRedo && previousWorkoutState == STATE_REST);
         vibrateShort();
         WatchUi.requestUpdate();
     }
@@ -1147,7 +1152,7 @@ class HaganeWorkoutState {
         var routine = routines[selectedRoutineIdx] as Dictionary;
         steps = buildStepsForRoutine(routine);
         if (steps.size() == 0) {
-            syncStatusText = "Routine is Empty";
+            syncStatusText = "Empty";
             WatchUi.requestUpdate();
             return false;
         }
@@ -1175,11 +1180,9 @@ class HaganeWorkoutState {
         calories = 0;
         isWorkoutComplete = false;
         discardConfirmIdx = 0;
-        // Wait on the GET READY screen (no countdown) until the lifter presses START for set 1
+        // Wait on the GET READY screen until the lifter presses START for set 1
         previousWorkoutState = STATE_REST;
-        restTargetSec = 0;
-        hasVibratedForRest = true;
-        screenState = STATE_REST;
+        enterGetReady(false);
 
         // Start Garmin FIT Strength Training Recording Session
         var nmObj = routine.get("n");
@@ -1357,6 +1360,18 @@ class HaganeWorkoutState {
         WatchUi.requestUpdate();
     }
 
+    // Wait screen before a set: no countdown, START begins the set.
+    // keepRest = true continues the rest that was already running (time keeps counting as rest).
+    function enterGetReady(keepRest as Boolean) as Void {
+        if (!keepRest) {
+            restElapsedSec = 0;
+        }
+        restTargetSec = 0;
+        hasVibratedForRest = true;
+        setElapsedSec = 0;
+        screenState = STATE_REST;
+    }
+
     // Called when user presses START during Rest Timer (either early before 00:00, or during +00:xx overtime)
     function startNextSetFromRest() as Void {
         vibrateShort();
@@ -1390,7 +1405,6 @@ class HaganeWorkoutState {
         isWorkoutComplete = true;
         pauseMenuIdx = 0; // "Save Workout" is pre-selected
         screenState = STATE_PAUSE_MENU;
-        stopTimer();
         if (_session != null && _session.isRecording()) {
             try {
                 _session.stop();
@@ -1498,42 +1512,37 @@ class HaganeWorkoutState {
             } catch (ex) {}
         }
         startTimer();
-        if (previousWorkoutState == STATE_REST) {
-            lastRestElapsedSec = restElapsedSec;
-            setElapsedSec = 0;
-            screenState = STATE_ACTIVE_SET;
-        } else {
-            if (currentStepIdx < steps.size()) {
-                var currStep = steps[currentStepIdx] as Dictionary;
-                currStep.put("skipped", true);
-                currStep.put("completed", false);
+        var fromRest = (previousWorkoutState == STATE_REST);
+        if (currentStepIdx < steps.size()) {
+            var currStep = steps[currentStepIdx] as Dictionary;
+            currStep.put("skipped", true);
+            currStep.put("completed", false);
+        }
+        var nextIdx = -1;
+        for (var i = currentStepIdx + 1; i < steps.size(); i += 1) {
+            var stp = steps[i] as Dictionary;
+            if (stp.get("completed") != true && stp.get("skipped") != true) {
+                nextIdx = i;
+                break;
             }
-            var nextIdx = -1;
-            for (var i = currentStepIdx + 1; i < steps.size(); i += 1) {
-                var stp = steps[i] as Dictionary;
+        }
+        if (nextIdx < 0) {
+            for (var j = 0; j < currentStepIdx; j += 1) {
+                var stp = steps[j] as Dictionary;
                 if (stp.get("completed") != true && stp.get("skipped") != true) {
-                    nextIdx = i;
+                    nextIdx = j;
                     break;
                 }
             }
-            if (nextIdx < 0) {
-                for (var j = 0; j < currentStepIdx; j += 1) {
-                    var stp = steps[j] as Dictionary;
-                    if (stp.get("completed") != true && stp.get("skipped") != true) {
-                        nextIdx = j;
-                        break;
-                    }
-                }
-            }
-            if (nextIdx < 0) {
-                onWorkoutComplete();
-                return;
-            }
-            currentStepIdx = nextIdx;
-            setElapsedSec = 0;
-            lastRestElapsedSec = 0;
-            screenState = STATE_ACTIVE_SET;
         }
+        if (nextIdx < 0) {
+            onWorkoutComplete();
+            return;
+        }
+        currentStepIdx = nextIdx;
+        lastRestElapsedSec = 0;
+        enterGetReady(fromRest);
+        saveProgress();
         WatchUi.requestUpdate();
     }
 
@@ -1594,15 +1603,24 @@ class HaganeWorkoutState {
             } catch (ex) {}
         }
         startTimer();
-        if (currentStepIdx > 0) {
-            currentStepIdx -= 1;
-            uncompleteStep(currentStepIdx);
-        } else if (currentStepIdx == 0) {
-            uncompleteStep(0);
+        if (completedLog.size() == 0) {
+            // Nothing logged yet: just go back to where we were
+            screenState = previousWorkoutState;
+            WatchUi.requestUpdate();
+            return;
         }
-        setElapsedSec = 0;
+        var last = completedLog[completedLog.size() - 1] as Dictionary;
+        var lastIdx = last.get("stepIdx");
+        if (!(lastIdx instanceof Number) || (lastIdx as Number) < 0 || (lastIdx as Number) >= steps.size()) {
+            screenState = previousWorkoutState;
+            WatchUi.requestUpdate();
+            return;
+        }
+        uncompleteStep(lastIdx as Number);
+        currentStepIdx = lastIdx as Number;
         lastRestElapsedSec = 0;
-        screenState = STATE_ACTIVE_SET;
+        enterGetReady(false);
+        saveProgress();
         WatchUi.requestUpdate();
     }
 
@@ -1748,16 +1766,15 @@ class HaganeWorkoutState {
                     "restSec"  => totalRestSec
                 },
                 null,
-                new HaganeSyncConnectListener(self)
+                new HaganeSilentListener()
             );
         } catch (ex) {}
 
         vibrateWorkoutSaved();
-        syncStatusText = "Workout Saved!";
         screenState = STATE_SUMMARY;
         summaryPageIdx = 0;
         applyPendingRoutines();
-        syncStatusText = "Workout Saved!";
+        syncStatusText = "Saved";
         WatchUi.requestUpdate();
     }
 
@@ -1777,7 +1794,7 @@ class HaganeWorkoutState {
         vibrateShort();
         screenState = STATE_ROUTINE_LIST;
         applyPendingRoutines();
-        syncStatusText = "Workout Discarded";
+        syncStatusText = "Discarded";
         WatchUi.requestUpdate();
     }
 

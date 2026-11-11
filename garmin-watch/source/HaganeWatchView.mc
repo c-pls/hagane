@@ -36,8 +36,6 @@ class HaganeWatchView extends WatchUi.View {
             drawSummary(dc);
         } else if (st == HaganeWorkoutState.STATE_EXERCISE_PICKER) {
             drawExercisePicker(dc);
-        } else if (st == HaganeWorkoutState.STATE_CLOCK_GLANCE) {
-            drawClockGlance(dc);
         } else if (st == HaganeWorkoutState.STATE_RESUME_PROMPT) {
             drawResumePrompt(dc);
         } else if (st == HaganeWorkoutState.STATE_EDIT_WEIGHT) {
@@ -94,20 +92,17 @@ class HaganeWatchView extends WatchUi.View {
         var cx = w / 2;
         var cj = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
 
-        dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, 28, Graphics.FONT_SMALL, "HAGANE", cj);
+        // Header: latest status (Syncing..., Saved, No phone...) or the app name
+        var status = _state.syncStatusText;
+        dc.setColor(status.length() > 0 ? Graphics.COLOR_DK_GREEN : Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, 34, Graphics.FONT_SMALL, status.length() > 0 ? truncateText(status, 11) : "HAGANE", cj);
 
         var routines = _state.routines;
         if (routines.size() == 0) {
             dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, 92, Graphics.FONT_MEDIUM, "No routines", cj);
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-            var msg = "Sync via phone";
-            if (_state.syncStatusText.length() > 0 && !_state.syncStatusText.equals("Forge your steel!")) {
-                dc.setColor(Graphics.COLOR_DK_BLUE, Graphics.COLOR_TRANSPARENT);
-                msg = truncateText(_state.syncStatusText, 15);
-            }
-            dc.drawText(cx, 138, Graphics.FONT_SMALL, msg, cj);
+            dc.drawText(cx, 138, Graphics.FONT_SMALL, "Sync via phone", cj);
             dc.setColor(Graphics.COLOR_DK_GREEN, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, 186, Graphics.FONT_SMALL, "START: Sync", cj);
             return;
@@ -687,26 +682,6 @@ class HaganeWatchView extends WatchUi.View {
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
             dc.drawText(cx, 196, Graphics.FONT_SMALL, truncateText(nex.get("name") as String, 14), cj);
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // 8. CLOCK SCREEN (Press UP/DOWN in Active Set)
-    // -------------------------------------------------------------------------
-    private function drawClockGlance(dc as Graphics.Dc) as Void {
-        var w = dc.getWidth();
-        var h = dc.getHeight();
-
-        // Current time of day only
-        var clock = System.getClockTime();
-        var timeStr = Lang.format("$1$:$2$", [clock.hour.format("%02d"), clock.min.format("%02d")]);
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(
-            w / 2,
-            h / 2,
-            Graphics.FONT_NUMBER_HOT,
-            timeStr,
-            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
-        );
     }
 
     // -------------------------------------------------------------------------
