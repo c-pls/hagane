@@ -19,22 +19,24 @@ module HaganeNativeUi {
         return action;
     }
 
-    function iconFor(action as String) as WatchUi.BitmapResource? {
+    // The menu calls draw() on the icon, so it must be a Drawable (WatchUi.Bitmap), not a raw
+    // BitmapResource: on the FR255 a BitmapResource crashes with "Symbol Not Found".
+    function iconFor(action as String) as WatchUi.Bitmap? {
         try {
             if (action.equals("Resume") || action.equals("Resume Workout")) {
-                return WatchUi.loadResource(Rez.Drawables.IconResume) as WatchUi.BitmapResource;
+                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconResume });
             } else if (action.equals("Select Exercise")) {
-                return WatchUi.loadResource(Rez.Drawables.IconExercise) as WatchUi.BitmapResource;
+                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconExercise });
             } else if (action.equals("Edit Weight")) {
-                return WatchUi.loadResource(Rez.Drawables.IconWeight) as WatchUi.BitmapResource;
+                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconWeight });
             } else if (action.equals("Previous Set")) {
-                return WatchUi.loadResource(Rez.Drawables.IconUndo) as WatchUi.BitmapResource;
+                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconUndo });
             } else if (action.equals("Skip Set")) {
-                return WatchUi.loadResource(Rez.Drawables.IconSkip) as WatchUi.BitmapResource;
+                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconSkip });
             } else if (action.equals("Save Workout")) {
-                return WatchUi.loadResource(Rez.Drawables.IconSave) as WatchUi.BitmapResource;
+                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconSave });
             } else if (action.equals("Discard")) {
-                return WatchUi.loadResource(Rez.Drawables.IconDiscard) as WatchUi.BitmapResource;
+                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconDiscard });
             }
         } catch (ex) {}
         return null;

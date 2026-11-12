@@ -54,10 +54,13 @@ Offline-first gym tracker.
   Save, Discard. Rest countdown keeps running while the menu is open over the rest screen.
 - Set screen: `SET n/m` header, exercise name, `32kg x 10 reps`, set timer, `HR 70`.
 - Rest screen: `REST n/m` / `GO! n/m` / `GET READY`, big timer, HR and drop from set peak,
-  next exercise, `weight x reps`. Vibration at 10 s left, each of last 3 s, pattern at 0.
+  next exercise, `weight x reps`. Vibration at 10 s left, each of last 3 s, pattern at 0, then one buzz every 15 s of overtime.
 - Resume after app exit: progress saved to Storage every 15 s; on launch offers resume (≤ 6 h).
   The first part is saved as its own activity. Edited reps/weights of not-yet-done sets reset.
 - Routines from the phone mid-workout are queued and applied after the workout.
+
+- `IconMenuItem` icons must be `WatchUi.Bitmap` drawables, not `loadResource` BitmapResources
+  (the latter crash the FR255 with "Symbol Not Found" when the menu draws).
 
 ## Known Garmin limitations (don't re-investigate)
 - The "Lap 1 …" pop-up/voice after each set is from the watch firmware on `addLap()`; a CIQ app
@@ -74,4 +77,3 @@ Offline-first gym tracker.
 
 ## Open items
 - Build and test the latest watch changes on the device (native menus, marquee, review fixes).
-- `garmin-watch/STORE_DESCRIPTION.md` (old) and `.stage/` (stray 138 MB archive) can be deleted.

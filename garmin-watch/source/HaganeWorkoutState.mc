@@ -836,6 +836,10 @@ class HaganeWorkoutState {
         if (!hasVibratedForRest && restTargetSec > 0 && restElapsedSec >= restTargetSec) {
             hasVibratedForRest = true;
             vibrateRestComplete();
+        } else if (restTargetSec > 0 && restElapsedSec > restTargetSec &&
+                   (restElapsedSec - restTargetSec) % 15 == 0) {
+            // Rest time is over and the lifter hasn't started the set: one buzz every 15s
+            vibrateShort();
         }
     }
 

@@ -45,7 +45,7 @@ Hagane is a strength-training app for the **Garmin Forerunner 255 / 255 Music**.
 ### Rest screen
 - Countdown to the next set, with your heart-rate drop from the set's peak.
 - Buzz at 10 s left, a short buzz each second for the last 3 s, and a long pattern at 00:00.
-- After 00:00 the timer counts up in orange (overtime) until you press **START**.
+- After 00:00 the timer counts up in orange (overtime) until you press **START**, with one short buzz every 15 s.
 - **UP / DOWN** add or remove 15 s. **START** skips the rest.
 - Supersets (3A / 3B): no rest between the two; rest starts after the second exercise.
 - After the **last set of an exercise** there is no rest: a **GET READY** screen waits (with the next exercise shown) until you press **START**, so you can move and set up.
