@@ -8,4 +8,5 @@
     <bitmap id="IconSkip" filename="icon_skip.png" dithering="none" />
     <bitmap id="IconSave" filename="icon_save.png" dithering="none" />
     <bitmap id="IconDiscard" filename="icon_discard.png" dithering="none" />
+    <bitmap id="IconExtraSet" filename="icon_extra.png" dithering="none" />
 </drawables>

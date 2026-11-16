@@ -45,10 +45,10 @@ Hagane is a strength-training app for the **Garmin Forerunner 255 / 255 Music**.
 ### Rest screen
 - Countdown to the next set, with your heart-rate drop from the set's peak.
 - Buzz at 10 s left, a short buzz each second for the last 3 s, and a long pattern at 00:00.
-- After 00:00 the timer counts up in orange (overtime) until you press **START**, with one short buzz every 15 s.
+- After 00:00 the timer counts up in orange (overtime) until you press **START**, with three quick buzzes every 15 s.
 - **UP / DOWN** add or remove 15 s. **START** skips the rest.
 - Supersets (3A / 3B): no rest between the two; rest starts after the second exercise.
-- After the **last set of an exercise** there is no rest: a **GET READY** screen waits (with the next exercise shown) until you press **START**, so you can move and set up.
+- After the **last set of an exercise** there is no rest: a **GET READY** screen waits (with the next exercise shown) until you press **START**, so you can move and set up. If you still haven't started after 1 minute, it buzzes three times, then again every 15 s.
 - Pressing **BACK** to check the time does not stop the rest countdown.
 
 ### Machine busy? Switch exercise
@@ -66,13 +66,15 @@ Hagane is a strength-training app for the **Garmin Forerunner 255 / 255 Music**.
 | **Resume** | Continue the workout |
 | **Exercise** | Jump to any exercise |
 | **Weight** | Change weight for this and later sets of the exercise |
+| **+1 Set** | One more set of this exercise (or of the one you just finished), same weight and reps as its last set |
 | **Undo Set** | Reopen the set you logged last, to redo it |
 | **Skip Set** | Skip the set that is up next (also works from the rest screen) |
 | **Save** | Finish and save the workout |
 | **Discard** | Throw the workout away (asks to confirm) |
 
 When every set is done the menu opens by itself with **Save** selected.
-You can still choose **Resume** to add extra sets of any exercise.
+Choose **+1 Set** for one more set of the last exercise, or **Resume** and pick any exercise:
+a finished exercise gets one more set added; the sets you already logged stay as they are.
 
 ---
 

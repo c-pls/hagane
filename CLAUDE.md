@@ -49,15 +49,20 @@ Offline-first gym tracker.
 - Buttons: START = finish set / start next set; BACK = pause menu; UP/DOWN on set screen = reps ±1
   (changed values turn orange); UP/DOWN on rest = ±15 s; hold UP during set/rest = switch exercise
   (returns to the exercise you left afterwards — `returnStack`); hold UP on list = sync.
-- Pause menu: Resume, Exercise, Weight (±2.5 kg, applies to remaining sets of that exercise),
+- Pause menu: Resume, Exercise, Weight (±2.5 kg, applies to remaining sets of that exercise), +1 Set,
   Undo Set (reopens the last logged set), Skip Set (skips the upcoming set, also from rest),
   Save, Discard. Rest countdown keeps running while the menu is open over the rest screen.
 - Set screen: `SET n/m` header, exercise name, `32kg x 10 reps`, set timer, `HR 70`.
 - Rest screen: `REST n/m` / `GO! n/m` / `GET READY`, big timer, HR and drop from set peak,
-  next exercise, `weight x reps`. Vibration at 10 s left, each of last 3 s, pattern at 0, then one buzz every 15 s of overtime.
+  next exercise, `weight x reps`. Vibration at 10 s left, each of last 3 s, pattern at 0, then 3 quick pulses every 15 s of overtime;
+  GET READY: same reminder after 60 s, then every 15 s. No reminders while a menu is open.
 - Resume after app exit: progress saved to Storage every 15 s; on launch offers resume (≤ 6 h).
   The first part is saved as its own activity. Edited reps/weights of not-yet-done sets reset.
 - Routines from the phone mid-workout are queued and applied after the workout.
+- Extra sets (`insertExtraSet`): a copy of the exercise's last set is inserted after it and every
+  step index (log, `returnStack`, current) shifts. `extraSets` lists the source indices in order and is
+  saved with progress, so resume replays them. Picking a finished exercise adds a set (no redo).
+  "+1 Set" uses the last logged set's exercise when opened from rest/GET READY or after the end.
 
 - `IconMenuItem` icons must be Drawables, not `loadResource` BitmapResources (those crash the FR255
   with "Symbol Not Found"). Use `HaganeMenuIcon`, which centres the bitmap in the 45×76 icon slot;

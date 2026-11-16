@@ -1,1 +1,5 @@
-Log actual reps with UP/DOWN, Edit Weight, rest countdown cues (and a buzz every 15 s once rest is over), heart rate recovery, switch exercise and come back, resume after exit.
+Extra sets: +1 Set in the pause menu, or pick a finished exercise to add one more set.
+
+Reminder buzzes every 15 s when rest is over, and on the Get Ready screen after a minute.
+
+Log actual reps with UP/DOWN, Edit Weight, rest countdown cues, heart rate recovery, switch exercise and come back, resume after exit.

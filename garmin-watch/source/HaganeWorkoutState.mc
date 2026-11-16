@@ -63,6 +63,9 @@ class HaganeWorkoutState {
     // Step indices of sets left unfinished when the lifter jumped to another exercise (machine busy).
     // The workout returns to them once the detour exercise is finished.
     public var returnStack as Array = [];
+    // Extra sets added during the workout, as the step index each was copied from (in order), so a
+    // resumed workout can add them again
+    public var extraSets as Array = [];
     // Where BACK goes from the exercise picker: the pause menu, or the screen it was opened from
     public var pickerReturnState as Number = STATE_PAUSE_MENU;
     // Highest heart rate during the set just finished, and the same value kept during rest so the
@@ -86,6 +89,7 @@ class HaganeWorkoutState {
     public var restTargetSec as Number = 90;
     public var restElapsedSec as Number = 0;
     public var hasVibratedForRest as Boolean = false;
+    private static const GET_READY_REMIND_SEC = 60;
     public var workoutTotalSec as Number = 0;
     public var completedSetsCount as Number = 0;
 
@@ -98,6 +102,7 @@ class HaganeWorkoutState {
         "Resume",
         "Select Exercise",
         "Edit Weight",
+        "Extra Set",
         "Previous Set",
         "Skip Set",
         "Save Workout",
@@ -106,6 +111,7 @@ class HaganeWorkoutState {
 
     public static const COMPLETE_MENU_ITEMS = [
         "Save Workout",
+        "Extra Set",
         "Discard",
         "Resume Workout"
     ];
@@ -232,7 +238,8 @@ class HaganeWorkoutState {
                 "log"  => log,
                 "tot"  => workoutTotalSec,
                 "work" => totalWorkSec,
-                "rest" => totalRestSec
+                "rest" => totalRestSec,
+                "extra" => extraSets
             });
         } catch (ex) {
             // Storage unavailable: resuming simply will not be offered
@@ -317,6 +324,19 @@ class HaganeWorkoutState {
             if (steps.size() == 0) {
                 discardSavedWorkout();
                 return;
+            }
+            currentStepIdx = 0;
+            completedLog = [];
+            returnStack = [];
+            extraSets = [];
+            var extraObj = prog.get("extra");
+            if (extraObj instanceof Array) {
+                var ea = extraObj as Array;
+                for (var x = 0; x < ea.size(); x += 1) {
+                    if (ea[x] instanceof Number) {
+                        insertExtraSet(ea[x] as Number);
+                    }
+                }
             }
 
             currentStepIdx = 0;
@@ -836,10 +856,8 @@ class HaganeWorkoutState {
         if (!hasVibratedForRest && restTargetSec > 0 && restElapsedSec >= restTargetSec) {
             hasVibratedForRest = true;
             vibrateRestComplete();
-        } else if (restTargetSec > 0 && restElapsedSec > restTargetSec &&
-                   (restElapsedSec - restTargetSec) % 15 == 0) {
-            // Rest time is over and the lifter hasn't started the set: one buzz every 15s
-            vibrateShort();
+        } else if (screenState == STATE_REST && isReminderDue()) {
+            vibrateReminder();
         }
     }
 
@@ -1119,12 +1137,15 @@ class HaganeWorkoutState {
                 }
             }
         }
-        var isRedo = false;
+        var isExtra = false;
         if (foundIdx < 0) {
-            foundIdx = target.get("firstStepIdx") as Number;
-            // Lifter jumped to an already-completed/skipped exercise to redo it -> uncomplete it cleanly
-            uncompleteStep(foundIdx);
-            isRedo = true;
+            // Every set of it is done: add one more set (the logged sets stay as they are)
+            foundIdx = insertExtraSet(target.get("firstStepIdx") as Number);
+            if (foundIdx < 0) {
+                return;
+            }
+            isExtra = true;
+            isWorkoutComplete = false;
         }
 
         if (_session != null && !_session.isRecording()) {
@@ -1135,7 +1156,7 @@ class HaganeWorkoutState {
         startTimer();
 
         // Picked the exercise we are already on: just go back to where we were
-        if (!isRedo && foundIdx == currentStepIdx) {
+        if (!isExtra && foundIdx == currentStepIdx) {
             screenState = (previousWorkoutState == STATE_REST) ? STATE_REST : STATE_ACTIVE_SET;
             WatchUi.requestUpdate();
             return;
@@ -1144,8 +1165,136 @@ class HaganeWorkoutState {
         rememberReturnPoint(foundIdx);
         currentStepIdx = foundIdx;
         // Wait screen so the lifter can move to the other machine; a running rest keeps counting
-        enterGetReady(!isRedo && previousWorkoutState == STATE_REST);
+        enterGetReady(previousWorkoutState == STATE_REST);
         vibrateShort();
+        WatchUi.requestUpdate();
+    }
+
+    // Adds one more set of the exercise that step srcIdx belongs to, right after its last set.
+    // Weight and reps are copied from that last set. Returns the new step's index, or -1.
+    function insertExtraSet(srcIdx as Number) as Number {
+        if (srcIdx < 0 || srcIdx >= steps.size()) {
+            return -1;
+        }
+        var src = steps[srcIdx] as Dictionary;
+        var label = src.get("label") as String;
+        var name = src.get("name") as String;
+        var lastIdx = -1;
+        var count = 0;
+        for (var i = 0; i < steps.size(); i += 1) {
+            var stp = steps[i] as Dictionary;
+            if ((stp.get("label") as String).equals(label) && (stp.get("name") as String).equals(name)) {
+                lastIdx = i;
+                count += 1;
+            }
+        }
+        var last = steps[lastIdx] as Dictionary;
+        var newTotal = count + 1;
+        for (var j = 0; j < steps.size(); j += 1) {
+            var stp = steps[j] as Dictionary;
+            if ((stp.get("label") as String).equals(label) && (stp.get("name") as String).equals(name)) {
+                stp.put("setTotal", newTotal);
+            }
+        }
+        var extra = {
+            "exIdx"         => last.get("exIdx"),
+            "exTotal"       => last.get("exTotal"),
+            "label"         => label,
+            "name"          => name,
+            "isWarmup"      => last.get("isWarmup"),
+            "setNum"        => newTotal,
+            "setTotal"      => newTotal,
+            "weight"        => last.get("weight"),
+            "reps"          => last.get("reps"),
+            "plannedWeight" => last.get("weight"),
+            "plannedReps"   => last.get("reps"),
+            "isWarmupSet"   => false,
+            "restSeconds"   => last.get("restSeconds"),
+            "note"          => last.get("note"),
+            "completed"     => false,
+            "skipped"       => false
+        };
+        var pos = lastIdx + 1;
+        var rebuilt = steps.slice(0, pos);
+        rebuilt.add(extra);
+        rebuilt.addAll(steps.slice(pos, null));
+        steps = rebuilt;
+
+        // Everything that points at a step after the new one moves down by one
+        if (currentStepIdx >= pos) {
+            currentStepIdx += 1;
+        }
+        for (var k = 0; k < completedLog.size(); k += 1) {
+            var e = completedLog[k] as Dictionary;
+            var si = e.get("stepIdx");
+            if ((si instanceof Number) && (si as Number) >= pos) {
+                e.put("stepIdx", (si as Number) + 1);
+            }
+        }
+        for (var r = 0; r < returnStack.size(); r += 1) {
+            if ((returnStack[r] as Number) >= pos) {
+                returnStack[r] = (returnStack[r] as Number) + 1;
+            }
+        }
+        extraSets.add(srcIdx);
+        return pos;
+    }
+
+    // "+1 Set" in the pause menu: one more set of the exercise in progress, or of the one just
+    // finished when the menu was opened from the rest / GET READY screen or after the workout ended.
+    function addExtraSetFromMenu() as Void {
+        var src = currentStepIdx;
+        var fromRest = (previousWorkoutState == STATE_REST || isWorkoutComplete);
+        if (fromRest && completedLog.size() > 0) {
+            var lastLogged = (completedLog[completedLog.size() - 1] as Dictionary).get("stepIdx");
+            if (lastLogged instanceof Number) {
+                src = lastLogged as Number;
+            }
+        }
+        if (src < 0 || src >= steps.size()) {
+            resumeFromPauseMenu();
+            return;
+        }
+        var srcStep = steps[src] as Dictionary;
+        var label = srcStep.get("label") as String;
+        var name = srcStep.get("name") as String;
+        // Does this exercise still have sets to do? Then the plan just gets one set longer.
+        var hasSetsLeft = false;
+        for (var i = 0; i < steps.size(); i += 1) {
+            var stp = steps[i] as Dictionary;
+            if ((stp.get("label") as String).equals(label) && (stp.get("name") as String).equals(name) &&
+                stp.get("completed") != true && stp.get("skipped") != true) {
+                hasSetsLeft = true;
+                break;
+            }
+        }
+        var newIdx = insertExtraSet(src);
+        if (newIdx < 0) {
+            resumeFromPauseMenu();
+            return;
+        }
+        if (hasSetsLeft && !isWorkoutComplete) {
+            saveProgress();
+            resumeFromPauseMenu();
+            return;
+        }
+        // The exercise was finished: the extra set is next. A running rest keeps counting.
+        if (_session != null && !_session.isRecording()) {
+            try {
+                _session.start();
+            } catch (ex) {}
+        }
+        startTimer();
+        var keepRest = (previousWorkoutState == STATE_REST && !isWorkoutComplete);
+        isWorkoutComplete = false;
+        currentStepIdx = newIdx;
+        if (keepRest) {
+            screenState = STATE_REST;
+        } else {
+            lastRestElapsedSec = 0;
+            enterGetReady(false);
+        }
+        saveProgress();
         WatchUi.requestUpdate();
     }
 
@@ -1163,6 +1312,7 @@ class HaganeWorkoutState {
         var startIdObj = routine.get("id");
         activeRoutineId = (startIdObj instanceof String) ? (startIdObj as String) : "";
         returnStack = [];
+        extraSets = [];
         setPeakHr = 0;
         restPeakHr = 0;
 
@@ -1734,6 +1884,9 @@ class HaganeWorkoutState {
         } else if (action.equals("Select Exercise")) {
             openExercisePicker();
             return;
+        } else if (action.equals("Extra Set")) {
+            addExtraSetFromMenu();
+            return;
         } else if (action.equals("Edit Weight")) {
             openEditWeight();
             return;
@@ -1837,6 +1990,30 @@ class HaganeWorkoutState {
         if (Attention has :vibrate) {
             try {
                 Attention.vibrate([new Attention.VibeProfile(60, 90)]);
+            } catch (ex) {}
+        }
+    }
+
+    // Nudge when the lifter seems to have forgotten to start the next set (not while a menu is open):
+    // rest overtime -> every 15s after 00:00; GET READY (no countdown) -> after 60s, then every 15s.
+    private function isReminderDue() as Boolean {
+        if (restTargetSec > 0) {
+            return restElapsedSec > restTargetSec && (restElapsedSec - restTargetSec) % 15 == 0;
+        }
+        return restElapsedSec >= GET_READY_REMIND_SEC && (restElapsedSec - GET_READY_REMIND_SEC) % 15 == 0;
+    }
+
+    // Three quick pulses: hard to miss mid-conversation or while walking between machines
+    function vibrateReminder() as Void {
+        if (Attention has :vibrate) {
+            try {
+                Attention.vibrate([
+                    new Attention.VibeProfile(100, 150),
+                    new Attention.VibeProfile(0, 120),
+                    new Attention.VibeProfile(100, 150),
+                    new Attention.VibeProfile(0, 120),
+                    new Attention.VibeProfile(100, 150)
+                ]);
             } catch (ex) {}
         }
     }

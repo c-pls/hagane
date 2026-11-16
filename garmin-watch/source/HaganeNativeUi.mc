@@ -16,6 +16,7 @@ module HaganeNativeUi {
         if (action.equals("Previous Set")) { return "Undo Set"; }
         if (action.equals("Select Exercise")) { return "Exercise"; }
         if (action.equals("Edit Weight")) { return "Weight"; }
+        if (action.equals("Extra Set")) { return "+1 Set"; }
         return action;
     }
 
@@ -37,6 +38,8 @@ module HaganeNativeUi {
                 return new HaganeMenuIcon(Rez.Drawables.IconSave);
             } else if (action.equals("Discard")) {
                 return new HaganeMenuIcon(Rez.Drawables.IconDiscard);
+            } else if (action.equals("Extra Set")) {
+                return new HaganeMenuIcon(Rez.Drawables.IconExtraSet);
             }
         } catch (ex) {}
         return null;
