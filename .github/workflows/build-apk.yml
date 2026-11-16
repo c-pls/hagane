@@ -5,6 +5,10 @@ on:
     branches:
       - main
       - master
+    # No APK when a push only changes the watch app or docs (the APK doesn't include them)
+    paths-ignore:
+      - 'garmin-watch/**'
+      - '**.md'
   workflow_dispatch:
 
 permissions:

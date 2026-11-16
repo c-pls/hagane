@@ -19,24 +19,24 @@ module HaganeNativeUi {
         return action;
     }
 
-    // The menu calls draw() on the icon, so it must be a Drawable (WatchUi.Bitmap), not a raw
-    // BitmapResource: on the FR255 a BitmapResource crashes with "Symbol Not Found".
-    function iconFor(action as String) as WatchUi.Bitmap? {
+    // The menu calls draw() on the icon, so it must be a Drawable, not a raw BitmapResource:
+    // on the FR255 a BitmapResource crashes with "Symbol Not Found".
+    function iconFor(action as String) as WatchUi.Drawable? {
         try {
             if (action.equals("Resume") || action.equals("Resume Workout")) {
-                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconResume });
+                return new HaganeMenuIcon(Rez.Drawables.IconResume);
             } else if (action.equals("Select Exercise")) {
-                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconExercise });
+                return new HaganeMenuIcon(Rez.Drawables.IconExercise);
             } else if (action.equals("Edit Weight")) {
-                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconWeight });
+                return new HaganeMenuIcon(Rez.Drawables.IconWeight);
             } else if (action.equals("Previous Set")) {
-                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconUndo });
+                return new HaganeMenuIcon(Rez.Drawables.IconUndo);
             } else if (action.equals("Skip Set")) {
-                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconSkip });
+                return new HaganeMenuIcon(Rez.Drawables.IconSkip);
             } else if (action.equals("Save Workout")) {
-                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconSave });
+                return new HaganeMenuIcon(Rez.Drawables.IconSave);
             } else if (action.equals("Discard")) {
-                return new WatchUi.Bitmap({ :rezId => Rez.Drawables.IconDiscard });
+                return new HaganeMenuIcon(Rez.Drawables.IconDiscard);
             }
         } catch (ex) {}
         return null;
@@ -97,6 +97,22 @@ module HaganeNativeUi {
         }
         laterTimer = new Timer.Timer();
         laterTimer.start(cb, 60, false);
+    }
+}
+
+// Menu icon that centres its bitmap in the slot the menu gives it, so it lines up with the
+// label (a plain WatchUi.Bitmap draws from the top-left corner and sits too high).
+class HaganeMenuIcon extends WatchUi.Drawable {
+    private var _rezId as ResourceId;
+
+    function initialize(rezId as ResourceId) {
+        Drawable.initialize({});
+        _rezId = rezId;
+    }
+
+    function draw(dc as Graphics.Dc) as Void {
+        var bmp = WatchUi.loadResource(_rezId) as WatchUi.BitmapResource;
+        dc.drawBitmap((dc.getWidth() - bmp.getWidth()) / 2, (dc.getHeight() - bmp.getHeight()) / 2, bmp);
     }
 }
 

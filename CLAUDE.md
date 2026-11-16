@@ -59,8 +59,9 @@ Offline-first gym tracker.
   The first part is saved as its own activity. Edited reps/weights of not-yet-done sets reset.
 - Routines from the phone mid-workout are queued and applied after the workout.
 
-- `IconMenuItem` icons must be `WatchUi.Bitmap` drawables, not `loadResource` BitmapResources
-  (the latter crash the FR255 with "Symbol Not Found" when the menu draws).
+- `IconMenuItem` icons must be Drawables, not `loadResource` BitmapResources (those crash the FR255
+  with "Symbol Not Found"). Use `HaganeMenuIcon`, which centres the bitmap in the 45×76 icon slot;
+  a plain `WatchUi.Bitmap` draws at the slot's top-left and sits above the label.
 
 ## Known Garmin limitations (don't re-investigate)
 - The "Lap 1 …" pop-up/voice after each set is from the watch firmware on `addLap()`; a CIQ app
