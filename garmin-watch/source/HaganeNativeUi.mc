@@ -48,13 +48,15 @@ module HaganeNativeUi {
         var title = clock.hour.format("%02d") + ":" + clock.min.format("%02d");
         var menu = new WatchUi.Menu2({ :title => title });
         var items = state.getPauseMenuItems();
+        // Left-aligned items put the icon beside the label (centred ones stack it above)
+        var opts = { :alignment => WatchUi.MenuItem.MENU_ITEM_LABEL_ALIGN_LEFT };
         for (var i = 0; i < items.size(); i += 1) {
             var action = items[i] as String;
             var icon = iconFor(action);
             if (icon != null) {
-                menu.addItem(new WatchUi.IconMenuItem(pauseLabel(action), null, action, icon, null));
+                menu.addItem(new WatchUi.IconMenuItem(pauseLabel(action), null, action, icon, opts));
             } else {
-                menu.addItem(new WatchUi.MenuItem(pauseLabel(action), null, action, null));
+                menu.addItem(new WatchUi.MenuItem(pauseLabel(action), null, action, opts));
             }
         }
         if (state.pauseMenuIdx >= 0 && state.pauseMenuIdx < items.size()) {
