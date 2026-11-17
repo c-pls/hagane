@@ -1,3 +1,5 @@
+See every exercise of a routine, with its sets, reps and weight, before you start.
+
 Extra sets: +1 Set in the pause menu, or pick a finished exercise to add one more set.
 
 Reminder buzzes every 15 s when rest is over, and on the Get Ready screen after a minute.

@@ -27,7 +27,9 @@ class HaganeWatchDelegate extends WatchUi.BehaviorDelegate {
                 _state.requestSyncFromPhone(false);
                 return true;
             }
-            return _state.startSelectedRoutine();
+            // Show the exercises first; the workout starts from the preview's Start item
+            HaganeNativeUi.showRoutinePreview(_state);
+            return true;
         } else if (st == HaganeWorkoutState.STATE_ACTIVE_SET) {
             _state.completeCurrentSet();
             return true;

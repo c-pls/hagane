@@ -44,7 +44,7 @@ Offline-first gym tracker.
 ## Watch app — behaviour
 - Files: `HaganeWorkoutState.mc` (state machine, FIT recording, sync, progress),
   `HaganeWatchView.mc` (custom screens), `HaganeWatchDelegate.mc` (buttons on custom screens),
-  `HaganeNativeUi.mc` (native pause menu, exercise list, Discard? dialog + their delegates),
+  `HaganeNativeUi.mc` (native routine preview, pause menu, exercise list, Discard? dialog + delegates),
   `HaganeWatchApp.mc` (lifecycle, phone messages).
 - Buttons: START = finish set / start next set; BACK = pause menu; UP/DOWN on set screen = reps ±1
   (changed values turn orange); UP/DOWN on rest = ±15 s; hold UP during set/rest = switch exercise
@@ -58,6 +58,8 @@ Offline-first gym tracker.
   GET READY: same reminder after 60 s, then every 15 s. No reminders while a menu is open.
 - Resume after app exit: progress saved to Storage every 15 s; on launch offers resume (≤ 6 h).
   The first part is saved as its own activity. Edited reps/weights of not-yet-done sets reset.
+- START on the routine list opens a native Menu2 preview (`showRoutinePreview`): Start, then one row
+  per exercise with `3x8 · 60kg` (warm-ups not counted). Only Start begins the workout.
 - Routines from the phone mid-workout are queued and applied after the workout.
 - Extra sets (`insertExtraSet`): a copy of the exercise's last set is inserted after it and every
   step index (log, `returnStack`, current) shifts. `extraSets` lists the source indices in order and is
