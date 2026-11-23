@@ -1045,6 +1045,8 @@ export const RoutineDetail: React.FC<RoutineDetailProps> = ({
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 title={t.dragHint}
+                role="img"
+                aria-label={t.dragHint}
                 className="mt-0.5 px-1.5 py-1 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 cursor-grab active:cursor-grabbing select-none touch-none shrink-0 font-bold text-xs leading-none"
               >
                 ⋮⋮

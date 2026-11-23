@@ -206,9 +206,6 @@ export const RoutineList: React.FC<RoutineListProps> = ({
       <div className="flex items-center justify-between px-1 gap-2">
         <div className="min-w-0">
           <h2 className="font-bold text-lg text-slate-900">{t.myRoutines}</h2>
-          <p className="text-xs text-slate-500 leading-snug">
-            {t.selectOrCreateRoutine}
-          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -525,7 +522,8 @@ export const RoutineList: React.FC<RoutineListProps> = ({
                               {displayName}
                             </span>
                             <span className="text-slate-400 font-medium shrink-0">
-                              {item.sets.length} {t.setsLabel} •{' '}
+                              {item.sets.length}{' '}
+                              {item.sets.length === 1 ? t.setLabel : t.setsLabel} •{' '}
                               {previewSet.weight}kg × {previewSet.reps}
                             </span>
                           </div>

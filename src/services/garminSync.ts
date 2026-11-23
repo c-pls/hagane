@@ -424,6 +424,8 @@ export type GarminSyncStatusHandler = (info: {
   success: boolean;
   message?: string;
   isTrimmed?: boolean;
+  /** True when nothing new had to be sent (the watch already has this payload). */
+  unchanged?: boolean;
 }) => void;
 let garminSyncStatusHandler: GarminSyncStatusHandler | null = null;
 export function setGarminSyncStatusHandler(handler: GarminSyncStatusHandler | null) {
@@ -451,6 +453,7 @@ async function executeGarminCacheUpdate(
   // (quarantined/corrupt data, or the first render before a restore): only push an empty list
   // when it is a real change from routines that were sent earlier in this session.
   if (routines.length === 0 && (isStorageCorruptionLocked() || !hasSentNonEmptyPayload)) {
+    garminSyncStatusHandler?.({ success: true, unchanged: true });
     return;
   }
   try {
@@ -460,6 +463,7 @@ async function executeGarminCacheUpdate(
     );
     const jsonStr = JSON.stringify(payload);
     if (jsonStr === lastSentPayloadJson) {
+      garminSyncStatusHandler?.({ success: true, unchanged: true });
       return;
     }
     const res = await GarminSyncNative.cacheRoutinesForWatch({ payload });
@@ -520,6 +524,15 @@ export function debouncedUpdateGarminWatchCache(
  * Immediately flushes any pending Garmin watch cache update when the app enters background
  * or the screen is locked before the 2.5s debounce timer fires.
  */
+/** Re-sends the routines to the watch right away, even if they have not changed. */
+export function syncGarminWatchNow(
+  routines: Routine[],
+  exercisesMap: Record<string, Exercise>
+): void {
+  resetGarminLastSentPayload();
+  debouncedUpdateGarminWatchCache(routines, exercisesMap, 0);
+}
+
 export function flushGarminWatchCache(): void {
   if (!Capacitor.isNativePlatform() || !pendingGarminArgs) return;
   if (garminDebounceTimer) {

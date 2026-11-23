@@ -36,6 +36,7 @@ import { RoutineDetail } from './components/RoutineDetail';
 import { ExercisePickerView } from './components/ExercisePickerView';
 import { ExerciseWiki } from './components/ExerciseWiki';
 import { ExerciseDetail } from './components/ExerciseDetail';
+import { WatchSyncStatus, WatchSyncState } from './components/WatchSyncStatus';
 import {
   initNativeStatusBar,
 } from './services/native';
@@ -59,6 +60,7 @@ import {
   addGarminMessageStatusListener,
   addGarminWorkoutCompletedListener,
   resetGarminLastSentPayload,
+  syncGarminWatchNow,
 } from './services/garminSync';
 
 export const App: React.FC = () => {
@@ -112,6 +114,10 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  const [watchSync, setWatchSync] = useState<WatchSyncState>(() => {
+    const at = Number(localStorage.getItem('hagane_last_watch_sync') || 0);
+    return at > 0 ? { kind: 'synced', at } : { kind: 'pending' };
+  });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
   const toastQueueRef = useRef<{ msg: string; durationMs: number }[]>([]);
@@ -770,7 +776,7 @@ export const App: React.FC = () => {
     };
     const next = [...currentRoutines, newRoutine];
     persistRoutines(next, 100);
-    setRoute({ name: 'routineDetail', routineId: newRoutine.id });
+    setRoute({ name: 'routineDetail', routineId: newRoutine.id, initialEditMode: true });
   };
 
   const handleDeleteRoutine = (routineId: string) => {
@@ -851,6 +857,15 @@ export const App: React.FC = () => {
   // Listen for Garmin sync status updates
   useEffect(() => {
     setGarminSyncStatusHandler((info) => {
+      if (info.success) {
+        const at = info.unchanged
+          ? Number(localStorage.getItem('hagane_last_watch_sync') || 0) || Date.now()
+          : Date.now();
+        localStorage.setItem('hagane_last_watch_sync', String(at));
+        setWatchSync({ kind: 'synced', at });
+      } else {
+        setWatchSync({ kind: 'error', message: info.message });
+      }
       if (!info.success && info.message) {
         showToast(
           lang === 'vi'
@@ -888,7 +903,8 @@ export const App: React.FC = () => {
     routineId: string,
     exerciseId: string,
     asWarmup: boolean = false,
-    replacingExIdx: number | null = null
+    replacingExIdx: number | null = null,
+    quiet = false
   ): boolean => {
     const currentRoutines = routinesRef.current || routines;
     const targetRoutine = currentRoutines.find((r) => r.id === routineId);
@@ -973,7 +989,7 @@ export const App: React.FC = () => {
         ];
 
     handleUpdateRoutine({ ...targetRoutine, exercises: nextExercises });
-    showToast(`+ ${exName} → ${targetRoutine.name}`);
+    if (!quiet) showToast(`+ ${exName} → ${targetRoutine.name}`);
     return true;
   };
 
@@ -1138,8 +1154,8 @@ export const App: React.FC = () => {
       )}
 
       {/* Top Sticky App Bar (Hidden in Exercise Picker for native full-height search) */}
-      {route.name === 'exercisePicker' && toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+      {toastMessage && (
+        <div className={`fixed ${route.name === 'exercisePicker' ? 'top-[calc(env(safe-area-inset-top)+4rem)]' : 'bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]'} left-1/2 -translate-x-1/2 z-50 pointer-events-none`}>
           <span
             role="status"
             aria-live="polite"
@@ -1155,16 +1171,6 @@ export const App: React.FC = () => {
             {renderHeaderLeft()}
 
             <div className="flex items-center gap-2 shrink-0">
-              {toastMessage && (
-                <span
-                  role="status"
-                  aria-live="polite"
-                  className="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold"
-                >
-                  {toastMessage}
-                </span>
-              )}
-
               {/* Routine Edit Mode Toggle (Option A: Right in the header) */}
               {route.name === 'routineDetail' && (
                 <button
@@ -1183,7 +1189,8 @@ export const App: React.FC = () => {
                 </button>
               )}
 
-              {/* 1-Click Flag + EN / VI Language Switcher (No dropdown) */}
+              {/* EN / VI switch: only on the top-level screens, so it doesn't crowd editing screens */}
+              {(route.name === 'routineList' || route.name === 'wikiList') && (
               <div
                 className="flex items-center bg-slate-100 p-0.5 rounded-full border border-slate-200/80 select-none shadow-2xs"
                 role="group"
@@ -1220,6 +1227,7 @@ export const App: React.FC = () => {
                   <span>VI</span>
                 </button>
               </div>
+              )}
             </div>
           </div>
         </header>
@@ -1397,6 +1405,19 @@ export const App: React.FC = () => {
           </div>
         )}
 
+        {route.name === 'routineList' && Capacitor.isNativePlatform() && (
+          <div className="mb-3">
+            <WatchSyncStatus
+              state={watchSync}
+              lang={lang}
+              onSyncNow={() => {
+                setWatchSync({ kind: 'pending' });
+                syncGarminWatchNow(routines, exercisesMap);
+              }}
+            />
+          </div>
+        )}
+
         {route.name === 'routineList' && (
           <RoutineList
             routines={routines}
@@ -1553,6 +1574,27 @@ export const App: React.FC = () => {
                     route.replacingExIdx
                   );
                   if (success) {
+                    setRoute({
+                      name: 'routineDetail',
+                      routineId: targetRoutine.id,
+                      initialEditMode: true,
+                      scrollToIndex: scrollIdx,
+                    });
+                  }
+                }}
+                onAddExercises={(exerciseIds) => {
+                  const scrollIdx = route.asWarmup
+                    ? (targetRoutine.exercises || []).filter((e) => e.isWarmup).length
+                    : (targetRoutine.exercises || []).length;
+                  const added = exerciseIds.filter((id) =>
+                    handleAddExerciseToRoutine(targetRoutine.id, id, route.asWarmup, null, true)
+                  ).length;
+                  if (added > 0) {
+                    showToast(
+                      lang === 'vi'
+                        ? `+ ${added} bài tập → ${targetRoutine.name}`
+                        : `+ ${added} exercise${added === 1 ? '' : 's'} → ${targetRoutine.name}`
+                    );
                     setRoute({
                       name: 'routineDetail',
                       routineId: targetRoutine.id,

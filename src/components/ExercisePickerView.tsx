@@ -23,6 +23,8 @@ interface ExercisePickerViewProps {
   autoFocusSearch?: boolean;
   onBack: () => void;
   onSelectExercise: (exerciseId: string) => void;
+  /** Adds several exercises at once (multi-select when adding, not when swapping). */
+  onAddExercises?: (exerciseIds: string[]) => void;
   onDuplicateWarning?: (exerciseName: string) => void;
   onOpenWiki: (
     exerciseId: string,
@@ -52,6 +54,21 @@ const MOST_USED_IDS = [
   '0203', // Face Pull (Cable)
 ];
 
+// Primary muscles that fit each routine category, used to rank "Most used" for that routine.
+const TAG_MUSCLES: Record<string, string[]> = {
+  push: ['Chest', 'Upper Chest', 'Delts', 'Front Delts', 'Shoulders', 'Triceps'],
+  pull: ['Back', 'Lats', 'Upper Back', 'Traps', 'Rear Delts', 'Biceps', 'Forearms'],
+  legs: ['Quads', 'Glutes', 'Hamstrings', 'Adductors', 'Calves'],
+  lower: ['Quads', 'Glutes', 'Hamstrings', 'Adductors', 'Calves'],
+  upper: ['Chest', 'Upper Chest', 'Back', 'Lats', 'Upper Back', 'Delts', 'Shoulders', 'Biceps', 'Triceps'],
+};
+
+function matchesTag(ex: Exercise, tag: string | undefined): boolean {
+  const muscles = TAG_MUSCLES[(tag || '').trim().toLowerCase()];
+  if (!muscles) return false;
+  return ex.primaryMuscles.some((m) => muscles.includes(m));
+}
+
 const MUSCLE_QUICK_FILTERS = [...MUSCLE_FILTER_CHOICES];
 
 const EQUIPMENT_QUICK_FILTERS = [
@@ -79,6 +96,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
   autoFocusSearch = true,
   onBack,
   onSelectExercise,
+  onAddExercises,
   onDuplicateWarning,
   onOpenWiki,
 }) => {
@@ -87,6 +105,12 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
   const [activeTab, setActiveTab] = useState<'most_used' | 'all'>(initialTab);
   const [muscleFilter, setMuscleFilter] = useState(initialMuscle);
   const [equipmentFilter, setEquipmentFilter] = useState(initialEquipment);
+  const multiSelect = replacingExIdx === null && Boolean(onAddExercises);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
 
   const replacedExercise = useMemo(() => {
     if (replacingExIdx === null || !routine.exercises[replacingExIdx])
@@ -123,10 +147,15 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
       const list = MOST_USED_IDS.map((id) => map.get(id)).filter(
         Boolean
       ) as Exercise[];
-      return list.length > 0 ? list : allExercises;
+      if (list.length === 0) return allExercises;
+      // Exercises that fit this routine's category (e.g. Push) come first.
+      return [
+        ...list.filter((e) => matchesTag(e, routine.tag)),
+        ...list.filter((e) => !matchesTag(e, routine.tag)),
+      ];
     }
     return allExercises;
-  }, [allExercises, search, activeTab, muscleFilter, equipmentFilter]);
+  }, [allExercises, search, activeTab, muscleFilter, equipmentFilter, routine.tag]);
 
   const filtered = useMemo(() => {
     return searchAndRankExercises(
@@ -392,6 +421,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
         {filtered.map((ex) => {
           const displayName = lang === 'vi' && ex.nameVi ? ex.nameVi : ex.name;
           const isAlreadyAdded = existingExerciseIds.has(ex.id);
+          const isSelected = selectedIds.includes(ex.id);
 
           return (
             <div
@@ -411,12 +441,30 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                     onDuplicateWarning?.(displayName);
                     return;
                   }
+                  if (multiSelect) {
+                    toggleSelected(ex.id);
+                    return;
+                  }
                   onSelectExercise(ex.id);
                 }}
-                className={`flex-1 min-w-0 min-h-[44px] pr-2 py-1 text-left transition rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                aria-pressed={multiSelect ? isSelected : undefined}
+                className={`flex-1 min-w-0 flex items-center gap-3 min-h-[44px] pr-2 py-1 text-left transition rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   isAlreadyAdded ? 'cursor-not-allowed' : 'cursor-pointer'
                 }`}
               >
+                  {multiSelect && !isAlreadyAdded && (
+                    <span
+                      aria-hidden="true"
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${
+                        isSelected
+                          ? 'bg-blue-600 border-blue-600 text-white'
+                          : 'border-slate-300 text-transparent'
+                      }`}
+                    >
+                      {isSelected ? selectedIds.indexOf(ex.id) + 1 : ''}
+                    </span>
+                  )}
+                <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3
                     className={`font-semibold text-[15px] leading-snug truncate ${
@@ -443,6 +491,7 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
                       .join(', ')}
                   </span>
                 </p>
+                </div>
               </button>
 
               {/* Right Column: Circular (?) Button to inspect video/wiki */}
@@ -486,6 +535,20 @@ export const ExercisePickerView: React.FC<ExercisePickerViewProps> = ({
           </div>
         )}
       </div>
+
+      {multiSelect && selectedIds.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 p-4 pb-[calc(env(safe-area-inset-bottom)+5rem)] pointer-events-none">
+          <button
+            type="button"
+            onClick={() => onAddExercises?.(selectedIds)}
+            className="pointer-events-auto w-full max-w-md mx-auto block min-h-[52px] rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-lg cursor-pointer"
+          >
+            {lang === 'vi'
+              ? `Thêm ${selectedIds.length} bài tập`
+              : `Add ${selectedIds.length} exercise${selectedIds.length === 1 ? '' : 's'}`}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
